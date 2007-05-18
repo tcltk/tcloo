@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1 2007/05/18 13:17:15 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.2 2007/05/18 13:36:39 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -233,7 +233,6 @@ int DLLEXPORT
 Tcloo_Init(
     Tcl_Interp *interp)		/* The interpreter to install into. */
 {
-    Interp *iPtr = (Interp *) interp;
     Foundation *fPtr;
     int i;
     Tcl_DString buffer;
@@ -489,7 +488,6 @@ ObjectDeletedTrace(
     const char *newName,	/* Always NULL. */
     int flags)			/* Why was the object deleted? */
 {
-    Interp *iPtr = (Interp *) interp;
     Object *oPtr = clientData;
     Class *clsPtr;
 
@@ -1167,7 +1165,6 @@ Tcl_CopyObjectInstance(
     const char *targetName)
 {
     Object *oPtr = (Object *) sourceObject, *o2Ptr;
-    Interp *iPtr = (Interp *) interp;
     FOREACH_HASH_DECLS;
     Method *mPtr;
     Class *mixinPtr;
@@ -2554,7 +2551,6 @@ ObjectCmd(
 				 * public or the private command interface. */
     Tcl_HashTable *cachePtr)	/* What call chain cache to use. */
 {
-    Interp *iPtr = (Interp *) interp;
     CallContext *contextPtr;
     int result;
 
