@@ -50,7 +50,7 @@ TCLSH_ENV=TCL_LIBRARY="`@CYGPATH@ $(TCL_SRC_DIR)/library`" \
 	  PATH="$(EXTRA_PATH):$(PATH)" \
 	  TCLLIBPATH="$(top_builddir)"
 TCLSH_PROGRAM=@TCLSH_PROG@
-PLATFORM=@PLATFORM@
+PLATFORM=`echo 'package require platform;puts [platform::generic]'|$(TCLSH_PROGRAM)`
 TCLSH=$(TCLSH_ENV) "$(TCLSH_PROGRAM)"
 # We assume that sdx is on the path!
 SDX_PROGRAM=sdx
