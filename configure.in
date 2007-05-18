@@ -1,0 +1,37 @@
+# $Id: configure.in,v 1.1 2007/05/18 13:17:14 dkf Exp $
+
+AC_REVISION($Revision: 1.1 $)
+AC_INIT([tcloo],[0.1])
+AC_CONFIG_AUX_DIR(tclconfig)
+
+TEA_INIT([3.5])
+TEA_PATH_TCLCONFIG
+TEA_LOAD_TCLCONFIG
+TEA_PREFIX
+TEA_SETUP_COMPILER
+TEA_ADD_SOURCES([tclOO.c tclOOCall.c tclOODefineCmds.c tclOOInfo.c tclOOStubLib.c])
+TEA_ADD_INCLUDES([-I. -I\"`${CYGPATH} ${srcdir}/generic`\"])
+TEA_PRIVATE_TCL_HEADERS
+TEA_ENABLE_THREADS
+TEA_ENABLE_SHARED
+TEA_ENABLE_SYMBOLS
+TEA_CONFIG_CFLAGS
+
+CLEANFILES="$CLEANFILES pkgIndex.tcl"
+AC_SUBST(CLEANFILES)
+AC_DEFINE(USE_TCL_STUBS,[1],[Should always be 1])
+AC_DEFINE(BUILD_tcloo,[1],[Set to 1 when building package])
+
+TEA_MAKE_LIB
+if test "${TEA_PLATFORM}" = "windows" -a "$GCC" != "yes"; then
+    PKG_STUB_LIB_FILE=tcloostub.lib
+else
+    PKG_STUB_LIB_FILE=libtcloostub.a
+fi
+
+TEA_PROG_TCLSH
+CONFIGURE_OUTPUTS="Makefile config.cache config.log config.status"
+AC_SUBST(CONFIGURE_OUTPUTS)
+
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
