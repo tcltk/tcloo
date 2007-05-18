@@ -1,3 +1,9 @@
+2007-05-18  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* configure.in, Makefile.in: Updated to latest TEA and corrected build
+	system to work on more platforms.
+	* pkgIndex.tcl (removed): This file now generated automatically.
+
 2007-05-18  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c (Tcloo_Init, ObjectDeletedTrace)
