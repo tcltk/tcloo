@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.1 2007/05/18 13:17:15 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.2 2007/05/18 16:47:24 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -345,13 +345,12 @@ MODULE_SCOPE int	TclOOInvokeContext(Tcl_Interp *interp,
 MODULE_SCOPE int	TclOOGetSortedMethodList(Object *oPtr, int flags,
 			    const char ***stringsPtr);
 MODULE_SCOPE Foundation	*TclOOGetFoundation(Tcl_Interp *interp);
+
+/*
+ * Include all the private API, generated from tclOO.decls.
+ */
 
 #include "tclOOIntDecls.h"
-/*
-// vvvvvvvvvvvvvvvvvvvvvv MOVE TO OOINT.DECLS vvvvvvvvvvvvvvvvvvvvvv
-Tcl_Object		TclOOGetDefineCmdContext(Tcl_Interp *interp);
-// ^^^^^^^^^^^^^^^^^^^^^^ MOVE TO OOINT.DECLS ^^^^^^^^^^^^^^^^^^^^^^
-*/
 
 /*
  * A convenience macro for iterating through the lists used in the internal

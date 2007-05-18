@@ -1,10 +1,11 @@
-2007-05-18  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+2007-05-18  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/oo.test: Convert {expand} to {*}.
+	* generic/tclOOInt.h, generic/tclOO.h: Remove obsolete comments.
 
 	* configure.in, Makefile.in: Updated to latest TEA and corrected build
 	system to work on more platforms.
 	* pkgIndex.tcl (removed): This file now generated automatically.
-
-2007-05-18  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c (Tcloo_Init, ObjectDeletedTrace)
 	(Tcl_CopyObjectInstance, ObjectCmd): Remove unused variables.

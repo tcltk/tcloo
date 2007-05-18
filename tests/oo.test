@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.1 2007/05/18 13:17:16 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.2 2007/05/18 16:47:24 dkf Exp $
 
 lappend auto_path .
 package require TclOO
@@ -74,7 +74,7 @@ test oo-1.1 {basic test of OO functionality: no classes} {
     lappend result [oo::define foo {
 	method bar args {
 	    global result
-	    lappend result {expand}$args
+	    lappend result {*}$args
 	    return [llength $args]
 	}
     }]
@@ -513,13 +513,13 @@ test oo-12.1 {OO: filters} {
     oo::define Aclass {
 	method concatenate args {
 	    global result
-	    lappend result {expand}$args
+	    lappend result {*}$args
 	    join $args {}
 	}
 	method logFilter args {
 	    global result
 	    lappend result "calling [self object]->[self method] $args"
-	    set r [next {expand}$args]
+	    set r [next {*}$args]
 	    lappend result "result=$r"
 	    return $r
 	}
@@ -537,13 +537,13 @@ test oo-12.2 {OO: filters} -setup {
     oo::define Aclass {
 	method concatenate args {
 	    global result
-	    lappend result {expand}$args
+	    lappend result {*}$args
 	    join $args {}
 	}
 	method logFilter args {
 	    global result
 	    lappend result "calling [self object]->[self method] $args"
-	    set r [next {expand}$args]
+	    set r [next {*}$args]
 	    lappend result "result=$r"
 	    return $r
 	}
@@ -561,13 +561,13 @@ test oo-12.3 {OO: filters} -setup {
     oo::define Aclass {
 	method concatenate args {
 	    global result
-	    lappend result {expand}$args
+	    lappend result {*}$args
 	    join $args {}
 	}
 	method logFilter args {
 	    global result
 	    lappend result "calling [self object]->[self method] $args"
-	    set r [next {expand}$args]
+	    set r [next {*}$args]
 	    lappend result "result=$r"
 	    return $r
 	}
