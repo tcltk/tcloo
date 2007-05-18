@@ -1,6 +1,6 @@
-# $Id: configure.in,v 1.2 2007/05/18 14:35:27 dkf Exp $
+# $Id: configure.in,v 1.3 2007/05/18 22:49:16 dkf Exp $
 
-AC_REVISION($Revision: 1.2 $)
+AC_REVISION($Revision: 1.3 $)
 AC_INIT([TclOO],[0.1])
 AC_CONFIG_AUX_DIR(tclconfig)
 
@@ -29,6 +29,9 @@ TEA_MAKE_LIB
 TEA_PROG_TCLSH
 CONFIGURE_OUTPUTS="Makefile config.cache config.log config.status"
 AC_SUBST(CONFIGURE_OUTPUTS)
+
+PLATFORM=`echo 'package require platform;puts [platform::generic]'|$TCLSH_PROG`
+AC_SUBST(PLATFORM)
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

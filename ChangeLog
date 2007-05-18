@@ -1,5 +1,12 @@
 2007-05-18  Donal K. Fellows  <dkf@users.sf.net>
 
+	* Makefile.in (kit): Added _experimental_ code to build a starkit
+	distribution of the code.
+	* configure.in (PLATFORM): Added code to determine what platform we
+	are building for, needed for making the build of the kit work right.
+
+	* Makefile.in (pkgIndex.tcl): Update the statement of what version
+
 	* tests/oo.test: Convert {expand} to {*}.
 	* generic/tclOOInt.h, generic/tclOO.h: Remove obsolete comments.
 

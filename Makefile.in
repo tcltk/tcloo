@@ -12,6 +12,8 @@ libdir=@libdir@
 includedir=@includedir@
 DESTDIR=
 PKG_DIR=$(PACKAGE_NAME)$(PACKAGE_VERSION)
+PKG_KIT_ROOT=$(PACKAGE_DIR)-$(PLATFORM)
+PKG_KIT=$(PKG_KIT_ROOT).kit
 pkglibdir=$(libdir)/$(PKG_DIR)
 top_builddir=.
 INSTALL=@INSTALL@
@@ -20,6 +22,7 @@ INSTALL_DATA=@INSTALL_DATA@
 INSTALL_SCRIPT=@INSTALL_SCRIPT@
 PACKAGE_NAME=@PACKAGE_NAME@
 PACKAGE_VERSION=@PACKAGE_VERSION@
+TCL_VERSION_REQ=8.5a7
 CC=@CC@
 CFLAGS_DEFAULT=@CFLAGS_DEFAULT@
 CFLAGS_WARNING=@CFLAGS_WARNING@
@@ -46,8 +49,11 @@ TCLSH_ENV=TCL_LIBRARY="`@CYGPATH@ $(TCL_SRC_DIR)/library`" \
 	  @LD_LIBRARY_PATH_VAR@="$(EXTRA_PATH):$(@LD_LIBRARY_PATH_VAR@)" \
 	  PATH="$(EXTRA_PATH):$(PATH)" \
 	  TCLLIBPATH="$(top_builddir)"
-TCLSH_PROG=@TCLSH_PROG@
-TCLSH=$(TCLSH_ENV) "$(TCLSH_PROG)"
+TCLSH_PROGRAM=@TCLSH_PROG@
+PLATFORM=@PLATFORM@
+TCLSH=$(TCLSH_ENV) "$(TCLSH_PROGRAM)"
+# We assume that sdx is on the path!
+SDX_PROGRAM=sdx
 INCLUDES=@PKG_INCLUDES@ @TCL_INCLUDES@
 EXTRA_CFLAGS=@PKG_CFLAGS@
 DEFS=@DEFS@ $(EXTRA_CFLAGS)
@@ -57,7 +63,7 @@ LIBS=@PKG_LIBS@ @LIBS@ @MATH_LIBS@
 AR=@AR@
 CFLAGS=@CFLAGS@
 COMPILE=$(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
-VPATH=$(srcdir):$(srcdir)/generic:$(srcdir)/win:$(srcdir)/macosx
+VPATH=$(srcdir)/generic:$(srcdir)/unix:$(srcdir)/win:$(srcdir)/macosx
 
 all: package libraries
 package: $(PKG_LIB_FILE) pkgIndex.tcl
@@ -103,13 +109,29 @@ $(PKG_STUB_LIB_FILE): $(PKG_STUB_OBJECTS)
 	$(COMPILE) -c `@CYGPATH@ $<` -o $@
 pkgIndex.tcl: Makefile
 	(\
-	echo 'if {[catch {package require Tcl 8.5a6}]} return';\
+	echo 'if {[catch {package require Tcl $(TCL_VERSION_REQ)}]} return';\
 	echo 'package ifneeded $(PACKAGE_NAME) $(PACKAGE_VERSION) \
 	    [list load [file join $$dir $(PKG_LIB_FILE)] $(PACKAGE_NAME)]' \
 	) > pkgIndex.tcl
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \
 	  && CONFIG_FILES=$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+# Build a starkit - this is experimental!
+kit: $(PKG_KIT)
+$(PKG_KIT): $(PKG_LIB_FILE)
+	@mkdir $(PKG_KIT_ROOT).vfs
+	@mkdir $(PKG_KIT_ROOT).vfs/lib
+	@mkdir $(PKG_KIT_ROOT).vfs/lib/$(PACKAGE_NAME)
+	@mkdir $(PKG_KIT_ROOT).vfs/lib/$(PACKAGE_NAME)/$(PLATFORM)
+	cp $(PKG_LIB_FILE) $(PKG_KIT_ROOT).vfs/lib/$(PACKAGE_NAME)/$(PLATFORM)
+	(\
+	echo 'if {[catch {package require Tcl $(TCL_VERSION_REQ)}]} return';\
+	echo 'package ifneeded $(PACKAGE_NAME) $(PACKAGE_VERSION) \
+	    [list load [file join $$dir $(PLATFORM) $(PKG_LIB_FILE)] $(PACKAGE_NAME)]' \
+	) > $(PKG_KIT_ROOT).vfs/lib/$(PACKAGE_NAME)/pkgIndex.tcl
+	$(SDX) wrap $(PKG_KIT)
+	-@rm -f $(PKG_KIT_ROOT).vfs
 
 clean:
 	-test -z "$(BINARIES)" || rm -f $(BINARIES)
@@ -120,4 +142,4 @@ distclean: clean
 	-rm -f $(CONFIG_CLEAN_FILES)
 	-rm -f config.cache config.log config.status
 
-.PHONY: all package clean depend distclean doc install libraries test
+.PHONY: all package clean depend distclean doc install libraries test kit
