@@ -12,7 +12,7 @@ libdir=@libdir@
 includedir=@includedir@
 DESTDIR=
 PKG_DIR=$(PACKAGE_NAME)$(PACKAGE_VERSION)
-PKG_KIT_ROOT=$(PACKAGE_DIR)-$(PLATFORM)
+PKG_KIT_ROOT=$(PKG_DIR)-$(PLATFORM)
 PKG_KIT=$(PKG_KIT_ROOT).kit
 pkglibdir=$(libdir)/$(PKG_DIR)
 top_builddir=.
@@ -50,7 +50,7 @@ TCLSH_ENV=TCL_LIBRARY="`@CYGPATH@ $(TCL_SRC_DIR)/library`" \
 	  PATH="$(EXTRA_PATH):$(PATH)" \
 	  TCLLIBPATH="$(top_builddir)"
 TCLSH_PROGRAM=@TCLSH_PROG@
-PLATFORM=`echo 'package require platform;puts [platform::generic]'|$(TCLSH_PROGRAM)`
+PLATFORM=$(shell echo 'package require platform;puts [platform::generic]'|$(TCLSH_PROGRAM))
 TCLSH=$(TCLSH_ENV) "$(TCLSH_PROGRAM)"
 # We assume that sdx is on the path!
 SDX_PROGRAM=sdx
@@ -120,17 +120,17 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 # Build a starkit - this is experimental!
 kit: $(PKG_KIT)
 $(PKG_KIT): $(PKG_LIB_FILE)
-	@mkdir $(PKG_KIT_ROOT).vfs
-	@mkdir $(PKG_KIT_ROOT).vfs/lib
-	@mkdir $(PKG_KIT_ROOT).vfs/lib/$(PACKAGE_NAME)
-	@mkdir $(PKG_KIT_ROOT).vfs/lib/$(PACKAGE_NAME)/$(PLATFORM)
+	-@mkdir $(PKG_KIT_ROOT).vfs
+	-@mkdir $(PKG_KIT_ROOT).vfs/lib
+	-@mkdir $(PKG_KIT_ROOT).vfs/lib/$(PACKAGE_NAME)
+	-@mkdir $(PKG_KIT_ROOT).vfs/lib/$(PACKAGE_NAME)/$(PLATFORM)
 	cp $(PKG_LIB_FILE) $(PKG_KIT_ROOT).vfs/lib/$(PACKAGE_NAME)/$(PLATFORM)
 	(\
 	echo 'if {[catch {package require Tcl $(TCL_VERSION_REQ)}]} return';\
 	echo 'package ifneeded $(PACKAGE_NAME) $(PACKAGE_VERSION) \
 	    [list load [file join $$dir $(PLATFORM) $(PKG_LIB_FILE)] $(PACKAGE_NAME)]' \
 	) > $(PKG_KIT_ROOT).vfs/lib/$(PACKAGE_NAME)/pkgIndex.tcl
-	$(SDX) wrap $(PKG_KIT)
+	$(SDX_PROGRAM) wrap $(PKG_KIT)
 	-@rm -f $(PKG_KIT_ROOT).vfs
 
 clean:
