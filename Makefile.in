@@ -1,0 +1,123 @@
+PKG_OBJECTS=@PKG_OBJECTS@
+PKG_HEADERS=generic/tclOO.h generic/tclOOInt.h
+PKG_LIB_FILE=@PKG_LIB_FILE@
+PKG_STUB_LIB_FILE=@PKG_STUB_LIB_FILE@
+BINARIES=$(PKG_LIB_FILE) $(PKG_STUB_LIB_FILE)
+SHELL=@SHELL@
+srcdir=@srcdir@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+DESTDIR=
+PKG_DIR=$(PACKAGE_NAME)$(PACKAGE_VERSION)
+pkglibdir=$(libdir)/$(PKG_DIR)
+top_builddir=.
+INSTALL=@INSTALL@
+INSTALL_PROGRAM=@INSTALL_PROGRAM@
+INSTALL_DATA=@INSTALL_DATA@
+INSTALL_SCRIPT=@INSTALL_SCRIPT@
+PACKAGE_NAME=@PACKAGE_NAME@
+PACKAGE_VERSION=@PACKAGE_VERSION@
+CC=@CC@
+CFLAGS_DEFAULT=@CFLAGS_DEFAULT@
+CFLAGS_WARNING=@CFLAGS_WARNING@
+CLEANFILES=@CLEANFILES@
+EXEEXT=@EXEEXT@
+LDFLAGS_DEFAULT=@LDFLAGS_DEFAULT@
+MAKE_LIB=@MAKE_LIB@
+MAKE_SHARED_LIB=@MAKE_SHARED_LIB@
+MAKE_STATIC_LIB=@MAKE_STATIC_LIB@
+MAKE_STUB_LIB=@MAKE_STUB_LIB@
+OBJEXT=@OBJEXT@
+RANLIB=@RANLIB@
+RANLIB_STUB=@RANLIB_STUB@
+SHLIB_CFLAGS=@SHLIB_CFLAGS@
+SHLIB_LD=@SHLIB_LD@
+SHLIB_LD_LIBS=@SHLIB_LD_LIBS@
+STLIB_LD=@STLIB_LD@
+TCL_SRC_DIR=@TCL_SRC_DIR@
+TCL_BIN_DIR=@TCL_BIN_DIR@
+# Not actually used, but can help when tracing errors
+TCL_LIBS=@TCL_LIBS@
+EXTRA_PATH=$(top_builddir):$(TCL_BIN_DIR)
+TCLSH_ENV=TCL_LIBRARY="`@CYGPATH@ $(TCL_SRC_DIR)/library`" \
+	  @LD_LIBRARY_PATH_VAR@="$(EXTRA_PATH):$(@LD_LIBRARY_PATH_VAR@)" \
+	  PATH="$(EXTRA_PATH):$(PATH)" \
+	  TCLLIBPATH="$(top_builddir)"
+TCLSH_PROG=@TCLSH_PROG@
+TCLSH=$(TCLSH_ENV) $(TCLSH_PROG)
+INCLUDES=@PKG_INCLUDES@ @TCL_INCLUDES@
+EXTRA_CFLAGS=@PKG_CFLAGS@
+DEFS=@DEFS@ $(EXTRA_CFLAGS)
+CONFIG_CLEAN_FILES=Makefile
+CPPFLAGS=@CPPFLAGS@
+LIBS=@PKG_LIBS@ @LIBS@ @MATH_LIBS@
+AR=@AR@
+CFLAGS=@CFLAGS@
+COMPILE=$(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
+VPATH=$(srcdir):$(srcdir)/generic:$(srcdir)/win:$(srcdir)/macosx
+
+all: package libraries
+package: $(PKG_LIB_FILE) pkgIndex.tcl
+libraries: $(PKG_STUB_LIB_FILE)
+
+install : install-package install-libraries install-headers
+install-package :
+	@mkdir -p $(DESTDIR)$(pkglibdir)
+	$(INSTALL_PROGRAM) $(PKG_LIB_FILE) $(DESTDIR)$(pkglibdir)/$(PKG_LIB_FILE)
+	$(INSTALL_DATA) pkgIndex.tcl $(DESTDIR)$(pkglibdir)/pkgIndex.tcl
+	for p in $(srcdir)/library/*.tcl ; do \
+	    destp=`basename $$p`; \
+	    echo " Install $$destp $(DESTDIR)$(pkglibdir)/$$destp"; \
+	    $(INSTALL_DATA) $$p $(DESTDIR)$(pkglibdir)/$$destp; \
+	done
+install-headers:
+	@echo "Installing header files in $(DESTDIR)$(includedir)"
+	@mkdir -p $(DESTDIR)$(includedir)
+	@list='$(PKG_HEADERS)'; for p in $$list; do \
+	    echo "Installing $(srcdir)/$$p" ; \
+	    destp=`basename $$p`; \
+	    $(INSTALL_DATA) $(srcdir)/$$p $(DESTDIR)$(includedir)/$$destp ; \
+	done;
+install-libraries:
+	@echo "Installing $(PKG_STUB_LIB_FILE) in $(DESTDIR)$(libdir)"
+	@mkdir -p $(DESTDIR)$(libdir)
+	$(INSTALL_PROGRAM) $(PKG_STUB_LIB_FILE) $(DESTDIR)$(libdir)
+
+TESTLOAD=-load "load ./$(PKG_LIB_FILE)"
+TESTFLAGS=
+test: package libraries
+	$(TCLSH) `@CYGPATH@ $(srcdir)/tests/all.tcl` $(TESTLOAD) $(TESTFLAGS)
+
+$(PKG_LIB_FILE): $(PKG_OBJECTS)
+	-rm -f $(PKG_LIB_FILE)
+	${MAKE_LIB}
+	$(RANLIB) $(PKG_LIB_FILE)
+$(PKG_STUB_LIB_FILE): $(PKG_STUB_OBJECTS)
+	-rm -f $(PKG_STUB_LIB_FILE)
+	${MAKE_STUB_LIB}
+	$(RANLIB_STUB) $(PKG_STUB_LIB_FILE)
+.SUFFIXES: .c .$(OBJEXT)
+.c.@OBJEXT@:
+	$(COMPILE) -c `@CYGPATH@ $<` -o $@
+pkgIndex.tcl:
+	(\
+	echo 'if {[catch {package require Tcl 8.5a6}]} return';\
+	echo 'package ifneeded $(PACKAGE_NAME) $(PACKAGE_VERSION) \
+	    [list load [file join $$dir $(PKG_LIB_FILE)] $(PACKAGE_NAME)]' \
+	) > pkgIndex.tcl
+Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
+	cd $(top_builddir) \
+	  && CONFIG_FILES=$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+clean:
+	-test -z "$(BINARIES)" || rm -f $(BINARIES)
+	-rm -f *.$(OBJEXT) core *.core
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
+distclean: clean
+	-rm -f *.tab.c
+	-rm -f $(CONFIG_CLEAN_FILES)
+	-rm -f config.cache config.log config.status
+
+.PHONY: all package clean depend distclean doc install libraries test
