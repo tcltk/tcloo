@@ -1,28 +1,21 @@
+# All these assignments are substituted by configure
 PKG_OBJECTS=@PKG_OBJECTS@
 PKG_STUB_OBJECTS=@PKG_STUB_OBJECTS@
 PKG_HEADERS=@PKG_HEADERS@
 PKG_LIB_FILE=@PKG_LIB_FILE@
 PKG_STUB_LIB_FILE=@PKG_STUB_LIB_FILE@
-BINARIES=$(PKG_LIB_FILE) $(PKG_STUB_LIB_FILE)
 SHELL=@SHELL@
 srcdir=@srcdir@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
-DESTDIR=
-PKG_DIR=$(PACKAGE_NAME)$(PACKAGE_VERSION)
-PKG_KIT_ROOT=$(PKG_DIR)-$(PLATFORM)
-PKG_KIT=$(PKG_KIT_ROOT).kit
-pkglibdir=$(libdir)/$(PKG_DIR)
-top_builddir=.
 INSTALL=@INSTALL@
 INSTALL_PROGRAM=@INSTALL_PROGRAM@
 INSTALL_DATA=@INSTALL_DATA@
 INSTALL_SCRIPT=@INSTALL_SCRIPT@
 PACKAGE_NAME=@PACKAGE_NAME@
 PACKAGE_VERSION=@PACKAGE_VERSION@
-TCL_VERSION_REQ=8.5a7
 CC=@CC@
 CFLAGS_DEFAULT=@CFLAGS_DEFAULT@
 CFLAGS_WARNING=@CFLAGS_WARNING@
@@ -44,37 +37,53 @@ TCL_SRC_DIR=@TCL_SRC_DIR@
 TCL_BIN_DIR=@TCL_BIN_DIR@
 # Not actually used, but can help when tracing errors
 TCL_LIBS=@TCL_LIBS@
-EXTRA_PATH=$(top_builddir):$(TCL_BIN_DIR)
-TCLSH_ENV=TCL_LIBRARY="`@CYGPATH@ $(TCL_SRC_DIR)/library`" \
-	  @LD_LIBRARY_PATH_VAR@="$(EXTRA_PATH):$(@LD_LIBRARY_PATH_VAR@)" \
-	  PATH="$(EXTRA_PATH):$(PATH)" \
-	  TCLLIBPATH="$(top_builddir)"
 TCLSH_PROGRAM=@TCLSH_PROG@
-TCLSH=$(TCLSH_ENV) "$(TCLSH_PROGRAM)"
-PLATFORM=$(shell echo 'package require platform;puts [platform::generic]'|$(TCLSH))
-# We assume that sdx is on the path!
-SDX_PROGRAM=sdx
 INCLUDES=@PKG_INCLUDES@ @TCL_INCLUDES@
 EXTRA_CFLAGS=@PKG_CFLAGS@
 DEFS=@DEFS@ $(EXTRA_CFLAGS)
-CONFIG_CLEAN_FILES=Makefile
 CPPFLAGS=@CPPFLAGS@
 LIBS=@PKG_LIBS@ @LIBS@ @MATH_LIBS@
 AR=@AR@
 CFLAGS=@CFLAGS@
+CYGPATH=@CYGPATH@
+TCLSH_ENV=TCL_LIBRARY="`$(CYGPATH) $(TCL_SRC_DIR)/library`" \
+	  @LD_LIBRARY_PATH_VAR@="$(EXTRA_PATH):$(@LD_LIBRARY_PATH_VAR@)" \
+	  PATH="$(EXTRA_PATH):$(PATH)" \
+	  TCLLIBPATH="$(top_builddir)"
+
+# None of these assignments are substituted by configure
+SRC_DIR=$(srcdir)
+BINARIES=$(PKG_LIB_FILE) $(PKG_STUB_LIB_FILE)
+DESTDIR=
+PKG_DIR=$(PACKAGE_NAME)$(PACKAGE_VERSION)
+PKG_KIT_ROOT=$(PKG_DIR)-$(PLATFORM)
+PKG_KIT=$(PKG_KIT_ROOT).kit
+pkglibdir=$(libdir)/$(PKG_DIR)
+top_builddir=.
+TCL_VERSION_REQ=8.5a7
+EXTRA_PATH=$(top_builddir):$(TCL_BIN_DIR)
+TCLSH=$(TCLSH_ENV) "$(TCLSH_PROGRAM)"
+CONFIG_CLEAN_FILES=Makefile
 COMPILE=$(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
-VPATH=$(srcdir)/generic:$(srcdir)/unix:$(srcdir)/win:$(srcdir)/macosx
+VPATH=.:$(SRC_DIR)/generic:$(SRC_DIR)/unix:$(SRC_DIR)/win:$(SRC_DIR)/macosx
+TESTFLAGS=
+KIT_PKG_ROOT=$(PKG_KIT_ROOT).vfs/lib/$(PACKAGE_NAME)
+
+# These are things that are found by executing shell scripts
+# We assume that sdx.kit is on the path, and that the default tclsh is activetcl
+SDX_PROGRAM:=tclsh $(shell which sdx.kit)
+PLATFORM:=$(shell echo 'package require platform;puts [platform::generic]' | $(TCLSH))
 
 all: package libraries
 package: $(PKG_LIB_FILE) pkgIndex.tcl
 libraries: $(PKG_STUB_LIB_FILE)
 
-install : install-package install-libraries install-headers
-install-package :
+install: install-package install-libraries install-headers
+install-package:
 	@mkdir -p $(DESTDIR)$(pkglibdir)
 	$(INSTALL_PROGRAM) $(PKG_LIB_FILE) $(DESTDIR)$(pkglibdir)/$(PKG_LIB_FILE)
 	$(INSTALL_DATA) pkgIndex.tcl $(DESTDIR)$(pkglibdir)/pkgIndex.tcl
-	for p in $(srcdir)/library/*.tcl ; do \
+	for p in $(SRC_DIR)/library/*.tcl ; do \
 	    destp=`basename $$p`; \
 	    echo " Install $$destp $(DESTDIR)$(pkglibdir)/$$destp"; \
 	    $(INSTALL_DATA) $$p $(DESTDIR)$(pkglibdir)/$$destp; \
@@ -83,18 +92,17 @@ install-headers:
 	@echo "Installing header files in $(DESTDIR)$(includedir)"
 	@mkdir -p $(DESTDIR)$(includedir)
 	@list='$(PKG_HEADERS)'; for p in $$list; do \
-	    echo "Installing $(srcdir)/$$p" ; \
+	    echo "Installing $(SRC_DIR)/$$p" ; \
 	    destp=`basename $$p`; \
-	    $(INSTALL_DATA) $(srcdir)/$$p $(DESTDIR)$(includedir)/$$destp ; \
+	    $(INSTALL_DATA) $(SRC_DIR)/$$p $(DESTDIR)$(includedir)/$$destp ; \
 	done;
 install-libraries:
 	@echo "Installing $(PKG_STUB_LIB_FILE) in $(DESTDIR)$(libdir)"
 	@mkdir -p $(DESTDIR)$(libdir)
 	$(INSTALL_PROGRAM) $(PKG_STUB_LIB_FILE) $(DESTDIR)$(libdir)
 
-TESTFLAGS=
 test: package libraries
-	$(TCLSH) `@CYGPATH@ $(srcdir)/tests/all.tcl` $(TESTLOAD) $(TESTFLAGS)
+	$(TCLSH) `$(CYGPATH) $(SRC_DIR)/tests/all.tcl` $(TESTLOAD) $(TESTFLAGS)
 
 $(PKG_LIB_FILE): $(PKG_OBJECTS)
 	-rm -f $(PKG_LIB_FILE)
@@ -104,34 +112,32 @@ $(PKG_STUB_LIB_FILE): $(PKG_STUB_OBJECTS)
 	-rm -f $(PKG_STUB_LIB_FILE)
 	${MAKE_STUB_LIB}
 	$(RANLIB_STUB) $(PKG_STUB_LIB_FILE)
-.SUFFIXES: .c .$(OBJEXT)
 .c.@OBJEXT@:
-	$(COMPILE) -c `@CYGPATH@ $<` -o $@
+	$(COMPILE) -c `$(CYGPATH) $<` -o $@
 pkgIndex.tcl: Makefile
-	(\
-	echo 'if {[catch {package require Tcl $(TCL_VERSION_REQ)}]} return';\
+	-@echo Creating pkgIndex.tcl
+	@( \
+	echo 'if {[catch {package require Tcl $(TCL_VERSION_REQ)}]} return'; \
 	echo 'package ifneeded $(PACKAGE_NAME) $(PACKAGE_VERSION) \
 	    [list load [file join $$dir $(PKG_LIB_FILE)] $(PACKAGE_NAME)]' \
 	) > pkgIndex.tcl
-Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
+Makefile: $(SRC_DIR)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \
 	  && CONFIG_FILES=$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
 # Build a starkit - this is experimental!
 kit: $(PKG_KIT)
 $(PKG_KIT): $(PKG_LIB_FILE)
-	-@mkdir $(PKG_KIT_ROOT).vfs
-	-@mkdir $(PKG_KIT_ROOT).vfs/lib
-	-@mkdir $(PKG_KIT_ROOT).vfs/lib/$(PACKAGE_NAME)
-	-@mkdir $(PKG_KIT_ROOT).vfs/lib/$(PACKAGE_NAME)/$(PLATFORM)
-	cp $(PKG_LIB_FILE) $(PKG_KIT_ROOT).vfs/lib/$(PACKAGE_NAME)/$(PLATFORM)
-	(\
-	echo 'if {[catch {package require Tcl $(TCL_VERSION_REQ)}]} return';\
+	-@mkdir -p $(KIT_PKG_ROOT)/$(PLATFORM)
+	cp $(PKG_LIB_FILE) $(KIT_PKG_ROOT)/$(PLATFORM)
+	-@echo Creating $(KIT_PKG_ROOT)/pkgIndex.tcl
+	@( \
+	echo 'if {[catch {package require Tcl $(TCL_VERSION_REQ)}]} return'; \
 	echo 'package ifneeded $(PACKAGE_NAME) $(PACKAGE_VERSION) \
 	    [list load [file join $$dir $(PLATFORM) $(PKG_LIB_FILE)] $(PACKAGE_NAME)]' \
-	) > $(PKG_KIT_ROOT).vfs/lib/$(PACKAGE_NAME)/pkgIndex.tcl
+	) > $(KIT_PKG_ROOT)/pkgIndex.tcl
 	$(SDX_PROGRAM) wrap $(PKG_KIT)
-	-@rm -f $(PKG_KIT_ROOT).vfs
+	-@rm -rf $(PKG_KIT_ROOT).vfs $(PKG_KIT_ROOT).bat
 
 clean:
 	-test -z "$(BINARIES)" || rm -f $(BINARIES)
@@ -142,4 +148,5 @@ distclean: clean
 	-rm -f $(CONFIG_CLEAN_FILES)
 	-rm -f config.cache config.log config.status
 
+.SUFFIXES: .c .$(OBJEXT)
 .PHONY: all package clean depend distclean doc install libraries test kit
