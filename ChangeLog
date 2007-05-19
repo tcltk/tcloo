@@ -1,3 +1,10 @@
+2007-05-19  Donal K. Fellows  <dkf@users.sf.net>
+
+	* Makefile.in (kit): Rewrote to make the building of a starkit work
+	for myself. Also tried to separate out things substituted by configure
+	from things that are not substituted. The build now _requires_ GNU
+	make to work, since it is easier to control substitution with it.
+
 2007-05-18  Donal K. Fellows  <dkf@users.sf.net>
 
 	* Makefile.in (kit): Added _experimental_ code to build a starkit
