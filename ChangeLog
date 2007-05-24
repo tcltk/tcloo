@@ -1,3 +1,8 @@
+2007-05-24  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* license.terms: Added, same license as Tcl/Tk.
+	* doc/define.n: Started to write documentation.
+
 2007-05-19  Donal K. Fellows  <dkf@users.sf.net>
 
 	* Makefile.in (kit): Rewrote to make the building of a starkit work

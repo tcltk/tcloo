@@ -1,0 +1,57 @@
+'\"
+'\" Copyright (c) 2007 Donal K. Fellows
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" RCS: @(#) $Id: define.n,v 1.1 2007/05/24 14:25:22 dkf Exp $
+'\" 
+.so man.macros
+.TH define n 0.1 TclOO "TclOO Commands"
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+define \- Define and configure classes and objects
+.SH SYNOPSIS
+.nf
+package require TclOO
+
+\fBoo::define\fI classOrObject defScript\fR
+\fBoo::define\fI classOrObject subcommand arg\fR ?\fIarg ...\fR?
+.fi
+.BE
+
+.SH DESCRIPTION
+The \fBoo::define\fR command is used to control the configuration of classes
+and objects, with the configuration being applied to the entity named in the
+\fIclassOrObject\fR argument. Configuring a class also updates the
+configuration of all subclasses of the class and all objects that are
+instances of that class or which mix it in (as modified by any per-instance
+configuration). The way in which the configuration is done is controlled by
+either the \fIdefScript\fR argument or by the \fIsubcommand\fR and following
+\fIarg\fR arguments; when the second is present, it is exactly as if all the
+arguments from \fIsubcommand\fR onwards are made into a list and that list is
+used as the \fIdefScript\fR argument.
+.PP
+The following commands are supported in the \fIdefScript\fR, each of which may
+also be used in the \fIsubcommand\fR form:
+.TP
+\fBmethod\fI name argList bodyScript\fR
+When defining a class, this creates or updates a class method, and when
+defining another kind of object, this creates or updates an object method. The
+name of the method is \fIname\fR, the formal arguments to the method (defined
+using the same format as for the Tcl \fBproc\fR command) will be
+\fIargList\fR, and the body of the method will be \fIbodyScript\fR. When the
+body of the method is evaluated, the current namespace of the method will be a
+namespace that is unique to the current object.
+.SH EXAMPLES
+.I TODO
+.SH "SEE ALSO"
+.I TODO
+.SH KEYWORDS
+.I TODO
+
+\" Local variables:
+\" mode: nroff
+\" fill-column: 78
+\" End:
