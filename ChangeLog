@@ -1,4 +1,9 @@
-2007-05-24  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+2007-05-28  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/define.n: Completed the list of define subcommands, but not yet
+	documented what they all do. Added basic example.
+
+2007-05-24  Donal K. Fellows  <dkf@users.sf.net>
 
 	* license.terms: Added, same license as Tcl/Tk.
 	* doc/define.n: Started to write documentation.

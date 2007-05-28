@@ -3,9 +3,9 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
-'\" RCS: @(#) $Id: define.n,v 1.1 2007/05/24 14:25:22 dkf Exp $
-'\" 
+'\"
+'\" RCS: @(#) $Id: define.n,v 1.2 2007/05/28 10:48:01 dkf Exp $
+'\"
 .so man.macros
 .TH define n 0.1 TclOO "TclOO Commands"
 .BS
@@ -36,7 +36,23 @@ used as the \fIdefScript\fR argument.
 The following commands are supported in the \fIdefScript\fR, each of which may
 also be used in the \fIsubcommand\fR form:
 .TP
+\fBconstructor\fI argList bodyScript\fR
+.
+.TP
+\fBdestructor\fI bodyScript\fR
+.
+.TP
+\fBexport\fI name \fR?\fIname ...\fR?
+.
+.TP
+\fBfilter\fR ?\fImethodName ...\fR?
+.
+.TP
+\fBforward\fI name cmdName \fR?\fIarg ...\fR?
+.
+.TP
 \fBmethod\fI name argList bodyScript\fR
+.
 When defining a class, this creates or updates a class method, and when
 defining another kind of object, this creates or updates an object method. The
 name of the method is \fIname\fR, the formal arguments to the method (defined
@@ -44,8 +60,43 @@ using the same format as for the Tcl \fBproc\fR command) will be
 \fIargList\fR, and the body of the method will be \fIbodyScript\fR. When the
 body of the method is evaluated, the current namespace of the method will be a
 namespace that is unique to the current object.
+.TP
+.\fBmixin\fR ?\fIclassName ...\fR?
+.
+.TP
+.\fBself.class\fI className\fR
+.
+.TP
+\fBsuperclass\fI className \fR?\fIclassName ...\fR?
+.
+.TP
+\fBunexport\fI name \fR?\fIname ...\fR?
+.
+.SS "TREATING CLASSES AS OBJECTS"
+Since classes are themselves objects, manipulating them as such is done
+through this command. In order to force the \fBdefine\fR subcommands to work
+with the object when presented with a class, they should have their names
+prefixed with \fBself.\fR, thus \fBself.method\fR vs. \fBmethod\fR.
+.PP
+The following commands may be prefixed this way:
+.DS
+.ta 6c
+\fBexport\fR	\fBmethod\fR
+\fBfilter\fR	\fBmixin\fR
+\fBforward\fR	\fBunexport\fR
+.DE
 .SH EXAMPLES
-.I TODO
+.CS
+oo::class create c
+c create o
+\fBoo::define\fR c \fBmethod\fR foo {} {puts -nonewline "foo"}
+\fBoo::define\fR o {
+    \fBmethod\fR bar {} {this foo; puts "bar"}
+    \fBunexport\fR foo
+}
+o bar		\fI=> prints foobar\fR
+o foo		\fI=> gives error\fR
+.CE
 .SH "SEE ALSO"
 .I TODO
 .SH KEYWORDS
