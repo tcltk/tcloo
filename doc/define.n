@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: define.n,v 1.2 2007/05/28 10:48:01 dkf Exp $
+'\" RCS: @(#) $Id: define.n,v 1.3 2007/05/28 12:14:21 dkf Exp $
 '\"
 .so man.macros
 .TH define n 0.1 TclOO "TclOO Commands"
@@ -38,18 +38,50 @@ also be used in the \fIsubcommand\fR form:
 .TP
 \fBconstructor\fI argList bodyScript\fR
 .
+This creates or updates the constructor for a class. The formal arguments to
+the constructor (defined using the same format as for the Tcl \fBproc\fR
+command) will be \fIargList\fR, and the body of the constructor will be
+\fIbodyScript\fR. When the body of the constructor is evaluated, the current
+namespace of the constructor will be a namespace that is unique to the object
+being constructed. Within the constructor, the \fBnext\fR command should be
+used to call the superclasses' constructors. If \fIbodyScript\fR is the empty
+string, the constructor will be deleted.
 .TP
 \fBdestructor\fI bodyScript\fR
 .
+This creates or updates the destructor for a class. Destructors take no
+arguments, and the body of the destructor will be \fIbodyScript\fR. The
+destructor is called when objects of the class are deleted, and when called
+will have the object's unique namespace as the current namespace. Destructors
+should use the \fBnext\fR command to call the superclasses' destructors. Note
+that destructors are not called in all situations (e.g. if the interpreter is
+destroyed). If \fIbodyScript\fR is the empty string, the destructor will be
+deleted.
 .TP
 \fBexport\fI name \fR?\fIname ...\fR?
 .
+.I TODO
 .TP
 \fBfilter\fR ?\fImethodName ...\fR?
 .
+When defining a class, this sets or updates the list of method names that are
+used to guard whether a method call to instances of the class may be called
+and what the method's results are, and when defining another kind of object,
+this sets or updates the list of method names that are used to guard whether a
+method call to the object may be called and what the method's results are.
+Each \fImethodName\fR names a single filtering method (which may be exposed or
+not exposed); it is not an error for a non-existent method to be named since
+they may be defined by subclasses. If no \fImethodName\fR arguments are
+present, the list of filter names is set to empty.
 .TP
 \fBforward\fI name cmdName \fR?\fIarg ...\fR?
 .
+When defining a class, this creates or updates a class method, and when
+defining another kind of object, this creates or updates an object method. The
+name of the method is \fIname\fR. The method is defined be forwarded to the
+command called \fIcmdName\fR, with additional arguments, \fIarg\fR etc., added
+before those arguments specified by the caller of the method. Forwarded
+methods should be deleted using the \fBmethod\fR subcommand.
 .TP
 \fBmethod\fI name argList bodyScript\fR
 .
@@ -59,19 +91,34 @@ name of the method is \fIname\fR, the formal arguments to the method (defined
 using the same format as for the Tcl \fBproc\fR command) will be
 \fIargList\fR, and the body of the method will be \fIbodyScript\fR. When the
 body of the method is evaluated, the current namespace of the method will be a
-namespace that is unique to the current object.
+namespace that is unique to the current object. If \fIbodyScript\fR is the
+empty string, the method will be deleted.
 .TP
 .\fBmixin\fR ?\fIclassName ...\fR?
 .
+When defining a class, this sets or updates the list of additional classes
+that are to be mixed into all the instances of the class, and when defining
+another kind of object, this sets or updates a per-object list of additional
+classes that are to be mixed into the object. Each argument, \fIclassName\fR,
+names a single class that is to be mixed in; if no classes are present, the
+list of mixed-in classes is set to be empty.
 .TP
 .\fBself.class\fI className\fR
 .
+This allows the class of an object to be changed after creation. Note that the
+class's constructors are not called when this is done, and so the object may
+well be in an inconsistent state unless additional configuration work is done.
 .TP
 \fBsuperclass\fI className \fR?\fIclassName ...\fR?
 .
+This allows the alteration of the superclasses of the class being defined.
+Each \fIclassName\fR argument names one class that is to be a superclass of
+the defined class. Note that objects must not be changed from being classes to
+being non-classes or vice-versa.
 .TP
 \fBunexport\fI name \fR?\fIname ...\fR?
 .
+.I TODO
 .SS "TREATING CLASSES AS OBJECTS"
 Since classes are themselves objects, manipulating them as such is done
 through this command. In order to force the \fBdefine\fR subcommands to work
@@ -91,7 +138,7 @@ oo::class create c
 c create o
 \fBoo::define\fR c \fBmethod\fR foo {} {puts -nonewline "foo"}
 \fBoo::define\fR o {
-    \fBmethod\fR bar {} {this foo; puts "bar"}
+    \fBmethod\fR bar {} {my foo; puts "bar"}
     \fBunexport\fR foo
 }
 o bar		\fI=> prints foobar\fR
