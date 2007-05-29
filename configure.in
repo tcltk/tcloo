@@ -1,6 +1,6 @@
-# $Id: configure.in,v 1.4 2007/05/18 22:58:25 dkf Exp $
+# $Id: configure.in,v 1.5 2007/05/29 21:20:26 dkf Exp $
 
-AC_REVISION($Revision: 1.4 $)
+AC_REVISION($Revision: 1.5 $)
 AC_INIT([TclOO],[0.1])
 AC_CONFIG_AUX_DIR(tclconfig)
 
@@ -10,6 +10,9 @@ TEA_LOAD_TCLCONFIG
 TEA_PREFIX
 TEA_SETUP_COMPILER
 TEA_ADD_SOURCES([tclOO.c tclOOCall.c tclOODefineCmds.c tclOOInfo.c tclOOStubInit.c])
+if test ${TEA_PLATFORM} = "windows"; then
+    PKG_OBJECTS="${PKG_OBJECTS} ${PACKAGE_NAME}.res.o"
+fi
 TEA_ADD_STUB_SOURCES([tclOOStubLib.c])
 TEA_ADD_HEADERS([generic/tclOO.h generic/tclOOInt.h])
 TEA_ADD_INCLUDES([-I. -I\"`${CYGPATH} ${srcdir}/generic`\"])

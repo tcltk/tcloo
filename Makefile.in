@@ -68,6 +68,12 @@ COMPILE=$(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
 VPATH=.:$(SRC_DIR)/generic:$(SRC_DIR)/unix:$(SRC_DIR)/win:$(SRC_DIR)/macosx
 TESTFLAGS=
 KIT_PKG_ROOT=$(PKG_KIT_ROOT).vfs/lib/$(PACKAGE_NAME)
+RC=windres
+# The quoting is horrific, I know!
+RCFLAGS=--define PACKAGE_NAME='\"$(PACKAGE_NAME)\"' \
+	--define PKG_LIB_FILE='\"$(PKG_LIB_FILE)\"' \
+	--define PACKAGE_VERSION='\"$(PACKAGE_VERSION)\"'
+RES=res.o
 
 # These are things that are found by executing shell scripts
 # We assume that sdx.kit is on the path, and that the default tclsh is activetcl
@@ -114,6 +120,8 @@ $(PKG_STUB_LIB_FILE): $(PKG_STUB_OBJECTS)
 	$(RANLIB_STUB) $(PKG_STUB_LIB_FILE)
 .c.@OBJEXT@:
 	$(COMPILE) -c `$(CYGPATH) $<` -o $@
+.rc.$(RES):
+	$(RC) -o $@ $(RCFLAGS) --include $(SRC_DIR)/generic "$<"
 pkgIndex.tcl: Makefile
 	-@echo Creating pkgIndex.tcl
 	@( \
@@ -148,5 +156,5 @@ distclean: clean
 	-rm -f $(CONFIG_CLEAN_FILES)
 	-rm -f config.cache config.log config.status
 
-.SUFFIXES: .c .$(OBJEXT)
+.SUFFIXES: .c .$(OBJEXT) .rc .$(RES)
 .PHONY: all package clean depend distclean doc install libraries test kit
