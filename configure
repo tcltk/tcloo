@@ -6118,6 +6118,9 @@ echo "$as_me: error: could not find source file '$i'" >&2;}
     done
 
 
+if test ${TEA_PLATFORM} = "windows"; then
+    PKG_OBJECTS="${PKG_OBJECTS} ${PACKAGE_NAME}.res.o"
+fi
 
 
     vars="tclOOStubLib.c"
