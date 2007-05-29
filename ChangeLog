@@ -1,5 +1,8 @@
 2007-05-29  Donal K. Fellows  <dkf@users.sf.net>
 
+	* TclOO.rc, Makefile.in, configure.in: Horrific hacking to make the
+	generated DLL have nice metadata on Windows.
+
 	* doc/class.n: Started work on third documentation file.
 	* doc/object.n: Started work on second documentation file.
 
