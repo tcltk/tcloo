@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: object.n,v 1.2 2007/05/29 14:34:58 dkf Exp $
+'\" RCS: @(#) $Id: object.n,v 1.3 2007/05/29 15:43:15 dkf Exp $
 '\"
 .so man.macros
 .TH object n 0.1 TclOO "TclOO Commands"
@@ -19,9 +19,9 @@ package require TclOO
 \fBoo::object\fI method \fR?\fIarg ...\fR?
 .fi
 .SS "CLASS HIERARCHY"
-.CS
+.nf
 \fBoo::object\fR
-.CE
+.fi
 .BE
 
 .SH DESCRIPTION
@@ -29,8 +29,12 @@ The \fBoo::object\fR class is the root class of the object hierarchy; every
 object (and hence every class) is an instance of this class. Objects are
 always referred to by their name, and may be \fBrename\fRd while maintaining
 their identity. Each object has a unique namespace associated with it.
+.SS CONSTRUCTOR
+The \fBoo::object\fR class does not define an explicit constructor.
+.SS DESTRUCTOR
+The \fBoo::object\fR class does not define an explicit destructor.
 .SS "EXPORTED METHODS"
-The \fBoo:object\fR class supports the following exported methods:
+The \fBoo::object\fR class supports the following exported methods:
 .TP
 \fIobj \fBdestroy\fR
 .
@@ -39,7 +43,7 @@ any destructors on the object's class in the process. It is equivalent to
 using \fBrename\fR to delete the object command. The result of this method is
 always the empty string.
 .SS "NON-EXPORTED METHODS"
-The \fBoo:object\fR class supports the following non-exported methods:
+The \fBoo::object\fR class supports the following non-exported methods:
 .TP
 \fIobj \fBeval\fR ?\fIarg ...\fR?
 .
