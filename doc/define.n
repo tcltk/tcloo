@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: define.n,v 1.5 2007/05/29 14:34:58 dkf Exp $
+'\" RCS: @(#) $Id: define.n,v 1.6 2007/05/29 15:43:15 dkf Exp $
 '\"
 .so man.macros
 .TH define n 0.1 TclOO "TclOO Commands"
@@ -106,7 +106,7 @@ namespace that is unique to the current object. If \fIbodyScript\fR is the
 empty string, the method will be deleted. The method will be exported if
 \fIname\fR starts with a lower-case letter, and non-exported otherwise.
 .TP
-.\fBmixin\fR ?\fIclassName ...\fR?
+\fBmixin\fR ?\fIclassName ...\fR?
 .
 When defining a class, this sets or updates the list of additional classes
 that are to be mixed into all the instances of the class, and when defining
@@ -115,7 +115,7 @@ classes that are to be mixed into the object. Each argument, \fIclassName\fR,
 names a single class that is to be mixed in; if no classes are present, the
 list of mixed-in classes is set to be empty.
 .TP
-.\fBself.class\fI className\fR
+\fBself.class\fI className\fR
 .
 This allows the class of an object to be changed after creation. Note that the
 class's constructors are not called when this is done, and so the object may
@@ -144,24 +144,31 @@ prefixed with \fBself.\fR, thus \fBself.method\fR vs. \fBmethod\fR.
 .PP
 The following commands may be prefixed this way:
 .DS
-.ta 6c
-\fBexport\fR	\fBmethod\fR
-\fBfilter\fR	\fBmixin\fR
-\fBforward\fR	\fBunexport\fR
+.ta 4c 8c
+\fBexport\fR	\fBfilter\fR	\fBforward\fR
+\fBmethod\fR	\fBmixin\fR	\fBunexport\fR
 .DE
 .SH EXAMPLES
+This example demonstrates how to use both forms of the \fBoo::define\fR
+command, as well as illustrating three of the subcommands of it.
+
 .CS
 oo::class create c
 c create o
-\fBoo::define\fR c \fBmethod\fR foo {} {puts -nonewline "foo"}
+\fBoo::define\fR c \fBmethod\fR foo {} {
+    puts "world"
+}
 \fBoo::define\fR o {
-    \fBmethod\fR bar {} {my foo; my Foo bar}
-    \fBforward\fR Foo ::puts
+    \fBmethod\fR bar {} {
+        my Foo "hello "
+        my foo
+    }
+    \fBforward\fR Foo ::puts -nonewline
     \fBunexport\fR foo
 }
-o bar		\fI=> prints foobar\fR
-o foo		\fI=> gives error\fR
-o Foo Bar	\fI=> gives error\fR
+o bar		    \fI=> prints "hello world"\fR
+o foo		    \fI=> gives error; unknown method\fR
+o Foo Bar	    \fI=> gives error; unknown method\fR
 .CE
 .SH "SEE ALSO"
 class(n), next(n), object(n)
