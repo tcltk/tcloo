@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: define.n,v 1.3 2007/05/28 12:14:21 dkf Exp $
+'\" RCS: @(#) $Id: define.n,v 1.4 2007/05/29 13:19:17 dkf Exp $
 '\"
 .so man.macros
 .TH define n 0.1 TclOO "TclOO Commands"
@@ -60,7 +60,11 @@ deleted.
 .TP
 \fBexport\fI name \fR?\fIname ...\fR?
 .
-.I TODO
+This arranges for each of the named methods, \fIname\fR, to be exported
+(i.e. usable outside the object or class through the object's command) by the
+object or class being defined. Note that the methods themselves may be
+actually defined by a superclass; subclass exports override superclass
+visibility.
 .TP
 \fBfilter\fR ?\fImethodName ...\fR?
 .
@@ -81,7 +85,9 @@ defining another kind of object, this creates or updates an object method. The
 name of the method is \fIname\fR. The method is defined be forwarded to the
 command called \fIcmdName\fR, with additional arguments, \fIarg\fR etc., added
 before those arguments specified by the caller of the method. Forwarded
-methods should be deleted using the \fBmethod\fR subcommand.
+methods should be deleted using the \fBmethod\fR subcommand. The method will
+be exported if \fIname\fR starts with a lower-case letter, and non-exported
+otherwise.
 .TP
 \fBmethod\fI name argList bodyScript\fR
 .
@@ -92,7 +98,8 @@ using the same format as for the Tcl \fBproc\fR command) will be
 \fIargList\fR, and the body of the method will be \fIbodyScript\fR. When the
 body of the method is evaluated, the current namespace of the method will be a
 namespace that is unique to the current object. If \fIbodyScript\fR is the
-empty string, the method will be deleted.
+empty string, the method will be deleted. The method will be exported if
+\fIname\fR starts with a lower-case letter, and non-exported otherwise.
 .TP
 .\fBmixin\fR ?\fIclassName ...\fR?
 .
@@ -118,7 +125,12 @@ being non-classes or vice-versa.
 .TP
 \fBunexport\fI name \fR?\fIname ...\fR?
 .
-.I TODO
+This arranges for each of the named methods, \fIname\fR, to be not exported
+(i.e. not usable outside the object or class through the object's command, but
+instead just through the \fBmy\fR command visible in each object's context) by
+the object or class being defined. Note that the methods themselves may be
+actually defined by a superclass; subclass unexports override superclass
+visibility.
 .SS "TREATING CLASSES AS OBJECTS"
 Since classes are themselves objects, manipulating them as such is done
 through this command. In order to force the \fBdefine\fR subcommands to work
@@ -138,14 +150,16 @@ oo::class create c
 c create o
 \fBoo::define\fR c \fBmethod\fR foo {} {puts -nonewline "foo"}
 \fBoo::define\fR o {
-    \fBmethod\fR bar {} {my foo; puts "bar"}
+    \fBmethod\fR bar {} {my foo; my Foo bar}
+    \fBforward\fR Foo ::puts
     \fBunexport\fR foo
 }
 o bar		\fI=> prints foobar\fR
 o foo		\fI=> gives error\fR
+o Foo Bar	\fI=> gives error\fR
 .CE
 .SH "SEE ALSO"
-.I TODO
+class(n), next(n), object(n)
 .SH KEYWORDS
 .I TODO
 
