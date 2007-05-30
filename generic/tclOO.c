@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.4 2007/05/30 15:09:06 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.5 2007/05/30 15:30:12 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2850,10 +2850,8 @@ ObjectUnknown(
     const char **methodNames;
     int numMethodNames, i;
 
-    if (objc != Tcl_ObjectContextSkippedArgs(context)+1) {
-	Tcl_WrongNumArgs(interp, objv, Tcl_ObjectContextSkippedArgs(context),
-		"methodName");
-	return TCL_ERROR;
+    if (Tcl_ObjectContextSkippedArgs(context) == 0) {
+	Tcl_Panic("can't happen?");
     }
 
     /*
@@ -2871,8 +2869,12 @@ ObjectUnknown(
 	Tcl_Obj *tmpBuf = Tcl_NewObj();
 
 	Tcl_GetCommandFullName(interp, oPtr->command, tmpBuf);
-	Tcl_AppendResult(interp, "object \"", TclGetString(tmpBuf),
-		"\" has no visible methods", NULL);
+	Tcl_AppendResult(interp, "object \"", TclGetString(tmpBuf), NULL);
+	if (contextPtr->flags & PUBLIC_METHOD) {
+	    Tcl_AppendResult(interp, "\" has no visible methods", NULL);
+	} else {
+	    Tcl_AppendResult(interp, "\" has no methods", NULL);
+	}
 	Tcl_DecrRefCount(tmpBuf);
 	return TCL_ERROR;
     }
