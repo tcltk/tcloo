@@ -1,5 +1,7 @@
 2007-05-30  Donal K. Fellows  <dkf@users.sf.net>
 
+	* doc/copy.n: Started work on documenting oo::copy.
+
 	* generic/tclOO.c (ObjectUnknown): Fixed possible crash when unknown
 	method used directly.
 
