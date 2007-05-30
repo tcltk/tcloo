@@ -1,5 +1,8 @@
 2007-05-30  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclOO.c (ObjectUnknown): Fixed possible crash when unknown
+	method used directly.
+
 	* configure.in: Detect sdx during configure time, not make time.
 
 2007-05-29  Donal K. Fellows  <dkf@users.sf.net>
