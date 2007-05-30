@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.3 2007/05/30 15:02:31 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.4 2007/05/30 15:09:06 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2850,8 +2850,8 @@ ObjectUnknown(
     const char **methodNames;
     int numMethodNames, i;
 
-    if (objc != Tcl_ObjContextSkippedArgs(context)+1) {
-	Tcl_WrongNumArgs(interp, objv, Tcl_ObjContextSkippedArgs(context),
+    if (objc != Tcl_ObjectContextSkippedArgs(context)+1) {
+	Tcl_WrongNumArgs(interp, objv, Tcl_ObjectContextSkippedArgs(context),
 		"methodName");
 	return TCL_ERROR;
     }
