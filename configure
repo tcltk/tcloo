@@ -12567,7 +12567,7 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
-if test ${SDX} = "none"; then
+if test "${SDX}" = "none"; then
 
     # Extract the first word of "sdx.kit", so it can be a program name with args.
 set dummy sdx.kit; ac_word=$2
@@ -12609,16 +12609,16 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
-    if test ${SDX_KIT} != "none"; then
+    if test "${SDX_KIT}" != "none"; then
 
 	# We assume that sdx.kit is on the path, and that the default tclsh
 	# is activetcl
-	SDX="tclsh ${SDX_KIT}"
+	SDX="tclsh '${SDX_KIT}'"
 fi
 
 fi
 
-if test ${SDX} = "none"; then
+if test "${SDX}" = "none"; then
 
     { echo "$as_me:$LINENO: WARNING: cannot find sdx; building starkits will fail; building as a normal library still supported" >&5
 echo "$as_me: WARNING: cannot find sdx; building starkits will fail; building as a normal library still supported" >&2;}
