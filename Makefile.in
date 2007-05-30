@@ -135,7 +135,7 @@ Makefile: $(SRC_DIR)/Makefile.in $(top_builddir)/config.status
 # Build a starkit - this is experimental!
 kit: sdx_valid $(PKG_KIT)
 sdx_valid:
-	@test "$(SDX)" = "none" && ( echo "Cannot build kit; no sdx!"; false )
+	@test "$(SDX)" != "none" || ( echo "Cannot build kit; no sdx!"; false )
 $(PKG_KIT): $(PKG_LIB_FILE)
 	-@mkdir -p $(KIT_PKG_ROOT)/$(PLATFORM)
 	cp $(PKG_LIB_FILE) $(KIT_PKG_ROOT)/$(PLATFORM)
