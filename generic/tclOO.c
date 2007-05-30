@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.5 2007/05/30 15:30:12 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.6 2007/05/30 23:12:56 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -279,7 +279,10 @@ Tcloo_Init(
     Tcl_IncrRefCount(fPtr->constructorName);
     Tcl_IncrRefCount(fPtr->destructorName);
 
-    //Tcl_CallWhenDeleted(interp, KillFoundation, fPtr);
+    /*
+     * While the foundation is in assocData, this call is not needed.
+     *Tcl_CallWhenDeleted(interp, KillFoundation, fPtr);
+     */
 
     /*
      * Create the objects at the core of the object system. These need to be
@@ -1968,9 +1971,19 @@ InvokeProcedureMethod(
 	efi.fields[1].name = "class";
     }
 
+    /*
+     * Ensure that the method name itself is part of the arguments when we're
+     * doing unknown processing.
+     */
+
     if (contextPtr->flags & OO_UNKNOWN_METHOD) {
 	skip--;
     }
+
+    /*
+     * Now invoke the body of the method.
+     */
+
     result = TclObjInterpProcCore(interp, framePtr, nameObj, 0, skip, errProc);
     return result;
 }
@@ -2269,7 +2282,16 @@ InvokeForwardMethod(
     CallContext *contextPtr = (CallContext *) context;
     ForwardMethod *fmPtr = clientData;
     Tcl_Obj **argObjs, **prefixObjs;
-    int numPrefixes, result, len;
+    int numPrefixes, result, len, skip = contextPtr->skip;
+
+    /*
+     * Ensure that the method name itself is part of the arguments when we're
+     * doing unknown processing.
+     */
+
+    if (contextPtr->flags & OO_UNKNOWN_METHOD) {
+	skip--;
+    }
 
     /*
      * Build the real list of arguments to use. Note that we know that the
@@ -2279,7 +2301,7 @@ InvokeForwardMethod(
      */
 
     TclListObjGetElements(fmPtr->prefixObj, numPrefixes, prefixObjs);
-    argObjs = InitEnsembleRewrite(interp, objc, objv, contextPtr->skip,
+    argObjs = InitEnsembleRewrite(interp, objc, objv, skip,
 	    numPrefixes, prefixObjs, &len);
 
     result = Tcl_EvalObjv(interp, len, argObjs, TCL_EVAL_INVOKE);
@@ -2848,10 +2870,20 @@ ObjectUnknown(
     CallContext *contextPtr = (CallContext *) context;
     Object *oPtr = contextPtr->oPtr;
     const char **methodNames;
-    int numMethodNames, i;
+    int numMethodNames, i, skip = Tcl_ObjectContextSkippedArgs(context);
 
-    if (Tcl_ObjectContextSkippedArgs(context) == 0) {
-	Tcl_Panic("can't happen?");
+    /*
+     * Ensure that the method name itself is part of the arguments when we're
+     * doing unknown processing.
+     */
+
+    if (contextPtr->flags & OO_UNKNOWN_METHOD) {
+	skip--;
+    }
+
+    if (objc < skip+1) {
+	Tcl_WrongNumArgs(interp, skip, objv, "methodName ?arg ...?");
+	return TCL_ERROR;
     }
 
     /*
@@ -2879,8 +2911,7 @@ ObjectUnknown(
 	return TCL_ERROR;
     }
 
-    Tcl_AppendResult(interp, "unknown method \"",
-	    TclGetString(objv[Tcl_ObjectContextSkippedArgs(context)-1]),
+    Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[skip]),
 	    "\": must be ", NULL);
     for (i=0 ; i<numMethodNames-1 ; i++) {
 	if (i) {
