@@ -46,6 +46,8 @@ LIBS=@PKG_LIBS@ @LIBS@ @MATH_LIBS@
 AR=@AR@
 CFLAGS=@CFLAGS@
 CYGPATH=@CYGPATH@
+SDX=@SDX@
+RC=@RC@
 TCLSH_ENV=TCL_LIBRARY="`$(CYGPATH) $(TCL_SRC_DIR)/library`" \
 	  @LD_LIBRARY_PATH_VAR@="$(EXTRA_PATH):$(@LD_LIBRARY_PATH_VAR@)" \
 	  PATH="$(EXTRA_PATH):$(PATH)" \
@@ -68,16 +70,13 @@ COMPILE=$(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
 VPATH=.:$(SRC_DIR)/generic:$(SRC_DIR)/unix:$(SRC_DIR)/win:$(SRC_DIR)/macosx
 TESTFLAGS=
 KIT_PKG_ROOT=$(PKG_KIT_ROOT).vfs/lib/$(PACKAGE_NAME)
-RC=windres
 # The quoting is horrific, I know!
 RCFLAGS=--define PACKAGE_NAME='\"$(PACKAGE_NAME)\"' \
 	--define PKG_LIB_FILE='\"$(PKG_LIB_FILE)\"' \
 	--define PACKAGE_VERSION='\"$(PACKAGE_VERSION)\"'
 RES=res.o
 
-# These are things that are found by executing shell scripts
-# We assume that sdx.kit is on the path, and that the default tclsh is activetcl
-SDX_PROGRAM:=tclsh $(shell which sdx.kit)
+# This is something that if found by executing a Tcl script
 PLATFORM:=$(shell echo 'package require platform;puts [platform::generic]' | $(TCLSH))
 
 all: package libraries
@@ -134,7 +133,9 @@ Makefile: $(SRC_DIR)/Makefile.in $(top_builddir)/config.status
 	  && CONFIG_FILES=$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
 # Build a starkit - this is experimental!
-kit: $(PKG_KIT)
+kit: sdx_valid $(PKG_KIT)
+sdx_valid:
+	@test "$(SDX)" = "none" && ( echo "Cannot build kit; no sdx!"; false )
 $(PKG_KIT): $(PKG_LIB_FILE)
 	-@mkdir -p $(KIT_PKG_ROOT)/$(PLATFORM)
 	cp $(PKG_LIB_FILE) $(KIT_PKG_ROOT)/$(PLATFORM)
@@ -144,7 +145,7 @@ $(PKG_KIT): $(PKG_LIB_FILE)
 	echo 'package ifneeded $(PACKAGE_NAME) $(PACKAGE_VERSION) \
 	    [list load [file join $$dir $(PLATFORM) $(PKG_LIB_FILE)] $(PACKAGE_NAME)]' \
 	) > $(KIT_PKG_ROOT)/pkgIndex.tcl
-	$(SDX_PROGRAM) wrap $(PKG_KIT)
+	$(SDX) wrap $(PKG_KIT)
 	-@rm -rf $(PKG_KIT_ROOT).vfs $(PKG_KIT_ROOT).bat
 
 clean:
@@ -157,4 +158,4 @@ distclean: clean
 	-rm -f config.cache config.log config.status
 
 .SUFFIXES: .c .$(OBJEXT) .rc .$(RES)
-.PHONY: all package clean depend distclean doc install libraries test kit
+.PHONY: all package clean depend distclean doc install libraries test kit sdx_valid

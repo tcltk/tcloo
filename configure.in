@@ -1,6 +1,6 @@
-# $Id: configure.in,v 1.5 2007/05/29 21:20:26 dkf Exp $
+# $Id: configure.in,v 1.6 2007/05/30 12:49:59 dkf Exp $
 
-AC_REVISION($Revision: 1.5 $)
+AC_REVISION($Revision: 1.6 $)
 AC_INIT([TclOO],[0.1])
 AC_CONFIG_AUX_DIR(tclconfig)
 
@@ -9,10 +9,12 @@ TEA_PATH_TCLCONFIG
 TEA_LOAD_TCLCONFIG
 TEA_PREFIX
 TEA_SETUP_COMPILER
-TEA_ADD_SOURCES([tclOO.c tclOOCall.c tclOODefineCmds.c tclOOInfo.c tclOOStubInit.c])
-if test ${TEA_PLATFORM} = "windows"; then
+TEA_ADD_SOURCES(
+	[tclOO.c tclOOCall.c tclOODefineCmds.c tclOOInfo.c tclOOStubInit.c])
+AS_IF([test ${TEA_PLATFORM} = "windows"], [
     PKG_OBJECTS="${PKG_OBJECTS} ${PACKAGE_NAME}.res.o"
-fi
+    RC=windres
+    AC_SUBST(RC)])
 TEA_ADD_STUB_SOURCES([tclOOStubLib.c])
 TEA_ADD_HEADERS([generic/tclOO.h generic/tclOOInt.h])
 TEA_ADD_INCLUDES([-I. -I\"`${CYGPATH} ${srcdir}/generic`\"])
@@ -32,6 +34,16 @@ TEA_MAKE_LIB
 TEA_PROG_TCLSH
 CONFIGURE_OUTPUTS="Makefile config.cache config.log config.status"
 AC_SUBST(CONFIGURE_OUTPUTS)
+
+AC_PATH_PROG(SDX, sdx, none)
+AS_IF([test ${SDX} = "none"],[
+    AC_PATH_PROG(SDX_KIT, sdx.kit, none)
+    AS_IF([test ${SDX_KIT} != "none"],[
+	# We assume that sdx.kit is on the path, and that the default tclsh
+	# is activetcl
+	SDX="tclsh ${SDX_KIT}"])])
+AS_IF([test ${SDX} = "none"],[
+    AC_MSG_WARN([cannot find sdx; building starkits will fail; building as a normal library still supported])])
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
