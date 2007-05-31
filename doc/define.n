@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: define.n,v 1.6 2007/05/29 15:43:15 dkf Exp $
+'\" RCS: @(#) $Id: define.n,v 1.7 2007/05/31 14:50:16 dkf Exp $
 '\"
 .so man.macros
 .TH define n 0.1 TclOO "TclOO Commands"
@@ -166,9 +166,9 @@ c create o
     \fBforward\fR Foo ::puts -nonewline
     \fBunexport\fR foo
 }
-o bar		    \fI=> prints "hello world"\fR
-o foo		    \fI=> gives error; unknown method\fR
-o Foo Bar	    \fI=> gives error; unknown method\fR
+o bar                \fI\(-> prints "hello world"\fR
+o foo                \fI\(-> error "unknown method foo"\fR
+o Foo Bar            \fI\(-> error "unknown method Foo"\fR
 .CE
 .SH "SEE ALSO"
 class(n), next(n), object(n)
