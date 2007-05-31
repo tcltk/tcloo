@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: class.n,v 1.1 2007/05/29 15:43:15 dkf Exp $
+'\" RCS: @(#) $Id: class.n,v 1.2 2007/05/31 14:50:16 dkf Exp $
 '\"
 .so man.macros
 .TH class n 0.1 TclOO "TclOO Commands"
@@ -18,10 +18,10 @@ package require TclOO
 
 \fBoo::class\fI method \fR?\fIarg ...\fR?
 .fi
-.SS "CLASS HIERARCHY"
+.SH "CLASS HIERARCHY"
 .nf
 \fBoo::object\fR
-   \fBoo::class\fR
+   \(-> \fBoo::class\fR
 .fi
 .BE
 
@@ -30,7 +30,9 @@ The \fBoo::class\fR class is the class of all classes; every class is an
 instance of this class, which is consequently an instance of itself. This
 class is a subclass of \fBoo::object\fR, so every class is also an object.
 Addutional metaclasses (i.e. classes of classes) can be defined if necessary
-by subclassing \fBoo::class\fR.
+by subclassing \fBoo::class\fR. Note that the \fBoo::class\fR object hides the
+\fBnew\fR method on itself, so new classes should always be made using the
+\fBcreate\fR method.
 .SS CONSTRUCTOR
 The constructor of the \fBoo::class\fR class takes an optional argument which,
 if present, is sent to the \fBoo::define\fR command (along with the name of
@@ -95,9 +97,9 @@ showing that the destruction is transitive.
     }
 }
 set b [banana \fBnew\fR]
-$b eat		    \fIprints "skin now off" and "yummy!"\fR
+$b eat               \fI\(-> prints "skin now off" and "yummy!"\fR
 fruit destroy
-$b eat		    \fIerror; no such command\fR
+$b eat               \fI\(-> error "unknown command"\fR
 .CE
 .SH "SEE ALSO"
 define(n), object(n)

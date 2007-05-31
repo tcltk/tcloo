@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: object.n,v 1.4 2007/05/30 23:12:56 dkf Exp $
+'\" RCS: @(#) $Id: object.n,v 1.5 2007/05/31 14:50:16 dkf Exp $
 '\"
 .so man.macros
 .TH object n 0.1 TclOO "TclOO Commands"
@@ -18,7 +18,7 @@ package require TclOO
 
 \fBoo::object\fI method \fR?\fIarg ...\fR?
 .fi
-.SS "CLASS HIERARCHY"
+.SH "CLASS HIERARCHY"
 .nf
 \fBoo::object\fR
 .fi
@@ -29,6 +29,9 @@ The \fBoo::object\fR class is the root class of the object hierarchy; every
 object (and hence every class) is an instance of this class. Objects are
 always referred to by their name, and may be \fBrename\fRd while maintaining
 their identity. Each object has a unique namespace associated with it.
+Instances of objects may be made with either the \fBcreate\fR or \fBnew\fR
+methods of the \fBoo::object\fR object itself, or by invoking those methods on
+any of the subclass objects; see \fBoo::class\fR for more details.
 .SS CONSTRUCTOR
 The \fBoo::object\fR class does not define an explicit constructor.
 .SS DESTRUCTOR
@@ -73,8 +76,19 @@ must not have any namespace separators in it. The result is the empty string.
 This method returns the globally qualified name of the variable \fIvarName\fR
 in the unique namespace for the object \fIobj\fR.
 .SH EXAMPLES
+This example demonstrates basic use of an object.
 .CS
-TODO
+set obj [\fBoo::object\fR new]
+$obj foo             \fI\(-> error "unknown method foo"\fR
+oo::define $obj method foo {} {
+    my \fBvariable\fR count
+    puts "bar[incr count]"
+}
+$obj foo             \fI\(-> prints "bar1"\fR
+$obj foo             \fI\(-> prints "bar2"\fR
+$obj variable count  \fI\(-> error "unknown method variable"\fR
+$obj \fBdestroy\fR
+$obj foo             \fI\(-> error "unknown command obj"\fR
 .CE
 .SH "SEE ALSO"
 class(n), my(n)

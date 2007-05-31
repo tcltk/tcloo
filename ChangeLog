@@ -1,5 +1,7 @@
 2007-05-31  Donal K. Fellows  <dkf@users.sf.net>
 
+	* doc/self.n: Added some documentation for [self].
+
 	* generic/tclOO.c (InvokeForwardMethod, ObjectUnknown): Better fix
 	for the unknown method handling.
 	* doc/object.n: Document it correctly.
