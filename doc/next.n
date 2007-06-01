@@ -1,0 +1,82 @@
+'\"
+'\" Copyright (c) 2007 Donal K. Fellows
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+'\" RCS: @(#) $Id: next.n,v 1.1 2007/06/01 13:05:17 dkf Exp $
+'\"
+.so man.macros
+.TH next n 0.1 TclOO "TclOO Commands"
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+next \- Invoke superclass method implementations
+.SH SYNOPSIS
+.nf
+package require TclOO
+
+\fBnext\fR ?\fIarg ...\fR?
+.fi
+.BE
+
+.SH DESCRIPTION
+The \fBnext\fR command is used to call implementations of a method by a class,
+superclass or mixin that are overridden by the current method. It can only be
+used from within a method. It is also used within filters to indicate the
+point where a filter calls the actual implementation (the filter may decide to
+not go along the chain, and may process the results of going along the chain
+of methods as it chooses). The result of the \fBnext\fR command is the result
+of the next method in the method chain; if there are no further methods in the
+method chain, the result of \fBnext\fR is the empty string. The arguments,
+\fIarg\fR, to \fBnext\fR are the arguments to pass to the next method in the
+chain.
+.SS "THE METHOD CHAIN"
+.I TODO
+.SH EXAMPLES
+This example demonstrates how to use the \fBnext\fR command to call the
+(super)class's implementation of a method. The script:
+.CS
+oo::class create theSuperclass {
+    method example {args} {
+        puts "in the superclass, args = $args"
+    }
+}
+oo::class create theSubclass {
+    superclass theSuperclass
+    method example {args} {
+        puts "before chaining from subclass, args = $args"
+        \fBnext\fR a {*}$args b
+        \fBnext\fR pureSynthesis
+        puts "after chaining from subclass"
+    }
+}
+theSubclass create obj
+oo::define obj method example args {
+    puts "per-object method, args = $args"
+    \fBnext\fR x {*}$args y
+    \fBnext\fR
+}
+obj example 1 2 3
+.CE
+prints the following:
+.CS
+per-object method, args = 1 2 3
+before chaining from subclass, args = x 1 2 3 y
+in the superclass, args = a x 1 2 3 y b
+in the superclass, args = pureSynthesis
+after chaining from subclass
+before chaining from subclass, args = 
+in the superclass, args = a b
+in the superclassm args = pureSynthesis
+after chaining from subclass
+.CE
+.SH "SEE ALSO"
+class(n), define(n), next(n), object(n), self(n)
+.SH KEYWORDS
+.I TODO
+
+\" Local variables:
+\" mode: nroff
+\" fill-column: 78
+\" End:

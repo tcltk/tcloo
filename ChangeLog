@@ -1,5 +1,6 @@
 2007-06-01  Donal K. Fellows  <dkf@users.sf.net>
 
+	* doc/next.n: Added documentation for [next].
 	* doc/my.n: Added documentation for [my].
 
 2007-05-31  Donal K. Fellows  <dkf@users.sf.net>
