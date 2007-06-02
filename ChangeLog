@@ -1,3 +1,7 @@
+2007-06-02  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/Class.3: Started documenting the C interface.
+
 2007-06-01  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/next.n: Added documentation for [next].
