@@ -4,14 +4,14 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: define.n,v 1.7 2007/05/31 14:50:16 dkf Exp $
+'\" RCS: @(#) $Id: define.n,v 1.8 2007/06/02 12:09:31 dkf Exp $
 '\"
 .so man.macros
 .TH define n 0.1 TclOO "TclOO Commands"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-define \- Define and configure classes and objects
+define \- define and configure classes and objects
 .SH SYNOPSIS
 .nf
 package require TclOO
