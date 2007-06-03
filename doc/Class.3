@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: Class.3,v 1.2 2007/06/02 13:29:57 dkf Exp $
+'\" RCS: @(#) $Id: Class.3,v 1.3 2007/06/03 22:48:23 dkf Exp $
 '\"
 .so man.macros
 .TH Tcl_Class 3 0.1 TclOO "TclOO Library Functions"
@@ -41,16 +41,16 @@ int
 \fBTcl_ObjectDeleted\fR(\fIobject\fR)
 .sp
 ClientData
-\fBTcl_ObjectGetMetadata\fR(\fIobject, typePtr\fR)
+\fBTcl_ObjectGetMetadata\fR(\fIobject, metaTypePtr\fR)
 .sp
-\fBTcl_ObjectSetMetadata\fR(\fIobject, typePtr, metadata\fR)
+\fBTcl_ObjectSetMetadata\fR(\fIobject, metaTypePtr, metadata\fR)
 .sp
 ClientData
-\fBTcl_ClassGetMetadata\fR(\fIclass, typePtr\fR)
+\fBTcl_ClassGetMetadata\fR(\fIclass, metaTypePtr\fR)
 .sp
-\fBTcl_ClassSetMetadata\fR(\fIclass, typePtr, metadata\fR)
+\fBTcl_ClassSetMetadata\fR(\fIclass, metaTypePtr, metadata\fR)
 .SH ARGUMENTS
-.AS "const Tcl_ObjectMetadataType" metadata in/out
+.AS "const Tcl_ObjectMetadataType" metaTypePtr in/out
 .AP Tcl_Interp *interp in/out
 Interpreter providing the context for looking up or creating an object, and
 into whose result error messages will be written on failure.
@@ -70,12 +70,12 @@ The arguments to the command to create the instance of the class.
 .AP int skip in
 The number of arguments at the start of the argument array, \fIobjv\fR, that
 are not arguments to any constructors.
-.AP "const Tcl_ObjectMetadataType" *typePtr in
+.AP "const Tcl_ObjectMetadataType" *metaTypePtr in
 The type of \fImetadata\fR being set with \fBTcl_ClassSetMetadata\fR or
 retrieved with \fBTcl_ClassGetMetadata\fR.
 .AP ClientData metadata in
 An item of metadata to attach to the class, or NULL to remove the metadata
-associated with a particular \fItypePtr\fR.
+associated with a particular \fImetaTypePtr\fR.
 .BE
 
 .SH DESCRIPTION
@@ -112,16 +112,16 @@ Every object and every class may have arbitrary amounts of metadata attached
 to it, which the object or class attaches no meaning to beyond what is
 described in a Tcl_ObjectMetadataType structure instance. Metadata to be
 attached is described by the the type of the metadata (given in the
-\fItypePtr\fR argument) and an arbitrary pointer (the \fImetadata\fR argument)
-that are given to \fBTcl_ObjectSetMetadata\fR and \fBTcl_ClassSetMetadata\fR,
-and a particular piece of metadata can be retrieved given its type using
-\fBTcl_ObjectGetMetadata\fR and \fBTcl_ClassGetMetadata\fR. If the
-\fImetadata\fR parameter to either \fBTcl_ObjectSetMetadata\fR or
-\fBTcl_ClassSetMetadata\fR is NULL, the metadata is removed if it was
-attached, and the results of \fBTcl_ObjectGetMetadata\fR and
-\fBTcl_ClassGetMetadata\fR are NULL if the given type of metadata was not
-attached. It is not an error to request or remove a piece of metadata that was
-not attached.
+\fImetaTypePtr\fR argument) and an arbitrary pointer (the \fImetadata\fR
+argument) that are given to \fBTcl_ObjectSetMetadata\fR and
+\fBTcl_ClassSetMetadata\fR, and a particular piece of metadata can be
+retrieved given its type using \fBTcl_ObjectGetMetadata\fR and
+\fBTcl_ClassGetMetadata\fR. If the \fImetadata\fR parameter to either
+\fBTcl_ObjectSetMetadata\fR or \fBTcl_ClassSetMetadata\fR is NULL, the
+metadata is removed if it was attached, and the results of
+\fBTcl_ObjectGetMetadata\fR and \fBTcl_ClassGetMetadata\fR are NULL if the
+given type of metadata was not attached. It is not an error to request or
+remove a piece of metadata that was not attached.
 .PP
 The contents of the Tcl_ObjectMetadataType structure are as follows:
 .CS
@@ -133,7 +133,7 @@ typedef struct {
 } Tcl_ObjectMetadataType;
 .CE
 The \fIversion\fR field allows for future expansion of the structure, and
-should always be declared equal to TCL_OO_METHOD_VERSION_CURRENT. The
+should always be declared equal to TCL_OO_METADATA_VERSION_CURRENT. The
 \fIname\fR field provides a human-readable name for the type, and is reserved
 for debugging.
 .PP
@@ -157,7 +157,7 @@ The \fImetadata\fR argument gives the address of the metadata to be cloned,
 and the result of the function must either be the cloned metadata or NULL if
 the metadata is to not be cloned.
 .SH "SEE ALSO"
-class(n), define(n), Method(3), object(n)
+class(n), copy(n), define(n), Method(3), object(n)
 .SH KEYWORDS
 .I TODO
 

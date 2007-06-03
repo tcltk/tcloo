@@ -1,3 +1,8 @@
+2007-06-03  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/Method.3: The other half of the C interface, being the part
+	dealing with methods.
+
 2007-06-02  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/Class.3: Started documenting the C interface.
