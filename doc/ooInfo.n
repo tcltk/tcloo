@@ -1,0 +1,214 @@
+'\"
+'\" Copyright (c) 2007 Donal K. Fellows
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+'\" RCS: @(#) $Id: ooInfo.n,v 1.1 2007/06/04 13:15:48 dkf Exp $
+'\"
+.so man.macros
+.TH ooInfo n 0.1 TclOO "TclOO Commands"
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+InfoClass, InfoObject \- define and configure classes and objects
+.SH SYNOPSIS
+.nf
+package require TclOO
+
+\fBoo::InfoObject\fI subcommand object\fR ?\fIarg ...\fR
+\fBoo::InfoClass\fI subcommand class\fR ?\fIarg ...\fR
+.fi
+.BE
+
+.SH DESCRIPTION
+.PP
+The commands \fBoo::InfoObject\fR and \fBoo::InfoClass\fR are ensemble
+commands that provide introspection capabilities to the object system, with
+the \fIsubcommand\fR argument designating which aspect is to be inspectected
+and the \fIobject\fR or \fIclass\fR argument naming the object or class to be
+inspected.
+.SS "OBJECT INTROSPECTION"
+.PP
+The following \fIsubcommand\fR values are supported by \fBoo::InfoObject\fR:
+.TP
+\fBoo::InfoObject class\fI object\fR ?\fIclassName\fR?
+.
+If \fIclassName\fR is unspecified, this subcommand returns class of the
+\fIobject\fR object. If \fIclassName\fR is present, this subcommand returns a
+boolean value indicating whether the \fIobject\fR is of that class.
+.TP
+\fBoo::InfoObject definition\fI object method\fR
+.
+This subcommand returns a description of the definition of the method named
+\fImethod\fR of object \fIobject\fR. The defintion is described as a two
+element list; the first element is the list of arguments to the method in a
+form suitable for passing to another call to \fBproc\fR or a method defintion,
+and the second element is the body of the method.
+.TP
+\fBoo::InfoObject filters\fI object\fR
+.
+This subcommand returns the list of filter methods set on the object.
+.TP
+\fBoo::InfoObject forward\fI object method\fR
+.
+This subcommand returns the argument list for the method forwarding called
+\fImethod\fR that is set on the object called \fIobject\fR.
+.TP
+\fBoo::InfoObject isa\fI category object\fR ?\fIarg\fR?
+.
+This subcommand tests whether an object belongs to a particular category,
+returning a boolean value that indicates whether the \fIobject\fR argument
+meets the criteria for the category. The supported categories are:
+.RS
+.TP
+\fBoo::InfoObject isa class\fI object\fR
+.
+This returns whether \fIobject\fR is a class (i.e. an instance of
+\fBoo::class\fR or one of its subclasses).
+.TP
+\fBoo::InfoObject isa metaclass\fI object\fR
+.
+This returns whether \fIobject\fR is a subclass of \fBoo::class\fR.
+.TP
+\fBoo::InfoObject isa mixin\fI object class\fR
+.
+This returns whether \fIclass\fR is directly mixed into \fIobject\fR.
+.TP
+\fBoo::InfoObject isa object\fI object\fR
+.
+This returns whether \fIobject\fR really is an object.
+.TP
+\fBoo::InfoObject isa typeof\fI object class\fR
+.
+This returns whether \fIclass\fR is the type of \fIobject\fR (i.e. whether
+\fIobject\fR is an instance of \fIclass\fR or one of its subclasses, whether
+direct or indirect).
+.RE
+.TP
+\fBoo::InfoObject methods\fI object\fR ?\fB\-private\fR?
+.
+This subcommand returns a list of all public (i.e. exported) methods of the
+object called \fIobject\fR. If the \fB\-private\fR flag is given, this
+subcommand returns a list of all the private (i.e. non-exported) methods of
+the object.
+.TP
+\fBoo::InfoObject mixins\fI object\fR
+.
+This subcommand returns a list of all classes that have been mixed into the
+object named \fIobject\fR.
+.TP
+\fBoo::InfoObject vars\fI object\fR ?\fIpattern\fR?
+.
+This subcommand returns a list of all variables in the private namespace of
+the object named \fIobject\fR. If the optional \fIpattern\fR argument is
+given, it is a filter (in the syntax of a \fBstring match\fR glob pattern)
+that constrains the list of variables returned.
+.SS "CLASS INTROSPECTION"
+.PP
+The following \fIsubcommand\fR values are supported by \fBoo::InfoClass\fR:
+.TP
+\fBoo::InfoClass constructor\fI class\fR
+.
+This subcommand returns a description of the definition of the constructor of
+class \fIclass\fR. The defintion is described as a two element list; the first
+element is the list of arguments to the constructor in a form suitable for
+passing to another call to \fBproc\fR or a method defintion, and the second
+element is the body of the constructor. If no constructor is present, this
+returns the empty list.
+.TP
+\fBoo::InfoClass definition\fI class method\fR
+.
+This subcommand returns a description of the definition of the method named
+\fImethod\fR of class \fIclass\fR. The defintion is described as a two element
+list; the first element is the list of arguments to the method in a form
+suitable for passing to another call to \fBproc\fR or a method defintion, and
+the second element is the body of the method.
+.TP
+\fBoo::InfoClass destructor\fI class\fR
+.
+This subcommand returns the body of the destructor of class \fIclass\fR. If no
+destructor is present, this returns the empty string.
+.TP
+\fBoo::InfoClass filters\fI class\fR
+.
+This subcommand returns the list of filter methods set on the class.
+.TP
+\fBoo::InfoClass forward\fI class method\fR
+.
+This subcommand returns the argument list for the method forwarding called
+\fImethod\fR that is set on the class called \fIclass\fR.
+.TP
+\fBoo::InfoClass instances\fI class\fR ?\fIpattern\fR?
+.
+This subcommand returns a list of instances of class \fIclass\fR. If the
+optional \fIpattern\fR argument is present, it constrains the list of returned
+instances to those that match it according to the rules of \fBstring match\fR.
+.TP
+\fBoo::InfoClass methods\fI class\fR ?\fB\-private\fR?
+.
+This subcommand returns a list of all public (i.e. exported) methods of the
+class called \fIclass\fR. If the \fB\-private\fR flag is given, this
+subcommand returns a list of all the private (i.e. non-exported) methods of
+the class.
+.TP
+\fBoo::InfoClass mixins\fI class\fR
+.
+This subcommand returns a list of all classes that have been mixed into the
+class named \fIclass\fR.
+.TP
+\fBoo::InfoClass subclasses\fI class\fR ?\fIpattern\fR?
+.
+This subcommand returns a list of direct subclasses of class \fIclass\fR. If
+the optional \fIpattern\fR argument is present, it constrains the list of
+returned classes to those that match it according to the rules of \fBstring
+match\fR.
+.TP
+\fBoo::InfoClass superclasses\fI class\fR
+.
+This subcommand returns a list of direct superclasses of class \fIclass\fR in
+inheritance precedence order.
+.SH "FUTURE CHANGES"
+Note that these commands are likely to be renamed in the future.
+.SH EXAMPLES
+.PP
+Every object necessarily knows what its class is; this information is
+trivially extractable through introspection:
+.CS
+oo::class create c
+c create o
+puts [oo::InfoObject class o]
+                     \fI\(-> prints "::c"\fR
+puts [oo::InfoObject class c]
+                     \fI\(-> prints "::oo::class"\fR
+.CE
+.PP
+The introspection capabilities can be used to discover what class implements a
+method and get how it is defined. This procedure illustrates how:
+.CS
+proc getDef {obj method} {
+    if {$method in [\fBoo::InfoObject methods\fR $obj]} {
+        # Assume no forwards
+        return [\fBoo::InfoObject definition\fR $obj $method]
+    }
+    set cls [\fBoo::InfoObject class\fR $obj]
+    while {$method ni [\fBoo::InfoClass methods\fR $cls]} {
+        # Assume the simple case
+        set cls [lindex [\fBoo::InfoClass superclass\fR $cls] 0]
+        if {$cls eq {}} {
+            error "no definition for $method"
+        }
+    }
+    # Assume no forwards
+    return [\fBoo::InfoClass definition\fR $cls $method]
+}
+.CE
+.SH "SEE ALSO"
+class(n), object(n)
+.SH KEYWORDS
+.I TODO
+
+\" Local variables:
+\" mode: nroff
+\" fill-column: 78
+\" End:
