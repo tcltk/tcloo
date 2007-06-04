@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: Method.3,v 1.1 2007/06/03 22:48:23 dkf Exp $
+'\" RCS: @(#) $Id: Method.3,v 1.2 2007/06/04 14:52:22 dkf Exp $
 '\"
 .so man.macros
 .TH Tcl_Method 3 0.1 TclOO "TclOO Library Functions"
@@ -17,10 +17,12 @@ Tcl_MethodDeclarerClass, Tcl_MethodDeclarerObject, Tcl_MethodIsPublic, Tcl_Metho
 \fB#include <tclOO.h>\fR
 .sp
 Tcl_Method
-\fBTcl_NewMethod\fR(\fIinterp, object, nameObj, isPublic, methodTypePtr, clientData\fR)
+\fBTcl_NewMethod\fR(\fIinterp, object, nameObj, isPublic, methodTypePtr,
+              clientData\fR)
 .sp
 Tcl_Method
-\fBTcl_NewClassMethod\fR(\fIinterp, class, nameObj, isPublic, methodTypePtr, clientData\fR)
+\fBTcl_NewClassMethod\fR(\fIinterp, class, nameObj, isPublic, methodTypePtr,
+                   clientData\fR)
 .sp
 Tcl_Class
 \fBTcl_MethodDeclarerClass\fR(\fImethod\fR)
@@ -49,7 +51,7 @@ Tcl_Object
 int
 \fBTcl_ObjectContextSkippedArgs\fR(\fIcontext\fR)
 .SH ARGUMENTS
-.AS "const Tcl_MethodType" *methodTypePtr in
+.AS Tcl_ObjectContext *methodTypePtr in
 .AP Tcl_Interp *interp in/out
 The interpreter holding the object or class to create or update a method in.
 .AP Tcl_Object object in
@@ -60,7 +62,7 @@ The class to create the method in.
 The name of the method to create. Should not be NULL.
 .AP int isPublic in
 A boolean flag saying whether the method is to be exported.
-.AP "const Tcl_MethodType" *methodTypePtr in
+.AP Tcl_MethodType *methodTypePtr in
 A description of the type of the method to create, or the type of method to
 compare against.
 .AP ClientData clientData in
@@ -129,27 +131,44 @@ through \fBTcl_ObjectContextIsFiltering\fR.
 .PP
 The types of methods are described by a pointer to a Tcl_MethodType structure,
 which is defined as:
+.PP
 .CS
-typedef struct {
+typedef const struct {
     int \fIversion\fR;
     const char *\fIname\fR;
     Tcl_MethodCallProc \fIcallProc\fR;
     Tcl_MethodDeleteProc \fIdeleteProc\fR;
     Tcl_MethodCloneProc \fIcloneProc\fR;
-} Tcl_MethodType;
+} \fBTcl_MethodType\fR;
 .CE
+.PP
 The \fIversion\fR field allows for future expansion of the structure, and
 should always be declared equal to TCL_OO_METHOD_VERSION_CURRENT. The
 \fIname\fR field provides a human-readable name for the type, and is reserved
 for debugging.
 .PP
 The \fIcallProc\fR field gives a function that is called when the method is
-invoked; it must never be NULL. The type signature of the \fIcallProc\fR field
-is:
+invoked; it must never be NULL.
+.PP
+The \fIdeleteProc\fR field gives a function that is used to delete a
+particular method, and is called when the method is replaced or removed; if
+the field is NULL, it is assumed that the method's \fIclientData\fR needs no
+special action to delete.
+.PP
+The \fIcloneProc\fR field is either a function that is used to copy a method's
+\fIclientData\fR (as part of \fBTcl_CopyObjectInstance\fR) or NULL to indicate
+that the \fIclientData\fR can just be copied directly.
+.SS "TCL_METHODCALLPROC FUNCTION SIGNATURE"
+.PP
+Functions matching this signature are called when the method is invoked.
+.PP
 .CS
-typedef int (*Tcl_MethodCallProc) (ClientData \fIclientData\fR, Tcl_Interp *\fIinterp\fR,
-	Tcl_ObjectContext \fIobjectContext\fR, int \fIobjc\fR, Tcl_Obj *const *\fIobjv\fR);
+typedef int (*\fBTcl_MethodCallProc\fR) (
+        ClientData \fIclientData\fR, Tcl_Interp *\fIinterp\fR,
+        Tcl_ObjectContext \fIobjectContext\fR, int \fIobjc\fR,
+        Tcl_Obj *const *\fIobjv\fR);
 .CE
+.PP
 The \fIclientData\fR argument to a Tcl_MethodCallProc is the value that was
 given when the method was created, the \fIinterp\fR is a place in which to
 execute scripts and access variables as well as being where to put the result
@@ -157,26 +176,29 @@ of the method, and the \fIobjc\fR and \fIobjv\fR fields give the parameter
 objects to the method. The calling context of the method can be discovered
 through the \fIobjectContext\fR argument, and the return value from a
 Tcl_MethodCallProc is any Tcl return code (e.g. TCL_OK, TCL_ERROR).
+.SS "TCL_METHODDELETEPROC FUNCTION SIGNATURE"
 .PP
-The \fIdeleteProc\fR field gives a function that is used to delete a
-particular method, and is called when the method is replaced or removed; if
-the field is NULL, it is assumed that the method's \fIclientData\fR needs no
-special action to delete. The type signature of the \fIdeleteProc\fR field is:
+Functions matching this signature are used when a method is deleted, whether
+through a new method being created or because the object or class is deleted.
+.PP
 .CS
-typedef void (*Tcl_MethodDeleteProc) (ClientData \fIclientData\fR);
+typedef void (*\fBTcl_MethodDeleteProc\fR) (
+        ClientData \fIclientData\fR);
 .CE
+.PP
 The \fIclientData\fR argument to a Tcl_MethodDeleteProc will be the same as
 the value passed to the \fIclientData\fR argument to \fBTcl_NewMethod\fR or
 \fBTcl_NewClassMethod\fR when the method was created.
+.SS "TCL_METHODCLONEPROC FUNCTION SIGNATURE"
 .PP
-The \fIcloneProc\fR field is either a function that is used to copy a method's
-\fIclientData\fR (as part of \fBTcl_CopyObjectInstance\fR) or NULL to indicate
-that the \fIclientData\fR can just be copied directly. The type signature of
-the \fIcloneProc\fR field is:
+Functions matching this signature are used to copy a method when the object or
+class is copied using \fBTcl_CopyObjectInstance\fR (or \fBoo::copy\fR).
+.PP
 .CS
-typedef int (*Tcl_MethodCloneProc)(ClientData \fIoldClientData\fR,
-        ClientData *\fInewClientData\fR);
+typedef int (*\fBTcl_MethodCloneProc\fR) (
+        ClientData \fIoldClientData\fR, ClientData *\fInewClientData\fR);
 .CE
+.PP
 The \fIoldClientData\fR field to a Tcl_MethodCloneProc gives the value from
 the method being copied from, and the \fInewClientData\fR field will point to
 a variable in which to write the value for the method being copied to. The
