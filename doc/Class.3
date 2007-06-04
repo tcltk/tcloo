@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: Class.3,v 1.3 2007/06/03 22:48:23 dkf Exp $
+'\" RCS: @(#) $Id: Class.3,v 1.4 2007/06/04 14:52:22 dkf Exp $
 '\"
 .so man.macros
 .TH Tcl_Class 3 0.1 TclOO "TclOO Library Functions"
@@ -50,7 +50,7 @@ ClientData
 .sp
 \fBTcl_ClassSetMetadata\fR(\fIclass, metaTypePtr, metadata\fR)
 .SH ARGUMENTS
-.AS "const Tcl_ObjectMetadataType" metaTypePtr in/out
+.AS "Tcl_ObjectMetadataType" metaTypePtr in/out
 .AP Tcl_Interp *interp in/out
 Interpreter providing the context for looking up or creating an object, and
 into whose result error messages will be written on failure.
@@ -70,7 +70,7 @@ The arguments to the command to create the instance of the class.
 .AP int skip in
 The number of arguments at the start of the argument array, \fIobjv\fR, that
 are not arguments to any constructors.
-.AP "const Tcl_ObjectMetadataType" *metaTypePtr in
+.AP "Tcl_ObjectMetadataType" *metaTypePtr in
 The type of \fImetadata\fR being set with \fBTcl_ClassSetMetadata\fR or
 retrieved with \fBTcl_ClassGetMetadata\fR.
 .AP ClientData metadata in
@@ -122,37 +122,55 @@ metadata is removed if it was attached, and the results of
 \fBTcl_ObjectGetMetadata\fR and \fBTcl_ClassGetMetadata\fR are NULL if the
 given type of metadata was not attached. It is not an error to request or
 remove a piece of metadata that was not attached.
+.SS "TCL_OBJECTMETADATATYPE STRUCTURE"
 .PP
 The contents of the Tcl_ObjectMetadataType structure are as follows:
+.PP
 .CS
-typedef struct {
-        int \fIversion\fR;
-        const char *\fIname\fR;
-        Tcl_ObjectMetadataDeleteProc \fIdeleteProc\fR;
-        Tcl_ObjectMetadataCloneProc \fIcloneProc\fR;
-} Tcl_ObjectMetadataType;
+typedef const struct {
+    int \fIversion\fR;
+    const char *\fIname\fR;
+    Tcl_ObjectMetadataDeleteProc \fIdeleteProc\fR;
+    Tcl_ObjectMetadataCloneProc \fIcloneProc\fR;
+} \fBTcl_ObjectMetadataType\fR;
 .CE
+.PP
 The \fIversion\fR field allows for future expansion of the structure, and
 should always be declared equal to TCL_OO_METADATA_VERSION_CURRENT. The
 \fIname\fR field provides a human-readable name for the type, and is reserved
 for debugging.
 .PP
-The \fIdeleteProc\fR field gives a function that is used to delete a
-particular piece of metadata, and is called when the attached metadata is
-replaced or removed; the field must not be NULL.
-.CS
-typedef void (*Tcl_ObjectMetadataDeleteProc) (ClientData \fImetadata\fR);
-.CE
-The \fImetadata\fR argument gives the address of the metadata to be
-deleted.
+The \fIdeleteProc\fR field gives a function of type
+Tcl_ObjectMetadataDeleteProc that is used to delete a particular piece of
+metadata, and is called when the attached metadata is replaced or removed; the
+field must not be NULL.
 .PP
 The \fIcloneProc\fR field gives a function that is used to copy a piece of
 metadata (used when a copy of an object is created using
 \fBTcl_CopyObjectInstance\fR); if NULL, the metadata will not be cloned at all
 to the copy.
+.SS "TCL_OBJECTMETADATADELETEPROC FUNCTION SIGNATURE"
+.PP
+Functions matching this signature are used to delete metadata associated with
+a class or object.
+.PP
 .CS
-typedef ClientData (*Tcl_ObjectMetadataCloneProc) (ClientData \fImetadata\fR);
+typedef void (*\fBTcl_ObjectMetadataDeleteProc\fR) (
+        ClientData \fImetadata\fR);
 .CE
+.PP
+The \fImetadata\fR argument gives the address of the metadata to be
+deleted.
+.SS "TCL_OBJECTMETADATACLONEPROC FUNCTION SIGNATURE"
+.PP
+Functions matching this signature are used to create copies of metadata
+associated with a class or object.
+.PP
+.CS
+typedef ClientData (*\fBTcl_ObjectMetadataCloneProc\fR) (
+        ClientData \fImetadata\fR);
+.CE
+.PP
 The \fImetadata\fR argument gives the address of the metadata to be cloned,
 and the result of the function must either be the cloned metadata or NULL if
 the metadata is to not be cloned.
