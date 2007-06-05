@@ -1,4 +1,11 @@
+#
+# @configure_input@
+#
+
+#========================================================================
 # All these assignments are substituted by configure
+#========================================================================
+
 PKG_OBJECTS=@PKG_OBJECTS@
 PKG_STUB_OBJECTS=@PKG_STUB_OBJECTS@
 PKG_HEADERS=@PKG_HEADERS@
@@ -10,6 +17,7 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
+mandir=@mandir@
 INSTALL=@INSTALL@
 INSTALL_PROGRAM=@INSTALL_PROGRAM@
 INSTALL_DATA=@INSTALL_DATA@
@@ -53,7 +61,10 @@ TCLSH_ENV=TCL_LIBRARY="`$(CYGPATH) $(TCL_SRC_DIR)/library`" \
 	  PATH="$(EXTRA_PATH):$(PATH)" \
 	  TCLLIBPATH="$(top_builddir)"
 
+#========================================================================
 # None of these assignments are substituted by configure
+#========================================================================
+
 SRC_DIR=$(srcdir)
 BINARIES=$(PKG_LIB_FILE) $(PKG_STUB_LIB_FILE)
 DESTDIR=
@@ -76,14 +87,26 @@ RCFLAGS=--define PACKAGE_NAME='\"$(PACKAGE_NAME)\"' \
 	--define PACKAGE_VERSION='\"$(PACKAGE_VERSION)\"'
 RES=res.o
 
+#========================================================================
 # This is something that if found by executing a Tcl script
+#========================================================================
+
 PLATFORM:=$(shell echo 'package require platform;puts [platform::generic]' | $(TCLSH))
+
+#========================================================================
+# Master rules
+#========================================================================
 
 all: package libraries
 package: $(PKG_LIB_FILE) pkgIndex.tcl
 libraries: $(PKG_STUB_LIB_FILE)
+install: install-package install-libraries install-headers installl-doc
+kit: sdx_valid $(PKG_KIT)
 
-install: install-package install-libraries install-headers
+#========================================================================
+# Basic installation rules
+#========================================================================
+
 install-package:
 	@mkdir -p $(DESTDIR)$(pkglibdir)
 	$(INSTALL_PROGRAM) $(PKG_LIB_FILE) $(DESTDIR)$(pkglibdir)/$(PKG_LIB_FILE)
@@ -106,8 +129,37 @@ install-libraries:
 	@mkdir -p $(DESTDIR)$(libdir)
 	$(INSTALL_PROGRAM) $(PKG_STUB_LIB_FILE) $(DESTDIR)$(libdir)
 
+#========================================================================
+# Install documentation. Unix manpages should go in the $(mandir) directory.
+#========================================================================
+
+install-doc: doc
+	@echo "Installing documentation in $(DESTDIR)$(mandir)"
+	@mkdir -p $(DESTDIR)$(mandir)/mann
+	@list='$(SRC_DIR)/doc/*.n'; for i in $$list; do \
+	    echo "Installing $$i"; \
+	    rm -f $(DESTDIR)$(mandir)/mann/`basename $$i`; \
+	    $(INSTALL_DATA) $$i $(DESTDIR)$(mandir)/mann ; \
+	@mkdir -p $(DESTDIR)$(mandir)/man3
+	@list='$(SRC_DIR)/doc/*.3'; for i in $$list; do \
+	    echo "Installing $$i"; \
+	    rm -f $(DESTDIR)$(mandir)/man3/`basename $$i`; \
+	    $(INSTALL_DATA) $$i $(DESTDIR)$(mandir)/man3 ; \
+	done
+
+# A do-nothing target at the moment
+doc:
+
+#========================================================================
+# Run the test suite for the package.
+#========================================================================
+
 test: package libraries
 	$(TCLSH) `$(CYGPATH) $(SRC_DIR)/tests/all.tcl` $(TESTLOAD) $(TESTFLAGS)
+
+#========================================================================
+# The rules for actually doing the build of the package.
+#========================================================================
 
 $(PKG_LIB_FILE): $(PKG_OBJECTS)
 	-rm -f $(PKG_LIB_FILE)
@@ -132,8 +184,10 @@ Makefile: $(SRC_DIR)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \
 	  && CONFIG_FILES=$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
+#========================================================================
 # Build a starkit - this is experimental!
-kit: sdx_valid $(PKG_KIT)
+#========================================================================
+
 sdx_valid:
 	@test "$(SDX)" != "none" || ( echo "Cannot build kit; no sdx!"; false )
 $(PKG_KIT): $(PKG_LIB_FILE)
@@ -148,6 +202,10 @@ $(PKG_KIT): $(PKG_LIB_FILE)
 	$(SDX) wrap $(PKG_KIT)
 	-@rm -rf $(PKG_KIT_ROOT).vfs $(PKG_KIT_ROOT).bat
 
+#========================================================================
+# How to clean up after a build.
+#========================================================================
+
 clean:
 	-test -z "$(BINARIES)" || rm -f $(BINARIES)
 	-rm -f *.$(OBJEXT) core *.core
@@ -157,5 +215,52 @@ distclean: clean
 	-rm -f $(CONFIG_CLEAN_FILES)
 	-rm -f config.cache config.log config.status
 
+#========================================================================
+# Distribution creation (FROM sampleextension)
+# You may need to tweak this target to make it work correctly.
+#========================================================================
+
+#COMPRESS	= tar cvf $(PKG_DIR).tar $(PKG_DIR); compress $(PKG_DIR).tar
+COMPRESS	= gtar zcvf $(PKG_DIR).tar.gz $(PKG_DIR)
+DIST_ROOT	= /tmp/dist
+DIST_DIR	= $(DIST_ROOT)/$(PKG_DIR)
+
+dist-clean:
+	rm -rf $(DIST_DIR) $(DIST_ROOT)/$(PKG_DIR).tar.*
+
+dist: dist-clean
+	mkdir -p $(DIST_DIR)
+	cp -p $(srcdir)/ChangeLog $(srcdir)/README* $(srcdir)/license* \
+		$(srcdir)/aclocal.m4 $(srcdir)/configure $(srcdir)/*.in \
+		$(DIST_DIR)/
+	chmod 664 $(DIST_DIR)/Makefile.in $(DIST_DIR)/aclocal.m4
+	chmod 775 $(DIST_DIR)/configure $(DIST_DIR)/configure.in
+
+	for i in $(srcdir)/*.[ch]; do \
+	    if [ -f $$i ]; then \
+		cp -p $$i $(DIST_DIR)/ ; \
+	    fi; \
+	done;
+
+	mkdir $(DIST_DIR)/tclconfig
+	cp $(srcdir)/tclconfig/install-sh $(srcdir)/tclconfig/tcl.m4 \
+		$(DIST_DIR)/tclconfig/
+	chmod 664 $(DIST_DIR)/tclconfig/tcl.m4
+	chmod +x $(DIST_DIR)/tclconfig/install-sh
+
+	list='demos doc generic library mac tests unix win'; \
+	for p in $$list; do \
+	    if test -d $(srcdir)/$$p ; then \
+		mkdir $(DIST_DIR)/$$p; \
+		cp -p $(srcdir)/$$p/*.* $(DIST_DIR)/$$p/; \
+	    fi; \
+	done
+
+	(cd $(DIST_ROOT); $(COMPRESS);)
+
+#========================================================================
+# Magic declarations to make.
+#========================================================================
+
 .SUFFIXES: .c .$(OBJEXT) .rc .$(RES)
-.PHONY: all package clean depend distclean doc install libraries test kit sdx_valid
+.PHONY: all package clean depend distclean doc install libraries test kit sdx_valid doc dist dist-clean
