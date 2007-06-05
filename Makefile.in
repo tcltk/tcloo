@@ -111,11 +111,11 @@ install-package:
 	@mkdir -p $(DESTDIR)$(pkglibdir)
 	$(INSTALL_PROGRAM) $(PKG_LIB_FILE) $(DESTDIR)$(pkglibdir)/$(PKG_LIB_FILE)
 	$(INSTALL_DATA) pkgIndex.tcl $(DESTDIR)$(pkglibdir)/pkgIndex.tcl
-	for p in $(SRC_DIR)/library/*.tcl ; do \
-	    destp=`basename $$p`; \
-	    echo " Install $$destp $(DESTDIR)$(pkglibdir)/$$destp"; \
-	    $(INSTALL_DATA) $$p $(DESTDIR)$(pkglibdir)/$$destp; \
-	done
+#	for p in $(SRC_DIR)/library/*.tcl ; do \
+#	    destp=`basename $$p`; \
+#	    echo " Install $$destp $(DESTDIR)$(pkglibdir)/$$destp"; \
+#	    $(INSTALL_DATA) $$p $(DESTDIR)$(pkglibdir)/$$destp; \
+#	done
 install-headers:
 	@echo "Installing header files in $(DESTDIR)$(includedir)"
 	@mkdir -p $(DESTDIR)$(includedir)
