@@ -86,6 +86,7 @@ RCFLAGS=--define PACKAGE_NAME='\"$(PACKAGE_NAME)\"' \
 	--define PKG_LIB_FILE='\"$(PKG_LIB_FILE)\"' \
 	--define PACKAGE_VERSION='\"$(PACKAGE_VERSION)\"'
 RES=res.o
+ITERATIONS=1000
 
 #========================================================================
 # This is something that if found by executing a Tcl script
@@ -156,6 +157,17 @@ doc:
 
 test: package libraries
 	$(TCLSH) `$(CYGPATH) $(SRC_DIR)/tests/all.tcl` $(TESTLOAD) $(TESTFLAGS)
+
+#========================================================================
+# Run the benchmarks for the package.
+#========================================================================
+
+benchmarks: package libraries
+	@echo Benchmark Iterations = $(ITERATIONS)
+	@list='$(SRC_DIR)/benchmarks/*.tcl'; for i in $$list; do \
+	    echo "Benchmarking $$i"; \
+	    time $(TCLSH) `$(CYGPATH) $$i` $(ITERATIONS); \
+	done
 
 #========================================================================
 # The rules for actually doing the build of the package.
@@ -263,4 +275,4 @@ dist: dist-clean
 #========================================================================
 
 .SUFFIXES: .c .$(OBJEXT) .rc .$(RES)
-.PHONY: all package clean depend distclean doc install libraries test kit sdx_valid doc dist dist-clean
+.PHONY: all package clean depend distclean doc install libraries test kit sdx_valid doc dist dist-clean benchmarks
