@@ -2,7 +2,7 @@ package require TclOO
 
 oo::class create Toggle {
     constructor initState {
-	variable state $initState
+	variable state $initState self [self]
     }
     method value {} {
 	variable state
@@ -10,8 +10,9 @@ oo::class create Toggle {
     }
     method activate {} {
 	variable state
+	variable self
 	set state [expr {!$state}]
-	#return [self]
+	return $self
     }
 }
 oo::class create NthToggle {
@@ -23,11 +24,12 @@ oo::class create NthToggle {
     method activate {} {
 	variable counter
 	variable countMax
+	variable self
 	if {[incr counter] >= $countMax} {
 	    next
 	    set counter 0
 	}
-	#return [self]
+	return $self
     }
 }
 
