@@ -1,5 +1,8 @@
 2007-06-06  Donal K. Fellows  <dkf@users.sf.net>
 
+	* Makefile.in (shell): Added target for convenience of interactive
+	testing.
+
 	* Makefile.in (benchmarks): Added some benchmarking scripts, based off
 	* benchmarks/*.tcl:	    those in http://dada.perl.it/shootout/
 
