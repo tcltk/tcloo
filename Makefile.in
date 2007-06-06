@@ -167,7 +167,7 @@ benchmarks: package libraries
 	done
 
 shell: package libraries
-	$(TCLSH)
+	$(TCLSH) $(SCRIPT)
 
 #========================================================================
 # The rules for actually doing the build of the package.
