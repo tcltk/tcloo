@@ -1,5 +1,8 @@
 2007-06-06  Donal K. Fellows  <dkf@users.sf.net>
 
+	* Makefile.in (benchmarks): Added some benchmarking scripts, based off
+	* benchmarks/*.tcl:	    those in http://dada.perl.it/shootout/
+
 	* doc/next.n: Substantial enhancements, including a demonstration of
 	how a mixin and a filter can build a simple bolt-on method result
 	memoization cache.
