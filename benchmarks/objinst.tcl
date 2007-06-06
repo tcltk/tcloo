@@ -2,57 +2,57 @@ package require TclOO
 
 oo::class create Toggle {
     constructor initState {
-	my variable state
-	set state $initState
+	variable state $initState
     }
     method value {} {
-	my variable state
-	return [expr {$state ? "true" : "false"}]
+	variable state
+	return $state
     }
     method activate {} {
-	my variable state
+	variable state
 	set state [expr {!$state}]
-	return [self]
+	#return [self]
     }
 }
 oo::class create NthToggle {
     superclass Toggle
     constructor {initState maxCounter} {
 	next $initState
-	my variable countMax counter
-	set countMax $maxCounter
-	set counter 0
+	variable countMax $maxCounter counter 0
     }
     method activate {} {
-	my variable counter countMax
-	incr counter
-	if {$counter >= $countMax} {
+	variable counter
+	variable countMax
+	if {[incr counter] >= $countMax} {
 	    next
 	    set counter 0
 	}
-	return [self]
+	#return [self]
     }
 }
 
 proc main {n args} {
+    set tf {false true}
     incr n 0 ;# sanity check
 
-    Toggle create toggle1 true
+    Toggle create toggle1 1
     for {set i 0} {$i < 5} {incr i} {
-	puts [[toggle1 activate] value]
+	toggle1 activate
+	puts [lindex $tf [toggle1 value]]
     }
     for {set i 0} {$i < $n} {incr i} {
-	[Toggle new true] destroy
+	[Toggle new 1] destroy
     }
 
     puts ""
 
-    NthToggle create ntoggle1 true 3
+    NthToggle create ntoggle1 1 3
     for {set i 0} {$i < 8} {incr i} {
-	puts [[ntoggle1 activate] value]
+	ntoggle1 activate
+	puts [lindex $tf [ntoggle1 value]]
     }
     for {set i 0} {$i < $n} {incr i} {
-	[NthToggle new true 3] destroy
+	[NthToggle new 1 3] destroy
     }
 }
 
