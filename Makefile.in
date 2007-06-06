@@ -152,15 +152,12 @@ install-doc: doc
 doc:
 
 #========================================================================
-# Run the test suite for the package.
+# Run the test suite or benchmarks for the package, or just start a shell
+# primed to load the package.
 #========================================================================
 
 test: package libraries
 	$(TCLSH) `$(CYGPATH) $(SRC_DIR)/tests/all.tcl` $(TESTLOAD) $(TESTFLAGS)
-
-#========================================================================
-# Run the benchmarks for the package.
-#========================================================================
 
 benchmarks: package libraries
 	@echo Benchmark Iterations = $(ITERATIONS)
@@ -168,6 +165,9 @@ benchmarks: package libraries
 	    echo "Benchmarking $$i"; \
 	    time $(TCLSH) `$(CYGPATH) $$i` $(ITERATIONS); \
 	done
+
+shell: package libraries
+	$(TCLSH)
 
 #========================================================================
 # The rules for actually doing the build of the package.
@@ -275,4 +275,4 @@ dist: dist-clean
 #========================================================================
 
 .SUFFIXES: .c .$(OBJEXT) .rc .$(RES)
-.PHONY: all package clean depend distclean doc install libraries test kit sdx_valid doc dist dist-clean benchmarks
+.PHONY: all package clean depend distclean doc install libraries test kit sdx_valid doc dist dist-clean benchmarks shell
