@@ -32,7 +32,6 @@ oo::class create NthToggle {
 }
 
 proc main {n args} {
-    set tf {false true}
     incr n 0 ;# sanity check
 
     set val 1
@@ -40,14 +39,14 @@ proc main {n args} {
     for {set i 0} {$i < $n} {incr i} {
 	set val [[toggle activate] value]
     }
-    puts [lindex $tf $val]
+    puts [lindex {false true} $val]
 
     set val 1
     NthToggle create ntoggle 1 3
     for {set i 0} {$i < $n} {incr i} {
 	set val [[ntoggle activate] value]
     }
-    puts [lindex $tf $val]
+    puts [lindex {false true} $val]
 }
 
 main {*}$argv
