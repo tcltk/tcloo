@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.2 2007/05/18 16:47:24 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.3 2007/06/07 09:58:52 dkf Exp $
 
 lappend auto_path .
 package require TclOO
@@ -380,6 +380,20 @@ test oo-7.7 {OO: inheritance and errorInfo} -setup {
     (object "::c" method "foo" line 1)
     invoked from within
 "c foo"}}
+test oo-7.8 {OO: next at the end of the method chain} {
+    oo::class create foo {
+	method bar {} {lappend ::result [next] foo}
+    }
+    oo::class create foo2 {
+	superclass foo
+	method bar {} {lappend ::result [next] foo2}
+    }
+    set o [foo2 new]
+    set ::result ""
+    catch {$o bar}
+    foo destroy
+    return $result
+} {{} foo {{} foo} foo2}
 
 test oo-8.1 {OO: global must work in methods} {
     oo::object create foo
