@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.7 2007/06/07 09:02:23 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.8 2007/06/07 09:58:52 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3153,14 +3153,18 @@ NextObjCmd(
     contextPtr = framePtr->clientData;
 
     index = contextPtr->index;
-    skip = contextPtr->skip;
     if (index+1 >= contextPtr->numCallChain) {
-	Tcl_AppendResult(interp, "no superclass ",
-		(contextPtr->flags & CONSTRUCTOR ? "constructor" :
-		(contextPtr->flags & DESTRUCTOR ? "destructor" : "method")),
-		" implementation", NULL);
-	return TCL_ERROR;
+	/*
+	 * We're at the end of the chain; return the empty string (the most
+	 * useful thing we can do, since it turns out that it's not always
+	 * trivial to detect in source code whether there is a parent
+	 * implementation, what with multiple-inheritance...)
+	 */
+
+	return TCL_OK;
     }
+
+    skip = contextPtr->skip;
 
     /*
      * Advance to the next method implementation in the chain in the method

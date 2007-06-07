@@ -1,5 +1,8 @@
 2007-06-07  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclOO.c (NextObjCmd): Make this behave consistently with
+	documentation and what is most useful in practice.
+
 	* generic/tclOO.c (TclOOObjectName, SelfObjCmd, ObjectRenamedTrace):
 	Added code to manage a cache of the command name for the [self object]
 	command. It seems that this was previously a very slow command. In so
