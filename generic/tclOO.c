@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.8 2007/06/07 09:58:52 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.9 2007/06/07 22:00:50 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -681,13 +681,13 @@ ObjectNamespaceDeleted(
     CallContext *contextPtr;
     Method *mPtr;
     Tcl_Obj *filterObj;
-    int i;
+    int i, preserved = !(oPtr->flags & OBJECT_DELETED);
 
     /*
      * Instruct everyone to no longer use any allocated fields of the object.
      */
 
-    if (!(oPtr->flags & OBJECT_DELETED)) {
+    if (preserved) {
 	Tcl_Preserve(oPtr);
 	if (oPtr->classPtr != NULL) {
 	    ReleaseClassContents(NULL, oPtr);
@@ -708,14 +708,14 @@ ObjectNamespaceDeleted(
 	TclOORemoveFromInstances(oPtr, mixinPtr);
     }
     if (i) {
-	ckfree((char *)oPtr->mixins.list);
+	ckfree((char *) oPtr->mixins.list);
     }
 
     FOREACH(filterObj, oPtr->filters) {
 	Tcl_DecrRefCount(filterObj);
     }
     if (i) {
-	ckfree((char *)oPtr->filters.list);
+	ckfree((char *) oPtr->filters.list);
     }
 
     FOREACH_HASH_VALUE(mPtr, &oPtr->methods) {
@@ -759,7 +759,27 @@ ObjectNamespaceDeleted(
     if (clsPtr != NULL && !(oPtr->flags & ROOT_OBJECT)) {
 	Class *superPtr, *mixinPtr;
 
+	if (clsPtr->metadataPtr != NULL) {
+	    FOREACH_HASH_DECLS;
+	    Tcl_ObjectMetadataType *metadataTypePtr;
+	    ClientData value;
+
+	    FOREACH_HASH(metadataTypePtr, value, clsPtr->metadataPtr) {
+		metadataTypePtr->deleteProc(value);
+	    }
+	    Tcl_DeleteHashTable(clsPtr->metadataPtr);
+	    ckfree((char *) clsPtr->metadataPtr);
+	    clsPtr->metadataPtr = NULL;
+	}
+
 	clsPtr->flags |= OBJECT_DELETED;
+	FOREACH(filterObj, clsPtr->filters) {
+	    Tcl_DecrRefCount(filterObj);
+	}
+	if (i) {
+	    ckfree((char *) clsPtr->filters.list);
+	    clsPtr->filters.num = 0;
+	}
 	FOREACH(mixinPtr, clsPtr->mixins) {
 	    if (!(mixinPtr->flags & OBJECT_DELETED)) {
 		TclOORemoveFromSubclasses(clsPtr, mixinPtr);
@@ -808,11 +828,12 @@ ObjectNamespaceDeleted(
      * Delete the object structure itself.
      */
 
-    if (!(oPtr->flags & OBJECT_DELETED)) {
-	Tcl_EventuallyFree(oPtr, TCL_DYNAMIC);
+    Tcl_EventuallyFree(oPtr, TCL_DYNAMIC);
+    if (preserved) {
+	if (clsPtr) {
+	    Tcl_Release(clsPtr);
+	}
 	Tcl_Release(oPtr);
-    } else {
-	Tcl_EventuallyFree(oPtr, TCL_DYNAMIC);
     }
 }
 
