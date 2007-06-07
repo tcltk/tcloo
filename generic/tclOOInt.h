@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.2 2007/05/18 16:47:24 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.3 2007/06/07 09:02:23 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -112,6 +112,7 @@ typedef struct Object {
 				 * of each piece of attached metadata. This
 				 * field starts out as NULL and is only
 				 * allocated if metadata is attached. */
+    Tcl_Obj *cachedNameObj;	/* Cache of the name of the object. */
     Tcl_HashTable publicContextCache;	/* Place to keep unused contexts. */
     Tcl_HashTable privateContextCache;	/* Place to keep unused contexts. */
 } Object;
@@ -330,6 +331,7 @@ MODULE_SCOPE void	TclOOAddToMixinSubs(Class *subPtr, Class *mixinPtr);
 MODULE_SCOPE Proc *	TclOOGetProcFromMethod(Method *mPtr);
 MODULE_SCOPE Tcl_Obj *	TclOOGetFwdFromMethod(Method *mPtr);
 MODULE_SCOPE int	TclOOIsReachable(Class *targetPtr, Class *startPtr);
+MODULE_SCOPE Tcl_Obj *	TclOOObjectName(Tcl_Interp *interp, Object *oPtr);
 MODULE_SCOPE void	TclOORemoveFromInstances(Object *oPtr, Class *clsPtr);
 MODULE_SCOPE void	TclOORemoveFromSubclasses(Class *subPtr,
 			    Class *superPtr);

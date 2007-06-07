@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.1 2007/05/18 13:17:15 dkf Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.2 2007/06/07 09:02:23 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -204,8 +204,8 @@ InfoObjectClassCmd(
     }
 
     if (objc == 2) {
-	Tcl_GetCommandFullName(interp, oPtr->selfCls->thisPtr->command,
-		Tcl_GetObjResult(interp));
+	Tcl_SetObjResult(interp,
+		TclOOObjectName(interp, oPtr->selfCls->thisPtr));
 	return TCL_OK;
     } else {
 	Object *o2Ptr;
@@ -542,11 +542,8 @@ InfoObjectMixinsCmd(
     }
 
     FOREACH(mixinPtr, oPtr->mixins) {
-	Tcl_Obj *tmpObj;
-
-	tmpObj = Tcl_NewObj();
-	Tcl_GetCommandFullName(interp, mixinPtr->thisPtr->command, tmpObj);
-	Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), tmpObj);
+	Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
+		TclOOObjectName(interp, mixinPtr->thisPtr));
     }
     return TCL_OK;
 }
@@ -873,12 +870,9 @@ InfoClassInstancesCmd(
     }
 
     FOREACH(oPtr, clsPtr->instances) {
-	Tcl_Obj *tmpObj;
+	Tcl_Obj *tmpObj = TclOOObjectName(interp, oPtr);
 
-	tmpObj = Tcl_NewObj();
-	Tcl_GetCommandFullName(interp, oPtr->command, tmpObj);
 	if (pattern && !Tcl_StringMatch(TclGetString(tmpObj), pattern)) {
-	    Tcl_DecrRefCount(tmpObj);
 	    continue;
 	}
 	Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), tmpObj);
@@ -964,11 +958,8 @@ InfoClassMixinsCmd(
     clsPtr = oPtr->classPtr;
 
     FOREACH(mixinPtr, clsPtr->mixins) {
-	Tcl_Obj *tmpObj;
-
-	tmpObj = Tcl_NewObj();
-	Tcl_GetCommandFullName(interp, mixinPtr->thisPtr->command, tmpObj);
-	Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), tmpObj);
+	Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
+		TclOOObjectName(interp, mixinPtr->thisPtr));
     }
     return TCL_OK;
 }
@@ -1004,12 +995,9 @@ InfoClassSubsCmd(
     }
 
     FOREACH(subclassPtr, clsPtr->subclasses) {
-	Tcl_Obj *tmpObj;
+	Tcl_Obj *tmpObj = TclOOObjectName(interp, subclassPtr->thisPtr);
 
-	tmpObj = Tcl_NewObj();
-	Tcl_GetCommandFullName(interp, subclassPtr->thisPtr->command, tmpObj);
 	if (pattern && !Tcl_StringMatch(TclGetString(tmpObj), pattern)) {
-	    Tcl_DecrRefCount(tmpObj);
 	    continue;
 	}
 	Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), tmpObj);
@@ -1044,11 +1032,8 @@ InfoClassSupersCmd(
     clsPtr = oPtr->classPtr;
 
     FOREACH(superPtr, clsPtr->superclasses) {
-	Tcl_Obj *tmpObj;
-
-	tmpObj = Tcl_NewObj();
-	Tcl_GetCommandFullName(interp, superPtr->thisPtr->command, tmpObj);
-	Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), tmpObj);
+	Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
+		TclOOObjectName(interp, superPtr->thisPtr));
     }
     return TCL_OK;
 }
