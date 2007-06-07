@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.9 2007/06/07 22:00:50 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.10 2007/06/07 23:12:32 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -534,20 +534,22 @@ ObjectRenamedTrace(
 	}
     }
 
+    /*
+     * OK, the destructor's been run. Time to splat the class data (if any)
+     * and nuke the namespace (which triggers the final crushing of the object
+     * structure itself).
+     */
+
     clsPtr = oPtr->classPtr;
     if (clsPtr != NULL) {
+	Tcl_Preserve(clsPtr);
 	ReleaseClassContents(interp, oPtr);
     }
-
     Tcl_DeleteNamespace(oPtr->namespacePtr);
     if (clsPtr) {
 	Tcl_Release(clsPtr);
     }
     Tcl_Release(oPtr);
-
-    /*
-     * What else to do to delete an object?
-     */
 }
 
 /*
@@ -567,11 +569,8 @@ ReleaseClassContents(
     Object *oPtr)		/* The object representing the class. */
 {
     int i, n;
-    Class *clsPtr, **list;
+    Class *clsPtr = oPtr->classPtr, **list;
     Object **insts;
-
-    clsPtr = oPtr->classPtr;
-    Tcl_Preserve(clsPtr);
 
     /*
      * Must empty list before processing the members of the list so that
@@ -677,7 +676,7 @@ ObjectNamespaceDeleted(
 {
     Object *oPtr = clientData;
     FOREACH_HASH_DECLS;
-    Class *clsPtr, *mixinPtr;
+    Class *clsPtr = oPtr->classPtr, *mixinPtr;
     CallContext *contextPtr;
     Method *mPtr;
     Tcl_Obj *filterObj;
@@ -689,7 +688,8 @@ ObjectNamespaceDeleted(
 
     if (preserved) {
 	Tcl_Preserve(oPtr);
-	if (oPtr->classPtr != NULL) {
+	if (clsPtr != NULL) {
+	    Tcl_Preserve(clsPtr);
 	    ReleaseClassContents(NULL, oPtr);
 	}
     }
@@ -755,7 +755,6 @@ ObjectNamespaceDeleted(
 	oPtr->metadataPtr = NULL;
     }
 
-    clsPtr = oPtr->classPtr;
     if (clsPtr != NULL && !(oPtr->flags & ROOT_OBJECT)) {
 	Class *superPtr, *mixinPtr;
 
