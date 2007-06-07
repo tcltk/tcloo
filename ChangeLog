@@ -1,5 +1,9 @@
 2007-06-07  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclOO.c (ObjectNamespaceDeleted): Try to make the code leak
+	less. This doesn't seem to be a complete fix of [Bug 1732364] but is
+	covering at least one case that might have been hit...
+
 	* generic/tclOO.c (NextObjCmd): Make this behave consistently with
 	documentation and what is most useful in practice.
 
