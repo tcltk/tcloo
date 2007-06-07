@@ -1,3 +1,10 @@
+2007-06-07  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (TclOOObjectName, SelfObjCmd, ObjectRenamedTrace):
+	Added code to manage a cache of the command name for the [self object]
+	command. It seems that this was previously a very slow command. In so
+	doing, allow simplification of a lot of code.
+
 2007-06-06  Donal K. Fellows  <dkf@users.sf.net>
 
 	* Makefile.in (shell): Added target for convenience of interactive

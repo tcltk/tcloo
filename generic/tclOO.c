@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.6 2007/05/30 23:12:56 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.7 2007/06/07 09:02:23 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -86,7 +86,7 @@ static int		ObjectCmd(Object *oPtr, Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv, int publicOnly,
 			    Tcl_HashTable *cachePtr);
 static void		ObjectNamespaceDeleted(ClientData clientData);
-static void		ObjectDeletedTrace(ClientData clientData,
+static void		ObjectRenamedTrace(ClientData clientData,
 			    Tcl_Interp *interp, const char *oldName,
 			    const char *newName, int flags);
 static void		ReleaseClassContents(Tcl_Interp *interp,Object *oPtr);
@@ -461,11 +461,9 @@ AllocObject(
 	    PrivateObjectCmd, oPtr, NULL);
     Tcl_DStringFree(&buffer);
 
-    cmdnameObj = Tcl_NewObj();
-    Tcl_GetCommandFullName(interp, oPtr->command, cmdnameObj);
+    cmdnameObj = TclOOObjectName(interp, oPtr);
     Tcl_TraceCommand(interp, TclGetString(cmdnameObj),
-	    TCL_TRACE_DELETE, ObjectDeletedTrace, oPtr);
-    Tcl_DecrRefCount(cmdnameObj);
+	    TCL_TRACE_RENAME|TCL_TRACE_DELETE, ObjectRenamedTrace, oPtr);
 
     return oPtr;
 }
@@ -473,7 +471,7 @@ AllocObject(
 /*
  * ----------------------------------------------------------------------
  *
- * ObjectDeletedTrace --
+ * ObjectRenamedTrace --
  *
  *	This callback is triggered when the object is deleted by any
  *	mechanism. It runs the destructors and arranges for the actual cleanup
@@ -484,7 +482,7 @@ AllocObject(
  */
 
 static void
-ObjectDeletedTrace(
+ObjectRenamedTrace(
     ClientData clientData,	/* The object being deleted. */
     Tcl_Interp *interp,		/* The interpreter containing the object. */
     const char *oldName,	/* What the object was (last) called. */
@@ -493,6 +491,25 @@ ObjectDeletedTrace(
 {
     Object *oPtr = clientData;
     Class *clsPtr;
+
+    /*
+     * If this is a rename and not a delete of the object, we just flush the
+     * cache of the object name.
+     */
+
+    if (flags & TCL_TRACE_RENAME) {
+	if (oPtr->cachedNameObj) {
+	    Tcl_DecrRefCount(oPtr->cachedNameObj);
+	    oPtr->cachedNameObj = NULL;
+	}
+	return;
+    }
+
+    /*
+     * Oh dear, the object really is being deleted. Handle this by running the
+     * destructors and deleting the object's namespace, which in turn causes
+     * the real object structures to be deleted.
+     */
 
     Tcl_Preserve(oPtr);
     oPtr->flags |= OBJECT_DELETED;
@@ -686,34 +703,44 @@ ObjectNamespaceDeleted(
     if (!(oPtr->flags & ROOT_OBJECT)) {
 	TclOORemoveFromInstances(oPtr, oPtr->selfCls);
     }
+
     FOREACH(mixinPtr, oPtr->mixins) {
 	TclOORemoveFromInstances(oPtr, mixinPtr);
     }
     if (i) {
 	ckfree((char *)oPtr->mixins.list);
     }
+
     FOREACH(filterObj, oPtr->filters) {
 	Tcl_DecrRefCount(filterObj);
     }
     if (i) {
 	ckfree((char *)oPtr->filters.list);
     }
+
     FOREACH_HASH_VALUE(mPtr, &oPtr->methods) {
 	TclOODeleteMethod(mPtr);
     }
     Tcl_DeleteHashTable(&oPtr->methods);
+
     FOREACH_HASH_VALUE(contextPtr, &oPtr->publicContextCache) {
 	if (contextPtr) {
 	    TclOODeleteContext(contextPtr);
 	}
     }
     Tcl_DeleteHashTable(&oPtr->publicContextCache);
+
     FOREACH_HASH_VALUE(contextPtr, &oPtr->privateContextCache) {
 	if (contextPtr) {
 	    TclOODeleteContext(contextPtr);
 	}
     }
     Tcl_DeleteHashTable(&oPtr->privateContextCache);
+
+    if (oPtr->cachedNameObj) {
+	Tcl_DecrRefCount(oPtr->cachedNameObj);
+	oPtr->cachedNameObj = NULL;
+    }
 
     if (oPtr->metadataPtr != NULL) {
 	FOREACH_HASH_DECLS;
@@ -2007,14 +2034,11 @@ RenderDeclarerName(
 {
     struct PNI *pni = clientData;
     Tcl_Object object = Tcl_MethodDeclarerObject(pni->method);
-    Tcl_Obj *namePtr;
 
     if (object == NULL) {
 	object = Tcl_GetClassAsObject(Tcl_MethodDeclarerClass(pni->method));
     }
-    namePtr = Tcl_NewObj();
-    Tcl_GetCommandFullName(pni->interp, Tcl_GetObjectCommand(object),namePtr);
-    return namePtr;
+    return TclOOObjectName(pni->interp, (Object *) object);
 }
 
 /*
@@ -2044,32 +2068,27 @@ MethodErrorHandler(
     int nameLen, objectNameLen;
     CallContext *contextPtr = ((Interp *) interp)->varFramePtr->clientData;
     Method *mPtr = contextPtr->callChain[contextPtr->index].mPtr;
-    Tcl_Obj *objectNameObj;
     const char *objectName, *kindName, *methodName =
 	    Tcl_GetStringFromObj(mPtr->namePtr, &nameLen);
-    Tcl_Command declarer;
+    Object *declarerPtr;
 
     if (mPtr->declaringObjectPtr != NULL) {
-	declarer = mPtr->declaringObjectPtr->command;
+	declarerPtr = mPtr->declaringObjectPtr;
 	kindName = "object";
     } else {
 	if (mPtr->declaringClassPtr == NULL) {
 	    Tcl_Panic("method not declared in class or object");
 	}
-	declarer = mPtr->declaringClassPtr->thisPtr->command;
+	declarerPtr = mPtr->declaringClassPtr->thisPtr;
 	kindName = "class";
     }
 
-    objectNameObj = Tcl_NewObj();
-    Tcl_GetCommandFullName(interp, declarer, objectNameObj);
-    objectName = Tcl_GetStringFromObj(objectNameObj, &objectNameLen);
-
+    objectName = Tcl_GetStringFromObj(TclOOObjectName(interp, declarerPtr),
+	    &objectNameLen);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (%s \"%.*s%s\" method \"%.*s%s\" line %d)",
 	    kindName, ELLIPSIFY(objectName, objectNameLen),
 	    ELLIPSIFY(methodName, nameLen), interp->errorLine));
-
-    Tcl_DecrRefCount(objectNameObj);
 }
 
 static void
@@ -2079,8 +2098,7 @@ ConstructorErrorHandler(
 {
     CallContext *contextPtr = ((Interp *) interp)->varFramePtr->clientData;
     Method *mPtr = contextPtr->callChain[contextPtr->index].mPtr;
-    Tcl_Command declarer;
-    Tcl_Obj *objectNameObj;
+    Object *declarerPtr;
     const char *objectName, *kindName;
     int objectNameLen;
 
@@ -2094,25 +2112,21 @@ ConstructorErrorHandler(
     }
 
     if (mPtr->declaringObjectPtr != NULL) {
-	declarer = mPtr->declaringObjectPtr->command;
+	declarerPtr = mPtr->declaringObjectPtr;
 	kindName = "object";
     } else {
 	if (mPtr->declaringClassPtr == NULL) {
 	    Tcl_Panic("method not declared in class or object");
 	}
-	declarer = mPtr->declaringClassPtr->thisPtr->command;
+	declarerPtr = mPtr->declaringClassPtr->thisPtr;
 	kindName = "class";
     }
 
-    objectNameObj = Tcl_NewObj();
-    Tcl_GetCommandFullName(interp, declarer, objectNameObj);
-    objectName = Tcl_GetStringFromObj(objectNameObj, &objectNameLen);
-
+    objectName = Tcl_GetStringFromObj(TclOOObjectName(interp, declarerPtr),
+	    &objectNameLen);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (%s \"%.*s%s\" constructor line %d)", kindName,
 	    ELLIPSIFY(objectName, objectNameLen), interp->errorLine));
-
-    Tcl_DecrRefCount(objectNameObj);
 }
 
 static void
@@ -2122,31 +2136,26 @@ DestructorErrorHandler(
 {
     CallContext *contextPtr = ((Interp *) interp)->varFramePtr->clientData;
     Method *mPtr = contextPtr->callChain[contextPtr->index].mPtr;
-    Tcl_Command declarer;
-    Tcl_Obj *objectNameObj;
+    Object *declarerPtr;
     const char *objectName, *kindName;
     int objectNameLen;
 
     if (mPtr->declaringObjectPtr != NULL) {
-	declarer = mPtr->declaringObjectPtr->command;
+	declarerPtr = mPtr->declaringObjectPtr;
 	kindName = "object";
     } else {
 	if (mPtr->declaringClassPtr == NULL) {
 	    Tcl_Panic("method not declared in class or object");
 	}
-	declarer = mPtr->declaringClassPtr->thisPtr->command;
+	declarerPtr = mPtr->declaringClassPtr->thisPtr;
 	kindName = "class";
     }
 
-    objectNameObj = Tcl_NewObj();
-    Tcl_GetCommandFullName(interp, declarer, objectNameObj);
-    objectName = Tcl_GetStringFromObj(objectNameObj, &objectNameLen);
-
+    objectName = Tcl_GetStringFromObj(TclOOObjectName(interp, declarerPtr),
+	    &objectNameLen);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (%s \"%.*s%s\" destructor line %d)", kindName,
 	    ELLIPSIFY(objectName, objectNameLen), interp->errorLine));
-
-    Tcl_DecrRefCount(objectNameObj);
 }
 
 /*
@@ -2640,12 +2649,10 @@ ClassCreate(
      */
 
     if (oPtr->classPtr == NULL) {
-	Tcl_Obj *cmdnameObj = Tcl_NewObj();
+	Tcl_Obj *cmdnameObj = TclOOObjectName(interp, oPtr);
 
-	Tcl_GetCommandFullName(interp, oPtr->command, cmdnameObj);
 	Tcl_AppendResult(interp, "object \"", TclGetString(cmdnameObj),
 		"\" is not a class", NULL);
-	Tcl_DecrRefCount(cmdnameObj);
 	return TCL_ERROR;
     }
 
@@ -2674,8 +2681,7 @@ ClassCreate(
     if (newObject == NULL) {
 	return TCL_ERROR;
     }
-    Tcl_GetCommandFullName(interp, Tcl_GetObjectCommand(newObject),
-	    Tcl_GetObjResult(interp));
+    Tcl_SetObjResult(interp, TclOOObjectName(interp, (Object *) newObject));
     return TCL_OK;
 }
 
@@ -2707,12 +2713,10 @@ ClassNew(
      */
 
     if (oPtr->classPtr == NULL) {
-	Tcl_Obj *cmdnameObj = Tcl_NewObj();
+	Tcl_Obj *cmdnameObj = TclOOObjectName(interp, oPtr);
 
-	Tcl_GetCommandFullName(interp, oPtr->command, cmdnameObj);
 	Tcl_AppendResult(interp, "object \"", TclGetString(cmdnameObj),
 		"\" is not a class", NULL);
-	Tcl_DecrRefCount(cmdnameObj);
 	return TCL_ERROR;
     }
 
@@ -2725,8 +2729,7 @@ ClassNew(
     if (newObject == NULL) {
 	return TCL_ERROR;
     }
-    Tcl_GetCommandFullName(interp, Tcl_GetObjectCommand(newObject),
-	    Tcl_GetObjResult(interp));
+    Tcl_SetObjResult(interp, TclOOObjectName(interp, (Object *) newObject));
     return TCL_OK;
 }
 
@@ -2807,9 +2810,7 @@ ObjectEval(
 				 * incremented here. */
 
     if (contextPtr->flags & PUBLIC_METHOD) {
-	objnameObj = Tcl_NewObj();
-	Tcl_GetCommandFullName(interp, Tcl_GetObjectCommand(object),
-		objnameObj);
+	objnameObj = TclOOObjectName(interp, (Object *) object);
     } else {
 	objnameObj = Tcl_NewStringObj("my", 2);
     }
@@ -2898,16 +2899,14 @@ ObjectUnknown(
      */
 
     if (numMethodNames == 0) {
-	Tcl_Obj *tmpBuf = Tcl_NewObj();
+	Tcl_Obj *tmpBuf = TclOOObjectName(interp, oPtr);
 
-	Tcl_GetCommandFullName(interp, oPtr->command, tmpBuf);
 	Tcl_AppendResult(interp, "object \"", TclGetString(tmpBuf), NULL);
 	if (contextPtr->flags & PUBLIC_METHOD) {
 	    Tcl_AppendResult(interp, "\" has no visible methods", NULL);
 	} else {
 	    Tcl_AppendResult(interp, "\" has no methods", NULL);
 	}
-	Tcl_DecrRefCount(tmpBuf);
 	return TCL_ERROR;
     }
 
@@ -3250,7 +3249,7 @@ SelfObjCmd(
 	return TCL_ERROR;
     }
     if (objc == 1) {
-	index = SELF_OBJECT;
+	goto doSelfObject;
     } else if (Tcl_GetIndexFromObj(interp, objv[1], subcmds, "subcommand", 0,
 	    &index) != TCL_OK) {
 	return TCL_ERROR;
@@ -3258,8 +3257,8 @@ SelfObjCmd(
 
     switch ((enum SelfCmds) index) {
     case SELF_OBJECT:
-	Tcl_GetCommandFullName(interp, contextPtr->oPtr->command,
-		Tcl_GetObjResult(interp));
+    doSelfObject:
+	Tcl_SetObjResult(interp, TclOOObjectName(interp, contextPtr->oPtr));
 	return TCL_OK;
     case SELF_NS:
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -3282,8 +3281,7 @@ SelfObjCmd(
 	    return TCL_ERROR;
 	}
 
-	Tcl_GetCommandFullName(interp, declarerPtr->command,
-		Tcl_GetObjResult(interp));
+	Tcl_SetObjResult(interp, TclOOObjectName(interp, declarerPtr));
 	return TCL_OK;
     }
     case SELF_METHOD:
@@ -3315,8 +3313,7 @@ SelfObjCmd(
 		type = "object";
 	    }
 
-	    result[0] = Tcl_NewObj();
-	    Tcl_GetCommandFullName(interp, oPtr->command, result[0]);
+	    result[0] = TclOOObjectName(interp, oPtr);
 	    result[1] = Tcl_NewStringObj(type, -1);
 	    result[2] = miPtr->mPtr->namePtr;
 	    Tcl_SetObjResult(interp, Tcl_NewListObj(3, result));
@@ -3328,7 +3325,6 @@ SelfObjCmd(
 	    CallContext *callerPtr = framePtr->callerVarPtr->clientData;
 	    Method *mPtr = callerPtr->callChain[callerPtr->index].mPtr;
 	    Object *declarerPtr;
-	    Tcl_Obj *tmpObj;
 
 	    if (mPtr->declaringClassPtr != NULL) {
 		declarerPtr = mPtr->declaringClassPtr->thisPtr;
@@ -3343,12 +3339,10 @@ SelfObjCmd(
 		return TCL_ERROR;
 	    }
 
-	    tmpObj = Tcl_NewObj();
-	    Tcl_GetCommandFullName(interp, declarerPtr->command, tmpObj);
-	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), tmpObj);
-	    tmpObj = Tcl_NewObj();
-	    Tcl_GetCommandFullName(interp, callerPtr->oPtr->command, tmpObj);
-	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), tmpObj);
+	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
+		    TclOOObjectName(interp, declarerPtr));
+	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
+		    TclOOObjectName(interp, callerPtr->oPtr));
 	    if (callerPtr->flags & CONSTRUCTOR) {
 		Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
 			Tcl_NewStringObj("<constructor>", -1));
@@ -3368,7 +3362,6 @@ SelfObjCmd(
 	if (contextPtr->index < contextPtr->numCallChain-1) {
 	    Method *mPtr = contextPtr->callChain[contextPtr->index+1].mPtr;
 	    Object *declarerPtr;
-	    Tcl_Obj *tmpObj;
 
 	    if (mPtr->declaringClassPtr != NULL) {
 		declarerPtr = mPtr->declaringClassPtr->thisPtr;
@@ -3383,9 +3376,8 @@ SelfObjCmd(
 		return TCL_ERROR;
 	    }
 
-	    tmpObj = Tcl_NewObj();
-	    Tcl_GetCommandFullName(interp, declarerPtr->command, tmpObj);
-	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), tmpObj);
+	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
+		    TclOOObjectName(interp, declarerPtr));
 	    if (contextPtr->flags & CONSTRUCTOR) {
 		Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
 			Tcl_NewStringObj("<constructor>", -1));
@@ -3405,7 +3397,6 @@ SelfObjCmd(
 	} else {
 	    Method *mPtr;
 	    Object *declarerPtr;
-	    Tcl_Obj *cmdName;
 	    int i;
 
 	    for (i=contextPtr->index ; i<contextPtr->numCallChain ; i++) {
@@ -3429,9 +3420,8 @@ SelfObjCmd(
 		Tcl_AppendResult(interp, "method without declarer!", NULL);
 		return TCL_ERROR;
 	    }
-	    cmdName = Tcl_NewObj();
-	    Tcl_GetCommandFullName(interp, declarerPtr->command, cmdName);
-	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), cmdName);
+	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
+		    TclOOObjectName(interp, declarerPtr));
 	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
 		    mPtr->namePtr);
 	    return TCL_OK;
@@ -3510,8 +3500,7 @@ CopyObjectCmd(
      * Return the name of the cloned object.
      */
 
-    Tcl_GetCommandFullName(interp, Tcl_GetObjectCommand(o2Ptr),
-	    Tcl_GetObjResult(interp));
+    Tcl_SetObjResult(interp, TclOOObjectName(interp, (Object *) o2Ptr));
     return TCL_OK;
 }
 
@@ -3681,6 +3670,36 @@ InitEnsembleRewrite(
 
     *lengthPtr = len;
     return argObjs;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOObjectName --
+ *
+ *	Utility function that returns the name of the object. Note that this
+ *	simplifies cache management by keeping the code to do it in one place
+ *	and not sprayed all over. The value returned always has a reference
+ *	count of at least one.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclOOObjectName(
+    Tcl_Interp *interp,
+    Object *oPtr)
+{
+    Tcl_Obj *namePtr;
+
+    if (oPtr->cachedNameObj) {
+	return oPtr->cachedNameObj;
+    }
+    namePtr = Tcl_NewObj();
+    Tcl_GetCommandFullName(interp, oPtr->command, namePtr);
+    Tcl_IncrRefCount(namePtr);
+    oPtr->cachedNameObj = namePtr;
+    return namePtr;
 }
 
 Tcl_Method
