@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.11 2007/06/08 02:09:37 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.12 2007/06/08 09:37:08 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2464,6 +2464,7 @@ Tcl_ClassSetMetadata(
     if (metadata == NULL) {
 	hPtr = Tcl_FindHashEntry(clsPtr->metadataPtr, (char *) typePtr);
 	if (hPtr != NULL) {
+	    typePtr->deleteProc(Tcl_GetHashValue(hPtr));
 	    Tcl_DeleteHashEntry(hPtr);
 	}
 	return;
@@ -2544,6 +2545,7 @@ Tcl_ObjectSetMetadata(
     if (metadata == NULL) {
 	hPtr = Tcl_FindHashEntry(oPtr->metadataPtr, (char *) typePtr);
 	if (hPtr != NULL) {
+	    typePtr->deleteProc(Tcl_GetHashValue(hPtr));
 	    Tcl_DeleteHashEntry(hPtr);
 	}
 	return;
