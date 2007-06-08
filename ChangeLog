@@ -1,5 +1,9 @@
 2007-06-08  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclOO.c (Tcl_ObjectSetMetadata, Tcl_ClassSetMetadata): When
+	deleting metadata, must delete the metadata. (Thanks to Arnulf
+	Wiedemann for spotting!)
+
 	* generic/tclOO.c (AllocClass, Tcl_NewObjectInstance): Make the class
 	splicing work correctly so that the set of instances of oo::object and
 	the set of subclasses of oo::class stay limited in size. Fixes the
