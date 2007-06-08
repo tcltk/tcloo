@@ -1,3 +1,10 @@
+2007-06-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (AllocClass, Tcl_NewObjectInstance): Make the class
+	splicing work correctly so that the set of instances of oo::object and
+	the set of subclasses of oo::class stay limited in size. Fixes the
+	other part of the memory leak. [Bug 1732364]
+
 2007-06-07  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c (ObjectNamespaceDeleted): Try to make the code leak
