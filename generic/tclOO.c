@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.10 2007/06/07 23:12:32 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.11 2007/06/08 02:09:37 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -72,7 +72,8 @@ struct PNI {
  * Function declarations for things defined in this file.
  */
 
-static Class *		AllocClass(Tcl_Interp *interp, Object *useThisObj);
+static Class *		AllocClass(Tcl_Interp *interp, Object *useThisObj,
+			    Foundation *fPtr);
 static Object *		AllocObject(Tcl_Interp *interp, const char *nameStr);
 static Method *		CloneClassMethod(Tcl_Interp *interp, Class *clsPtr,
 			    Method *mPtr, Tcl_Obj *namePtr);
@@ -289,8 +290,10 @@ Tcloo_Init(
      * spliced manually.
      */
 
-    fPtr->objectCls = AllocClass(interp, AllocObject(interp, "::oo::object"));
-    fPtr->classCls = AllocClass(interp, AllocObject(interp, "::oo::class"));
+    fPtr->objectCls =
+	    AllocClass(interp, AllocObject(interp, "::oo::object"), fPtr);
+    fPtr->classCls =
+	    AllocClass(interp, AllocObject(interp, "::oo::class"), fPtr);
     fPtr->objectCls->thisPtr->selfCls = fPtr->classCls;
     fPtr->objectCls->thisPtr->flags |= ROOT_OBJECT;
     fPtr->objectCls->superclasses.num = 0;
@@ -1055,14 +1058,15 @@ static Class *
 AllocClass(
     Tcl_Interp *interp,		/* Interpreter within which to allocate the
 				 * class. */
-    Object *useThisObj)		/* Object that is to act as the class
+    Object *useThisObj,		/* Object that is to act as the class
 				 * representation, or NULL if a new object
 				 * (with automatic name) is to be used. */
+    Foundation *fPtr)		/* The foundation of the object system, passed
+				 * by reference since all callers need access
+				 * to it as well and that saves a lookup. */
 {
-    Class *clsPtr;
-    Foundation *fPtr = TclOOGetFoundation(interp);
+    Class *clsPtr = (Class *) ckalloc(sizeof(Class));
 
-    clsPtr = (Class *) ckalloc(sizeof(Class));
     memset(clsPtr, 0, sizeof(Class));
     if (useThisObj == NULL) {
 	clsPtr->thisPtr = AllocObject(interp, NULL);
@@ -1070,10 +1074,6 @@ AllocClass(
 	clsPtr->thisPtr = useThisObj;
     }
     clsPtr->thisPtr->selfCls = fPtr->classCls;
-    if (fPtr->classCls != NULL) {
-	TclOOAddToInstances(clsPtr->thisPtr, fPtr->classCls);
-	TclOOAddToSubclasses(clsPtr, fPtr->objectCls);
-    }
     {
 	Tcl_Namespace *path[2];
 
@@ -1159,6 +1159,8 @@ Tcl_NewObjectInstance(
      */
 
     if (TclOOIsReachable(TclOOGetFoundation(interp)->classCls, (Class*)cls)) {
+	Foundation *fPtr = TclOOGetFoundation(interp);
+
 	/*
 	 * Is a class, so attach a class structure. Note that the AllocClass
 	 * function splices the structure into the object, so we don't have
@@ -1166,8 +1168,9 @@ Tcl_NewObjectInstance(
 	 * right class since AllocClass interferes with that.
 	 */
 
-	AllocClass(interp, oPtr);
+	AllocClass(interp, oPtr, fPtr);
 	oPtr->selfCls = (Class *) cls;
+	TclOOAddToSubclasses(oPtr->classPtr, fPtr->objectCls);
     }
 
     if (objc >= 0) {
