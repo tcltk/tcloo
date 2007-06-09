@@ -1,6 +1,6 @@
-# $Id: configure.in,v 1.7 2007/05/30 23:20:59 dkf Exp $
+# $Id: configure.in,v 1.8 2007/06/09 23:45:23 dkf Exp $
 
-AC_REVISION($Revision: 1.7 $)
+AC_REVISION($Revision: 1.8 $)
 AC_INIT([TclOO],[0.1])
 AC_CONFIG_AUX_DIR(tclconfig)
 
@@ -10,12 +10,13 @@ TEA_LOAD_TCLCONFIG
 TEA_PREFIX
 TEA_SETUP_COMPILER
 TEA_ADD_SOURCES(
-	[tclOO.c tclOOCall.c tclOODefineCmds.c tclOOInfo.c tclOOStubInit.c])
+	tclOO.c tclOOCall.c tclOODefineCmds.c tclOOInfo.c tclOOMethod.c
+	tclOOStubInit.c)
 AS_IF([test ${TEA_PLATFORM} = "windows"], [
     PKG_OBJECTS="${PKG_OBJECTS} ${PACKAGE_NAME}.res.o"
     RC=windres
     AC_SUBST(RC)])
-TEA_ADD_STUB_SOURCES([tclOOStubLib.c])
+TEA_ADD_STUB_SOURCES(tclOOStubLib.c)
 TEA_ADD_HEADERS([generic/tclOO.h generic/tclOOInt.h])
 TEA_ADD_INCLUDES([-I. -I\"`${CYGPATH} ${srcdir}/generic`\"])
 TEA_PRIVATE_TCL_HEADERS

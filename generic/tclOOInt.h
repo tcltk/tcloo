@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.3 2007/06/07 09:02:23 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.4 2007/06/09 23:45:23 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -264,6 +264,16 @@ typedef struct CallContext {
 #define FRAME_IS_OO_DEFINE 0x8	/* TODO: Docme */
 #define FRAME_IS_CONSTRUCTOR 0x10
 #define FRAME_IS_DESTRUCTOR 0x20
+
+/*
+ * Structure containing definition information about basic class methods.
+ */
+
+typedef struct {
+    const char *name;		/* Name of the method in question. */
+    int isPublic;		/* Whether the method is public by default. */
+    Tcl_MethodCallProc callProc;/* How to call the method. */
+} DeclaredClassMethod;
 
 /*
  *----------------------------------------------------------------
@@ -323,6 +333,8 @@ MODULE_SCOPE Method *	TclOONewProcClassMethod(Tcl_Interp *interp,
 MODULE_SCOPE Method *	TclOONewForwardClassMethod(Tcl_Interp *interp,
 			    Class *clsPtr, int isPublic, Tcl_Obj *nameObj,
 			    Tcl_Obj *prefixObj);
+MODULE_SCOPE void	TclOONewBasicClassMethod(Tcl_Interp *interp,
+			    Class *clsPtr, const DeclaredClassMethod *dcm);
 MODULE_SCOPE void	TclOODeleteMethod(Method *method);
 MODULE_SCOPE void	TclOOInitInfo(Tcl_Interp *interp);
 MODULE_SCOPE void	TclOOAddToInstances(Object *oPtr, Class *clsPtr);
