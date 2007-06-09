@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.13 2007/06/09 23:45:23 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.14 2007/06/09 23:48:13 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -870,7 +870,7 @@ TclOORemoveFromSubclasses(
     superPtr->subclasses.num--;
     if (i < superPtr->subclasses.num) {
 	superPtr->subclasses.list[i] =
-	    superPtr->subclasses.list[superPtr->subclasses.num];
+		superPtr->subclasses.list[superPtr->subclasses.num];
     }
     superPtr->subclasses.list[superPtr->subclasses.num] = NULL;
 }
@@ -938,7 +938,7 @@ TclOORemoveFromMixinSubs(
     superPtr->mixinSubs.num--;
     if (i < superPtr->mixinSubs.num) {
 	superPtr->mixinSubs.list[i] =
-	    superPtr->mixinSubs.list[superPtr->mixinSubs.num];
+		superPtr->mixinSubs.list[superPtr->mixinSubs.num];
     }
     superPtr->mixinSubs.list[superPtr->mixinSubs.num] = NULL;
 }
