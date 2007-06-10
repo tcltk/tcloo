@@ -1,5 +1,9 @@
 2007-06-10  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclOO.c (AllocObject): Started writing code to allow control
+	over the name of the object's namespace generated during object
+	creation. This feature is not yet exposed outside this file.
+
 	* generic/tclOOMethod.c: Split out the method handling code into its
 	own source file; it's long enough and complex enough to warrant it.
 
