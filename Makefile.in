@@ -101,7 +101,7 @@ PLATFORM:=$(shell echo 'package require platform;puts [platform::generic]' | $(T
 all: package libraries
 package: $(PKG_LIB_FILE) pkgIndex.tcl
 libraries: $(PKG_STUB_LIB_FILE)
-install: install-package install-libraries install-headers installl-doc
+install: all install-package install-libraries install-headers install-doc
 kit: sdx_valid $(PKG_KIT)
 
 #========================================================================
