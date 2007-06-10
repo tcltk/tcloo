@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.14 2007/06/09 23:48:13 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.15 2007/06/10 19:48:38 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -54,7 +54,8 @@ static const struct {
 
 static Class *		AllocClass(Tcl_Interp *interp, Object *useThisObj,
 			    Foundation *fPtr);
-static Object *		AllocObject(Tcl_Interp *interp, const char *nameStr);
+static Object *		AllocObject(Tcl_Interp *interp, const char *nameStr,
+			    const char *nsNameStr);
 static Method *		CloneClassMethod(Tcl_Interp *interp, Class *clsPtr,
 			    Method *mPtr, Tcl_Obj *namePtr);
 static Method *		CloneObjectMethod(Tcl_Interp *interp, Object *oPtr,
@@ -222,10 +223,10 @@ Tcloo_Init(
      * spliced manually.
      */
 
-    fPtr->objectCls =
-	    AllocClass(interp, AllocObject(interp, "::oo::object"), fPtr);
-    fPtr->classCls =
-	    AllocClass(interp, AllocObject(interp, "::oo::class"), fPtr);
+    fPtr->objectCls = AllocClass(interp, AllocObject(interp, "::oo::object",
+	    NULL), fPtr);
+    fPtr->classCls = AllocClass(interp, AllocObject(interp, "::oo::class",
+	    NULL), fPtr);
     fPtr->objectCls->thisPtr->selfCls = fPtr->classCls;
     fPtr->objectCls->thisPtr->flags |= ROOT_OBJECT;
     fPtr->objectCls->superclasses.num = 0;
@@ -328,9 +329,15 @@ static Object *
 AllocObject(
     Tcl_Interp *interp,		/* Interpreter within which to create the
 				 * object. */
-    const char *nameStr)	/* The name of the object to create, or NULL
+    const char *nameStr,	/* The name of the object to create, or NULL
 				 * if the OO system should pick the object
-				 * name itself. */
+				 * name itself (equal to the namespace
+				 * name). */
+    const char *nsNameStr)	/* The name of the namespace to create, or
+				 * NULL if the OO system should pick a unique
+				 * name itself. If this is non-NULL but names
+				 * a namespace that already exists, the effect
+				 * will be the same as if this was NULL. */
 {
     Foundation *fPtr = TclOOGetFoundation(interp);
     Tcl_Obj *cmdnameObj;
@@ -339,6 +346,15 @@ AllocObject(
 
     oPtr = (Object *) ckalloc(sizeof(Object));
     memset(oPtr, 0, sizeof(Object));
+
+    if (nsNameStr != NULL) {
+	oPtr->namespacePtr = Tcl_CreateNamespace(interp, nsNamePtr, oPtr,
+		ObjectNamespaceDeleted);
+	if (oPtr->namespacePtr != NULL) {
+	    goto configNamespace;
+	}
+    }
+
     while (1) {
 	char objName[10 + TCL_INTEGER_SPACE];
 
@@ -357,7 +373,10 @@ AllocObject(
 
 	Tcl_ResetResult(interp);
     }
+
+  configNamespace:
     TclSetNsPath((Namespace *) oPtr->namespacePtr, 1, &fPtr->helpersNs);
+
     oPtr->selfCls = fPtr->objectCls;
     Tcl_InitObjHashTable(&oPtr->methods);
     Tcl_InitObjHashTable(&oPtr->publicContextCache);
@@ -1001,7 +1020,7 @@ AllocClass(
 
     memset(clsPtr, 0, sizeof(Class));
     if (useThisObj == NULL) {
-	clsPtr->thisPtr = AllocObject(interp, NULL);
+	clsPtr->thisPtr = AllocObject(interp, NULL, NULL);
     } else {
 	clsPtr->thisPtr = useThisObj;
     }
@@ -1063,7 +1082,7 @@ Tcl_NewObjectInstance(
     int skip)			/* Number of arguments to _not_ pass to the
 				 * constructor. */
 {
-    Object *oPtr = AllocObject(interp, NULL);
+    Object *oPtr = AllocObject(interp, NULL, NULL);
     CallContext *contextPtr;
 
     oPtr->selfCls = (Class *) cls;
