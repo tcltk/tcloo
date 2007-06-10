@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.15 2007/06/10 19:48:38 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.16 2007/06/10 23:46:53 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -348,7 +348,7 @@ AllocObject(
     memset(oPtr, 0, sizeof(Object));
 
     if (nsNameStr != NULL) {
-	oPtr->namespacePtr = Tcl_CreateNamespace(interp, nsNamePtr, oPtr,
+	oPtr->namespacePtr = Tcl_CreateNamespace(interp, nsNameStr, oPtr,
 		ObjectNamespaceDeleted);
 	if (oPtr->namespacePtr != NULL) {
 	    goto configNamespace;
