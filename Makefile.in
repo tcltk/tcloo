@@ -157,7 +157,8 @@ doc:
 #========================================================================
 
 test: package libraries
-	$(TCLSH) `$(CYGPATH) $(SRC_DIR)/tests/all.tcl` $(TESTLOAD) $(TESTFLAGS)
+	@echo $(TCLSH_PROGRAM) $(SRC_DIR)/tests/all.tcl $(TESTLOAD) $(TESTFLAGS)
+	@$(TCLSH) `$(CYGPATH) $(SRC_DIR)/tests/all.tcl` $(TESTLOAD) $(TESTFLAGS)
 
 benchmarks: package libraries
 	@echo Benchmark Iterations = $(ITERATIONS)
@@ -167,7 +168,8 @@ benchmarks: package libraries
 	done
 
 shell: package libraries
-	$(TCLSH) $(SCRIPT)
+	@echo $(TCLSH_PROGRAM) $(SCRIPT)
+	@$(TCLSH) $(SCRIPT)
 
 #========================================================================
 # The rules for actually doing the build of the package.
@@ -195,6 +197,14 @@ pkgIndex.tcl: Makefile
 Makefile: $(SRC_DIR)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \
 	  && CONFIG_FILES=$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+#========================================================================
+# How to rebuild the package's stub table.
+#========================================================================
+
+genstubs: $(SRC_DIR)/tools/genStubs.tcl $(SRC_DIR)/generic/tclOO.decls
+	@echo $(TCLSH_PROGRAM) $(SRC_DIR)/tools/genStubs.tcl $(SRC_DIR)/generic $(SRC_DIR)/generic/tclOO.decls
+	@$(TCLSH) `$(CYGPATH) $(SRC_DIR)/tools/genStubs.tcl` `$(CYGPATH) $(SRC_DIR)/generic` `$(CYGPATH) $(SRC_DIR)/generic/tclOO.decls`
 
 #========================================================================
 # Build a starkit - this is experimental!
@@ -275,4 +285,5 @@ dist: dist-clean
 #========================================================================
 
 .SUFFIXES: .c .$(OBJEXT) .rc .$(RES)
-.PHONY: all package clean depend distclean doc install libraries test kit sdx_valid doc dist dist-clean benchmarks shell
+.PHONY: all package clean depend distclean doc install libraries test kit
+.PHONY: sdx_valid doc dist dist-clean benchmarks shell genstubs
