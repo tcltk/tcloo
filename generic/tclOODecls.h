@@ -1,5 +1,5 @@
 /*
- * $Id: tclOODecls.h,v 1.1 2007/05/18 13:19:19 dkf Exp $
+ * $Id: tclOODecls.h,v 1.2 2007/06/11 10:09:28 dkf Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  */
@@ -32,7 +32,8 @@ extern const char *TclOOInitializeStubs(
 /* 0 */
 TCLOOAPI Tcl_Object	Tcl_CopyObjectInstance (Tcl_Interp * interp, 
 				Tcl_Object sourceObject, 
-				const char * targetName);
+				const char * targetName, 
+				const char * targetNamespaceName);
 /* 1 */
 TCLOOAPI Tcl_Object	Tcl_GetClassAsObject (Tcl_Class clazz);
 /* 2 */
@@ -68,7 +69,8 @@ TCLOOAPI Tcl_Method	Tcl_NewClassMethod (Tcl_Interp * interp,
 				ClientData clientData);
 /* 13 */
 TCLOOAPI Tcl_Object	Tcl_NewObjectInstance (Tcl_Interp * interp, 
-				Tcl_Class cls, const char * name, int objc, 
+				Tcl_Class cls, const char * nameStr, 
+				const char * nsNameStr, int objc, 
 				Tcl_Obj *const * objv, int skip);
 /* 14 */
 TCLOOAPI int		Tcl_ObjectDeleted (Tcl_Object object);
@@ -105,7 +107,7 @@ typedef struct TclOOStubs {
     int revision;
     struct TclOOStubHooks *hooks;
 
-    Tcl_Object (*tcl_CopyObjectInstance) (Tcl_Interp * interp, Tcl_Object sourceObject, const char * targetName); /* 0 */
+    Tcl_Object (*tcl_CopyObjectInstance) (Tcl_Interp * interp, Tcl_Object sourceObject, const char * targetName, const char * targetNamespaceName); /* 0 */
     Tcl_Object (*tcl_GetClassAsObject) (Tcl_Class clazz); /* 1 */
     Tcl_Class (*tcl_GetObjectAsClass) (Tcl_Object object); /* 2 */
     Tcl_Command (*tcl_GetObjectCommand) (Tcl_Object object); /* 3 */
@@ -118,7 +120,7 @@ typedef struct TclOOStubs {
     Tcl_Obj * (*tcl_MethodName) (Tcl_Method method); /* 10 */
     Tcl_Method (*tcl_NewMethod) (Tcl_Interp * interp, Tcl_Object object, Tcl_Obj * nameObj, int isPublic, const Tcl_MethodType * typePtr, ClientData clientData); /* 11 */
     Tcl_Method (*tcl_NewClassMethod) (Tcl_Interp * interp, Tcl_Class cls, Tcl_Obj * nameObj, int isPublic, const Tcl_MethodType * typePtr, ClientData clientData); /* 12 */
-    Tcl_Object (*tcl_NewObjectInstance) (Tcl_Interp * interp, Tcl_Class cls, const char * name, int objc, Tcl_Obj *const * objv, int skip); /* 13 */
+    Tcl_Object (*tcl_NewObjectInstance) (Tcl_Interp * interp, Tcl_Class cls, const char * nameStr, const char * nsNameStr, int objc, Tcl_Obj *const * objv, int skip); /* 13 */
     int (*tcl_ObjectDeleted) (Tcl_Object object); /* 14 */
     int (*tcl_ObjectContextIsFiltering) (Tcl_ObjectContext context); /* 15 */
     Tcl_Method (*tcl_ObjectContextMethod) (Tcl_ObjectContext context); /* 16 */
