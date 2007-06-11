@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: class.n,v 1.3 2007/06/02 12:09:31 dkf Exp $
+'\" RCS: @(#) $Id: class.n,v 1.4 2007/06/11 12:25:40 dkf Exp $
 '\"
 .so man.macros
 .TH class n 0.1 TclOO "TclOO Commands"
@@ -64,6 +64,20 @@ returns a non-OK result) then the object is destroyed and the error message is
 the result of this method call. Note that this method is not exported by the
 \fBoo::class\fR object itself, so classes should not be created using this
 method.
+.SS "NON-EXPORTED METHODS"
+The \fBoo::class\fR class supports the following non-exported methods:
+.TP
+\fIobj \fBcreateWithNamespace\fI name nsName\fR ?\fIarg ...\fR?
+.
+This creates a new instance of the class \fIcls\fR called \fIname\fR (which is
+resolved within the calling context's namespace if not fully qualified),
+passing the arguments, \fIarg ...\fR, to the constructor, and (if that returns
+a successful result) returning the fully qualified name of the created object
+(the result of the constructor is ignored). The name of the instance's
+internal namespace will be \fInsName\fR unless that namespace already exists
+(when an arbitrary name will be chosen instead). If the constructor fails
+(i.e. returns a non-OK result) then the object is destroyed and the error
+message is the result of this method call.
 .SH EXAMPLES
 This example defines a simple class hierarchy and creates a new instance of
 it. It then invokes a method of the object before destroying the hierarchy and

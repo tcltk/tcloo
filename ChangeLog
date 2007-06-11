@@ -1,5 +1,9 @@
 2007-06-11  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclOO.c (ClassCreateNs): Exposed the ability to create
+	* doc/class.n: objects with particular namespaces for names to
+	scripts.
+
 	* generic/tclOO.c (Tcl_NewObjectInstance, Tcl_CopyObjectInstance):
 	* doc/Class.3: Extended the C API to allow control over the naming of
 	the object's namespace, exposing the change to AllocObject from

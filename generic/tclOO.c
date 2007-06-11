@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.17 2007/06/11 10:08:43 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.18 2007/06/11 12:25:42 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -84,6 +84,9 @@ static int		PrivateObjectCmd(ClientData clientData,
 static int		ClassCreate(ClientData clientData, Tcl_Interp *interp,
 			    Tcl_ObjectContext context, int objc,
 			    Tcl_Obj *const *objv);
+static int		ClassCreateNs(ClientData clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
 static int		ClassNew(ClientData clientData, Tcl_Interp *interp,
 			    Tcl_ObjectContext context, int objc,
 			    Tcl_Obj *const *objv);
@@ -128,6 +131,7 @@ static const DeclaredClassMethod objMethods[] = {
 static const DeclaredClassMethod clsMethods[] = {
     {"create", 1, ClassCreate},
     {"new", 1, ClassNew},
+    {"createWithNamespace", 0, ClassCreateNs},
     {NULL, 0, NULL}
 };
 
@@ -353,6 +357,7 @@ AllocObject(
 	if (oPtr->namespacePtr != NULL) {
 	    goto configNamespace;
 	}
+	Tcl_ResetResult(interp);
     }
 
     while (1) {
@@ -1764,6 +1769,79 @@ ClassCreate(
     newObject = Tcl_NewObjectInstance(interp, (Tcl_Class) oPtr->classPtr,
 	    objName, NULL, objc, objv,
 	    Tcl_ObjectContextSkippedArgs(context)+1);
+    if (newObject == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, TclOOObjectName(interp, (Object *) newObject));
+    return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * ClassCreateNs --
+ *
+ *	Implementation for oo::class->createWithNamespace method.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static int
+ClassCreateNs(
+    ClientData clientData,	/* Ignored. */
+    Tcl_Interp *interp,		/* Interpreter in which to create the object;
+				 * also used for error reporting. */
+    Tcl_ObjectContext context,	/* The object/call context. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* The actual arguments. */
+{
+    Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
+    Tcl_Object newObject;
+    const char *objName, *nsName;
+    int len;
+
+    /*
+     * Sanity check; should not be possible to invoke this method on a
+     * non-class.
+     */
+
+    if (oPtr->classPtr == NULL) {
+	Tcl_Obj *cmdnameObj = TclOOObjectName(interp, oPtr);
+
+	Tcl_AppendResult(interp, "object \"", TclGetString(cmdnameObj),
+		"\" is not a class", NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Check we have the right number of (sensible) arguments.
+     */
+
+    if (objc - Tcl_ObjectContextSkippedArgs(context) < 2) {
+	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
+		"objectName namespaceName ?arg ...?");
+	return TCL_ERROR;
+    }
+    objName = Tcl_GetStringFromObj(
+	    objv[Tcl_ObjectContextSkippedArgs(context)], &len);
+    if (len == 0) {
+	Tcl_AppendResult(interp, "object name must not be empty", NULL);
+	return TCL_ERROR;
+    }
+    nsName = Tcl_GetStringFromObj(
+	    objv[Tcl_ObjectContextSkippedArgs(context)+1], &len);
+    if (len == 0) {
+	Tcl_AppendResult(interp, "namespace name must not be empty", NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Make the object and return its name.
+     */
+
+    newObject = Tcl_NewObjectInstance(interp, (Tcl_Class) oPtr->classPtr,
+	    objName, nsName, objc, objv,
+	    Tcl_ObjectContextSkippedArgs(context)+2);
     if (newObject == NULL) {
 	return TCL_ERROR;
     }
