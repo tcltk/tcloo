@@ -1,3 +1,10 @@
+2007-06-11  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOInfo.c (InfoObjectMethodsCmd): Enhanced the method
+	* doc/ooInfo.n: introspection to make it easier for commands to find
+	what the methods of an object are. Thanks to Mark Janssen for
+	suggesting this.
+
 2007-06-10  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c (AllocObject): Started writing code to allow control

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.2 2007/06/07 09:02:23 dkf Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.3 2007/06/11 09:32:59 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -485,32 +485,58 @@ InfoObjectMethodsCmd(
     Tcl_Obj *const objv[])
 {
     Object *oPtr;
-    int flag = PUBLIC_METHOD;
+    int flag = PUBLIC_METHOD, recurse = 0;
     FOREACH_HASH_DECLS;
     Tcl_Obj *namePtr;
     Method *mPtr;
+    static const char *options[] = {
+	"-all", "-private", "-recurse", NULL
+    };
+    enum Options {
+	OPT_ALL, OPT_PRIVATE, OPT_RECURSE
+    };
 
-    if (objc != 2 && objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "objName ?-private?");
+    if (objc < 2 && objc > 1+sizeof(options)/sizeof(char*)) {
+	Tcl_WrongNumArgs(interp, 1, objv, "objName ?options...?");
 	return TCL_ERROR;
     }
     oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
-    if (objc == 3) {
-	int len;
-	const char *str = Tcl_GetStringFromObj(objv[2], &len);
+    if (objc != 2) {
+	int i, idx;
 
-	if (len == 13 && !strcmp("-localprivate", str)) {
-	    flag = PRIVATE_METHOD;
-	} else if (len < 2 || strncmp("-private", str, (unsigned)len)) {
-	    Tcl_AppendResult(interp, "unknown switch \"", str,
-		    "\": must be -private", NULL);
-	    return TCL_ERROR;
-	} else {
-	    flag = 0;
+	for (i=2 ; i<objc ; i++) {
+	    if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
+		    &idx) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    switch ((enum Options) idx) {
+	    case OPT_RECURSE:
+		recurse = 1;
+		break;
+	    case OPT_PRIVATE:
+		flag = PRIVATE_METHOD;
+		break;
+	    case OPT_ALL:
+		flag = 0;
+		break;
+	    }
 	}
+    }
+
+    if (recurse) {
+	const char **names;
+	int i, numNames = TclOOGetSortedMethodList(oPtr, flag, &names);
+	Tcl_Obj *resultObj = Tcl_NewObj();
+
+	for (i=0 ; i<numNames ; i++) {
+	    Tcl_ListObjAppendElement(NULL, resultObj,
+		    Tcl_NewStringObj(names[i], -1));
+	}
+	Tcl_SetObjResult(interp, resultObj);
+	return TCL_OK;
     }
 
     FOREACH_HASH(namePtr, mPtr, &oPtr->methods) {
