@@ -1,5 +1,5 @@
 # -*- tcl -*-
-# $Id: tclOO.decls,v 1.1 2007/05/18 13:17:15 dkf Exp $
+# $Id: tclOO.decls,v 1.2 2007/06/11 10:08:43 dkf Exp $
 
 # public API
 library tclOO
@@ -9,7 +9,8 @@ scspec TCLOOAPI
 
 declare 0 current {
     Tcl_Object Tcl_CopyObjectInstance(Tcl_Interp *interp,
-	    Tcl_Object sourceObject, const char *targetName)
+	    Tcl_Object sourceObject, const char *targetName,
+	    const char *targetNamespaceName)
 }
 declare 1 current {
     Tcl_Object Tcl_GetClassAsObject(Tcl_Class clazz)
@@ -54,7 +55,8 @@ declare 12 current {
 }
 declare 13 current {
     Tcl_Object Tcl_NewObjectInstance(Tcl_Interp *interp, Tcl_Class cls,
-	    const char *name, int objc, Tcl_Obj *const *objv, int skip)
+	    const char *nameStr, const char *nsNameStr, int objc,
+	    Tcl_Obj *const *objv, int skip)
 }
 declare 14 current {
     int Tcl_ObjectDeleted(Tcl_Object object)

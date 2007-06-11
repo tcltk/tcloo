@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: Class.3,v 1.4 2007/06/04 14:52:22 dkf Exp $
+'\" RCS: @(#) $Id: Class.3,v 1.5 2007/06/11 10:08:44 dkf Exp $
 '\"
 .so man.macros
 .TH Tcl_Class 3 0.1 TclOO "TclOO Library Functions"
@@ -32,10 +32,10 @@ Tcl_Namespace *
 \fBTcl_GetObjectNamespace\fR(\fIobject\fR)
 .sp
 Tcl_Object
-\fBTcl_NewObjectInstance\fR(\fIinterp, class, name, objc, objv, skip\fR)
+\fBTcl_NewObjectInstance\fR(\fIinterp, class, name, nsName, objc, objv, skip\fR)
 .sp
 Tcl_Object
-\fBTcl_CopyObjectInstance\fR(\fIinterp, object, name\fR)
+\fBTcl_CopyObjectInstance\fR(\fIinterp, object, name, nsName\fR)
 .sp
 int
 \fBTcl_ObjectDeleted\fR(\fIobject\fR)
@@ -63,6 +63,9 @@ Reference to the class to operate upon.
 .AP "const char" *name in
 The name of the object to create, or NULL if a new unused name is to be
 automatically selected.
+.AP "const char" *nsName in
+The name of the namespace to create for the object's private use, or NULL if a
+new unused name is to be automatically selected.
 .AP int objc in
 The number of elements in the \fIobjv\fR array.
 .AP "Tcl_Obj *const" *objv in
@@ -99,11 +102,11 @@ namespace may be retrieved using the \fBTcl_GetObjectNamespace\fR function.
 Instances of classes are created using \fBTcl_NewObjectInstance\fR, which
 takes creates an object from any class (and which is internally called by both
 the \fBcreate\fR and \fbnew\fR methods of the \fBoo::class\fR class). It takes
-parameters that optionally give the name of the object to create, and which
-describe the arguments to pass to to the class's constructor (if any). The
-result of the function will be either a reference to the newly created object,
-or NULL if the creation failed (when an error message will be left in the
-interpreter result). In addition, objects may be copied by using
+parameters that optionally give the name of the object and namespace to
+create, and which describe the arguments to pass to to the class's constructor
+(if any). The result of the function will be either a reference to the newly
+created object, or NULL if the creation failed (when an error message will be
+left in the interpreter result). In addition, objects may be copied by using
 \fBTcl_CopyObjectInstance\fR which creates a copy of an object without running
 any constructors.
 .SH "OBJECT AND CLASS METADATA"

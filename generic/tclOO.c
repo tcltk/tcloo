@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.16 2007/06/10 23:46:53 msofer Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.17 2007/06/11 10:08:43 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1074,28 +1074,31 @@ Tcl_Object
 Tcl_NewObjectInstance(
     Tcl_Interp *interp,		/* Interpreter context. */
     Tcl_Class cls,		/* Class to create an instance of. */
-    const char *name,		/* Name of object to create, or NULL to ask
+    const char *nameStr,	/* Name of object to create, or NULL to ask
 				 * the code to pick its own unique name. */
+    const char *nsNameStr,	/* Name of namespace to create inside object,
+				 * or NULL to ask the code to pick its own
+				 * unique name. */
     int objc,			/* Number of arguments. Negative value means
 				 * do not call constructor. */
     Tcl_Obj *const *objv,	/* Argument list. */
     int skip)			/* Number of arguments to _not_ pass to the
 				 * constructor. */
 {
-    Object *oPtr = AllocObject(interp, NULL, NULL);
+    Object *oPtr = AllocObject(interp, NULL, nsNameStr);
     CallContext *contextPtr;
 
     oPtr->selfCls = (Class *) cls;
     TclOOAddToInstances(oPtr, (Class *) cls);
 
-    if (name != NULL) {
+    if (nameStr != NULL) {
 	Tcl_Obj *cmdnameObj = Tcl_NewObj();
 
 	Tcl_GetCommandFullName(interp, oPtr->command, cmdnameObj);
 	if (TclRenameCommand(interp, TclGetString(cmdnameObj),
-		name) != TCL_OK) {
+		nameStr) != TCL_OK) {
 	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp, "can't create object \"", name,
+	    Tcl_AppendResult(interp, "can't create object \"", nameStr,
 		    "\": command already exists with that name", NULL);
 	    Tcl_DecrRefCount(cmdnameObj);
 	    Tcl_DeleteCommandFromToken(interp, oPtr->command);
@@ -1166,7 +1169,8 @@ Tcl_Object
 Tcl_CopyObjectInstance(
     Tcl_Interp *interp,
     Tcl_Object sourceObject,
-    const char *targetName)
+    const char *targetName,
+    const char *targetNamespaceName)
 {
     Object *oPtr = (Object *) sourceObject, *o2Ptr;
     FOREACH_HASH_DECLS;
@@ -1194,7 +1198,8 @@ Tcl_CopyObjectInstance(
      */
 
     o2Ptr = (Object *) Tcl_NewObjectInstance(interp,
-	    (Tcl_Class) oPtr->selfCls, targetName, -1, NULL, -1);
+	    (Tcl_Class) oPtr->selfCls, targetName, targetNamespaceName, -1,
+	    NULL, -1);
     if (o2Ptr == NULL) {
 	return NULL;
     }
@@ -1757,7 +1762,8 @@ ClassCreate(
      */
 
     newObject = Tcl_NewObjectInstance(interp, (Tcl_Class) oPtr->classPtr,
-	    objName, objc, objv, Tcl_ObjectContextSkippedArgs(context)+1);
+	    objName, NULL, objc, objv,
+	    Tcl_ObjectContextSkippedArgs(context)+1);
     if (newObject == NULL) {
 	return TCL_ERROR;
     }
@@ -1805,7 +1811,7 @@ ClassNew(
      */
 
     newObject = Tcl_NewObjectInstance(interp, (Tcl_Class) oPtr->classPtr,
-	    NULL, objc, objv, Tcl_ObjectContextSkippedArgs(context));
+	    NULL, NULL, objc, objv, Tcl_ObjectContextSkippedArgs(context));
     if (newObject == NULL) {
 	return TCL_ERROR;
     }
@@ -2554,7 +2560,7 @@ CopyObjectCmd(
      */
 
     if (objc == 2) {
-	o2Ptr = Tcl_CopyObjectInstance(interp, oPtr, NULL);
+	o2Ptr = Tcl_CopyObjectInstance(interp, oPtr, NULL, NULL);
     } else {
 	char *name;
 	Tcl_DString buffer;
@@ -2572,7 +2578,7 @@ CopyObjectCmd(
 	    Tcl_DStringAppend(&buffer, name, -1);
 	    name = Tcl_DStringValue(&buffer);
 	}
-	o2Ptr = Tcl_CopyObjectInstance(interp, oPtr, name);
+	o2Ptr = Tcl_CopyObjectInstance(interp, oPtr, name, NULL);
 	Tcl_DStringFree(&buffer);
     }
 
