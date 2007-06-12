@@ -1,5 +1,8 @@
 2007-06-12  Donal K. Fellows  <dkf@users.sf.net>
 
+	* Makefile.in (gdb, gdbtest): Add targets for running a debugger that
+	actually work on Windows.
+
 	* generic/tclOOInfo.c (TclOOInitInfo): Plumb the introspection code
 	into the Tcl core [info] command.
 
