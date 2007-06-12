@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.3 2007/06/07 09:58:52 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.4 2007/06/12 12:58:35 dkf Exp $
 
 lappend auto_path .
 package require TclOO
@@ -774,41 +774,41 @@ test oo-15.3 {OO: class cloning} {
 } {::foo->::baseline ::foo->::baseline ::bar->::tester ::bar->::tester}
 
 test oo-16.1 {OO: object introspection} -body {
-    oo::InfoObject
-} -returnCodes 1 -result "wrong \# args: should be \"oo::InfoObject subcommand ?argument ...?\""
+    info object
+} -returnCodes 1 -result "wrong \# args: should be \"info object subcommand ?argument ...?\""
 test oo-16.2 {OO: object introspection} -body {
-    oo::InfoObject class NOTANOBJECT
+    info object class NOTANOBJECT
 } -returnCodes 1 -result {NOTANOBJECT does not refer to an object}
 test oo-16.3 {OO: object introspection} -body {
-    oo::InfoObject gorp oo::object
+    info object gorp oo::object
 } -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be class, definition, filters, forward, isa, methods, mixins, or vars}
 test oo-16.4 {OO: object introspection} -setup {
     oo::class create meta { superclass oo::class }
 } -body {
-    list [oo::InfoObject class oo::object] \
-	[oo::InfoObject class oo::class] \
-	[oo::InfoObject isa class     oo::object] \
-	[oo::InfoObject isa metaclass oo::object] \
-	[oo::InfoObject isa metaclass meta] \
-	[oo::InfoObject isa object    oo::object] \
-	[oo::InfoObject isa object    oo::define] \
-	[oo::InfoObject isa object    NOTANOBJECT]
+    list [info object class oo::object] \
+	[info object class oo::class] \
+	[info object isa class     oo::object] \
+	[info object isa metaclass oo::object] \
+	[info object isa metaclass meta] \
+	[info object isa object    oo::object] \
+	[info object isa object    oo::define] \
+	[info object isa object    NOTANOBJECT]
 } -cleanup {
     meta destroy
 } -result {::oo::class ::oo::class 1 0 1 1 0 0}
-test oo-16.5 {OO: object introspection} {oo::InfoObject methods oo::object} {}
+test oo-16.5 {OO: object introspection} {info object methods oo::object} {}
 test oo-16.6 {OO: object introspection} {
     oo::object create foo
-    set result [list [oo::InfoObject methods foo]]
+    set result [list [info object methods foo]]
     oo::define foo method bar {} {...}
-    lappend result [oo::InfoObject methods foo] [foo destroy]
+    lappend result [info object methods foo] [foo destroy]
 } {{} bar {}}
 test oo-16.7 {OO: object introspection} -setup {
     oo::object create foo
 } -body {
     oo::define foo method bar {a {b c} args} {the body}
-    set result [oo::InfoObject methods foo]
-    lappend result [oo::InfoObject definition foo bar]
+    set result [info object methods foo]
+    lappend result [info object definition foo bar]
 } -cleanup {
     foo destroy
 } -result {bar {{a {b c} args} {the body}}}
@@ -816,9 +816,9 @@ test oo-16.8 {OO: object introspection} {
     oo::object create foo
     oo::class create bar
     oo::define foo mixin bar
-    set result [list [oo::InfoObject mixins foo] \
-		    [oo::InfoObject isa mixin foo bar] \
-		    [oo::InfoObject isa mixin foo oo::class]]
+    set result [list [info object mixins foo] \
+		    [info object isa mixin foo bar] \
+		    [info object isa mixin foo oo::class]]
     foo destroy
     bar destroy
     return $result
@@ -828,8 +828,8 @@ test oo-16.9 {OO: object introspection} -body {
     oo::class create Bc; oo::define Bc superclass Ac
     oo::class create Cc; oo::define Cc superclass Bc
     Cc create D
-    list [oo::InfoObject isa typeof D oo::class] \
-	[oo::InfoObject isa  typeof D Ac]
+    list [info object isa typeof D oo::class] \
+	[info object isa  typeof D Ac]
 } -cleanup {
     catch {Ac destroy}
 } -result {0 1}
@@ -838,26 +838,26 @@ test oo-16.10 {OO: object introspection} -setup {
 } -body {
     oo::define foo export eval
     foo eval {variable c 3 a 1 b 2 ddd 4 e}
-    lsort [oo::InfoObject vars foo ?]
+    lsort [info object vars foo ?]
 } -cleanup {
     foo destroy
 } -result {a b c}
 
 test oo-17.1 {OO: class introspection} -body {
-    oo::InfoClass
-} -returnCodes 1 -result "wrong \# args: should be \"oo::InfoClass subcommand ?argument ...?\""
+    info class
+} -returnCodes 1 -result "wrong \# args: should be \"info class subcommand ?argument ...?\""
 test oo-17.2 {OO: class introspection} -body {
-    oo::InfoClass superclass NOTANOBJECT
+    info class superclass NOTANOBJECT
 } -returnCodes 1 -result {NOTANOBJECT does not refer to an object}
 test oo-17.3 {OO: class introspection} -setup {
     oo::object create foo
 } -body {
-    oo::InfoClass superclass foo
+    info class superclass foo
 } -returnCodes 1 -cleanup {
     foo destroy
 } -result {"foo" is not a class}
 test oo-17.4 {OO: class introspection} -body {
-    oo::InfoClass gorp oo::object
+    info class gorp oo::object
 } -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be constructor, definition, destructor, filters, forward, instances, methods, mixins, subclasses, or superclasses}
 test oo-17.5 {OO: class introspection} -setup {
     oo::class create testClass
@@ -865,7 +865,7 @@ test oo-17.5 {OO: class introspection} -setup {
     testClass create foo
     testClass create bar
     testClass create spong
-    lsort [oo::InfoClass instances testClass]
+    lsort [info class instances testClass]
 } -cleanup {
     testClass destroy
 } -result {::bar ::foo ::spong}
@@ -873,13 +873,13 @@ test oo-17.6 {OO: object introspection} -setup {
     oo::class create foo
 } -body {
     oo::define foo method bar {a {b c} args} {the body}
-    set result [oo::InfoClass methods foo]
-    lappend result [oo::InfoClass definition foo bar]
+    set result [info class methods foo]
+    lappend result [info class definition foo bar]
 } -cleanup {
     foo destroy
 } -result {bar {{a {b c} args} {the body}}}
 test oo-17.7 {OO: object introspection} {
-    oo::InfoClass superclasses oo::class
+    info class superclasses oo::class
 } ::oo::object
 test oo-17.8 {OO: object introspection} -setup {
     oo::class create testClass
@@ -887,8 +887,8 @@ test oo-17.8 {OO: object introspection} -setup {
     oo::class create superClass2
 } -body {
     oo::define testClass superclass superClass1 superClass2
-    list [oo::InfoClass superclasses testClass] \
-	[lsort [oo::InfoClass subclass oo::object ::superClass?]]
+    list [info class superclasses testClass] \
+	[lsort [info class subclass oo::object ::superClass?]]
 } -cleanup {
     testClass destroy
     superClass1 destroy
@@ -996,7 +996,7 @@ test oo-20.1 {OO: variable method} -body {
 	    set ok {}
 	}
     }
-    lsort [oo::InfoObject vars [testClass new]]
+    lsort [info object vars [testClass new]]
 } -cleanup {
     catch {testClass destroy}
 } -result ok
@@ -1007,7 +1007,7 @@ test oo-20.2 {OO: variable method} -body {
 	    set a [set b [set c {}]]
 	}
     }
-    lsort [oo::InfoObject vars [testClass new]]
+    lsort [info object vars [testClass new]]
 } -cleanup {
     catch {testClass destroy}
 } -result {a b c}
