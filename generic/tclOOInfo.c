@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.5 2007/06/12 13:38:11 dkf Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.6 2007/06/12 15:01:34 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -70,6 +70,17 @@ static const struct NameProcMap infoClassCmds[] = {
     {NULL, NULL}
 };
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOInitInfo --
+ *
+ *	Adjusts the Tcl core [info] command to contain subcommands ("object"
+ *	and "class") for introspection of objects and classes.
+ *
+ * ----------------------------------------------------------------------
+ */
+
 void
 TclOOInitInfo(
     Tcl_Interp *interp)
@@ -121,6 +132,16 @@ TclOOInitInfo(
     }
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InfoObjectClassCmd --
+ *
+ *	Implements [info object class $objName ?$className?]
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static int
 InfoObjectClassCmd(
     ClientData clientData,
@@ -171,6 +192,16 @@ InfoObjectClassCmd(
     }
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InfoObjectDefnCmd --
+ *
+ *	Implements [info object definition $objName $methodName]
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static int
 InfoObjectDefnCmd(
     ClientData clientData,
@@ -238,6 +269,16 @@ InfoObjectDefnCmd(
     return TCL_OK;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InfoObjectFiltersCmd --
+ *
+ *	Implements [info object filters $objName]
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static int
 InfoObjectFiltersCmd(
     ClientData clientData,
@@ -265,6 +306,16 @@ InfoObjectFiltersCmd(
     return TCL_OK;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InfoObjectForwardCmd --
+ *
+ *	Implements [info object forward $objName $methodName]
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static int
 InfoObjectForwardCmd(
     ClientData clientData,
@@ -304,6 +355,16 @@ InfoObjectForwardCmd(
     return TCL_OK;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InfoObjectIsACmd --
+ *
+ *	Implements [info object isa $category $objName ...]
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static int
 InfoObjectIsACmd(
     ClientData clientData,
@@ -414,6 +475,16 @@ InfoObjectIsACmd(
     return TCL_ERROR;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InfoObjectMethodsCmd --
+ *
+ *	Implements [info object methods $objName ?$option ...?]
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static int
 InfoObjectMethodsCmd(
     ClientData clientData,
@@ -484,6 +555,16 @@ InfoObjectMethodsCmd(
     return TCL_OK;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InfoObjectMixinsCmd --
+ *
+ *	Implements [info object mixins $objName]
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static int
 InfoObjectMixinsCmd(
     ClientData clientData,
@@ -511,6 +592,16 @@ InfoObjectMixinsCmd(
     return TCL_OK;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InfoObjectVarsCmd --
+ *
+ *	Implements [info object vars $objName ?$pattern?]
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static int
 InfoObjectVarsCmd(
     ClientData clientData,
@@ -549,6 +640,16 @@ InfoObjectVarsCmd(
     return TCL_OK;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InfoClassConstrCmd --
+ *
+ *	Implements [info class constructor $clsName]
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static int
 InfoClassConstrCmd(
     ClientData clientData,
@@ -612,6 +713,16 @@ InfoClassConstrCmd(
     return TCL_OK;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InfoClassDefnCmd --
+ *
+ *	Implements [info class definition $clsName $methodName]
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static int
 InfoClassDefnCmd(
     ClientData clientData,
@@ -679,6 +790,16 @@ InfoClassDefnCmd(
     return TCL_OK;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InfoClassDestrCmd --
+ *
+ *	Implements [info class destructor $clsName]
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static int
 InfoClassDestrCmd(
     ClientData clientData,
@@ -724,6 +845,16 @@ InfoClassDestrCmd(
     return TCL_OK;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InfoClassFiltersCmd --
+ *
+ *	Implements [info class filters $clsName]
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static int
 InfoClassFiltersCmd(
     ClientData clientData,
@@ -757,6 +888,16 @@ InfoClassFiltersCmd(
     return TCL_OK;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InfoClassForwardCmd --
+ *
+ *	Implements [info class forward $clsName $methodName]
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static int
 InfoClassForwardCmd(
     ClientData clientData,
@@ -802,6 +943,16 @@ InfoClassForwardCmd(
     return TCL_OK;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InfoClassInstancesCmd --
+ *
+ *	Implements [info class instances $clsName ?$pattern?]
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static int
 InfoClassInstancesCmd(
     ClientData clientData,
@@ -843,6 +994,16 @@ InfoClassInstancesCmd(
     return TCL_OK;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InfoClassMethodsCmd --
+ *
+ *	Implements [info class methods $clsName ?-private?]
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static int
 InfoClassMethodsCmd(
     ClientData clientData,
@@ -894,6 +1055,16 @@ InfoClassMethodsCmd(
     return TCL_OK;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InfoClassMixinsCmd --
+ *
+ *	Implements [info class mixins $clsName]
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static int
 InfoClassMixinsCmd(
     ClientData clientData,
@@ -927,6 +1098,16 @@ InfoClassMixinsCmd(
     return TCL_OK;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InfoClassSubsCmd --
+ *
+ *	Implements [info class subclasses $clsName ?$pattern?]
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static int
 InfoClassSubsCmd(
     ClientData clientData,
@@ -968,6 +1149,16 @@ InfoClassSubsCmd(
     return TCL_OK;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InfoClassSupersCmd --
+ *
+ *	Implements [info class superclasses $clsName]
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static int
 InfoClassSupersCmd(
     ClientData clientData,
