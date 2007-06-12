@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.3 2007/06/11 09:32:59 dkf Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.4 2007/06/12 12:58:35 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -75,6 +75,7 @@ TclOOInitInfo(
     Tcl_Interp *interp)
 {
     Tcl_Namespace *nsPtr;
+    Tcl_Command infoCmd;
     int i;
 
     /*
@@ -100,88 +101,26 @@ TclOOInitInfo(
 	Tcl_CreateObjCommand(interp, infoClassCmds[i].name,
 		infoClassCmds[i].proc, NULL, NULL);
     }
-}
 
-int
-TclInfoObjectCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const *objv)
-{
-    Interp *iPtr = (Interp *) interp;
-    int result;
-    Tcl_Obj **newobjv = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj *) * objc-1);
-    int isRootEnsemble = (iPtr->ensembleRewrite.sourceObjs == NULL);
+    /*
+     * Install into the master [info] ensemble.
+     */
 
-    if (isRootEnsemble) {
-	iPtr->ensembleRewrite.sourceObjs = objv;
-	iPtr->ensembleRewrite.numRemovedObjs = 2;
-	iPtr->ensembleRewrite.numInsertedObjs = 1;
-    } else {
-	int ni = iPtr->ensembleRewrite.numInsertedObjs;
-	if (ni < 2) {
-	    iPtr->ensembleRewrite.numRemovedObjs += 2 - ni;
-	} else {
-	    iPtr->ensembleRewrite.numInsertedObjs--;
+    infoCmd = Tcl_FindCommand(interp, "info", NULL, TCL_GLOBAL_ONLY);
+    if (infoCmd != NULL && Tcl_IsEnsemble(infoCmd)) {
+	Tcl_Obj *mapDict, *fromObj, *toObj;
+
+	Tcl_GetEnsembleMappingDict(NULL, infoCmd, &mapDict);
+	if (mapDict != NULL) {
+	    TclNewLiteralStringObj(fromObj, "object");
+	    TclNewLiteralStringObj(toObj, "::oo::InfoObject");
+	    Tcl_DictObjPut(NULL, mapDict, fromObj, toObj);
+	    TclNewLiteralStringObj(fromObj, "class");
+	    TclNewLiteralStringObj(toObj, "::oo::InfoClass");
+	    Tcl_DictObjPut(NULL, mapDict, fromObj, toObj);
+	    Tcl_SetEnsembleMappingDict(NULL, infoCmd, mapDict);
 	}
     }
-
-    newobjv[0] = Tcl_NewStringObj("::oo::InfoObject", -1);
-    Tcl_IncrRefCount(newobjv[0]);
-    if (objc > 2) {
-	memcpy(newobjv+1, objv+2, sizeof(Tcl_Obj *) * (objc-2));
-    }
-    result = Tcl_EvalObjv(interp, objc-1, newobjv, TCL_EVAL_INVOKE);
-    Tcl_DecrRefCount(newobjv[0]);
-    ckfree((char *) newobjv);
-    if (isRootEnsemble) {
-	iPtr->ensembleRewrite.sourceObjs = NULL;
-	iPtr->ensembleRewrite.numRemovedObjs = 0;
-	iPtr->ensembleRewrite.numInsertedObjs = 0;
-    }
-    return result;
-}
-
-int
-TclInfoClassCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const *objv)
-{
-    Interp *iPtr = (Interp *) interp;
-    int result;
-    Tcl_Obj **newobjv = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj *) * objc-1);
-    int isRootEnsemble = (iPtr->ensembleRewrite.sourceObjs == NULL);
-
-    if (isRootEnsemble) {
-	iPtr->ensembleRewrite.sourceObjs = objv;
-	iPtr->ensembleRewrite.numRemovedObjs = 2;
-	iPtr->ensembleRewrite.numInsertedObjs = 1;
-    } else {
-	int ni = iPtr->ensembleRewrite.numInsertedObjs;
-	if (ni < 2) {
-	    iPtr->ensembleRewrite.numRemovedObjs += 2 - ni;
-	} else {
-	    iPtr->ensembleRewrite.numInsertedObjs--;
-	}
-    }
-
-    newobjv[0] = Tcl_NewStringObj("::oo::InfoClass", -1);
-    Tcl_IncrRefCount(newobjv[0]);
-    if (objc > 2) {
-	memcpy(newobjv+1, objv+2, sizeof(Tcl_Obj *) * (objc-2));
-    }
-    result = Tcl_EvalObjv(interp, objc-1, newobjv, TCL_EVAL_INVOKE);
-    Tcl_DecrRefCount(newobjv[0]);
-    ckfree((char *) newobjv);
-    if (isRootEnsemble) {
-	iPtr->ensembleRewrite.sourceObjs = NULL;
-	iPtr->ensembleRewrite.numRemovedObjs = 0;
-	iPtr->ensembleRewrite.numInsertedObjs = 0;
-    }
-    return result;
 }
 
 static int
