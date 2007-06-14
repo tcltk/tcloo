@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.4 2007/06/09 23:45:23 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.5 2007/06/14 21:03:55 msofer Exp $
  */
 
 #include <tclInt.h>
@@ -259,11 +259,11 @@ typedef struct CallContext {
  * Assorted flags for call frames. Note that bit 1 is already taken.
  */
 
-#define FRAME_IS_METHOD	0x2	/* TODO: Docme */
-#define FRAME_IS_FILTER	0x4	/* TODO: Docme */
-#define FRAME_IS_OO_DEFINE 0x8	/* TODO: Docme */
-#define FRAME_IS_CONSTRUCTOR 0x10
-#define FRAME_IS_DESTRUCTOR 0x20
+#define FRAME_IS_METHOD	0x4	/* TODO: Docme */
+#define FRAME_IS_FILTER	0x8	/* TODO: Docme */
+#define FRAME_IS_OO_DEFINE 0x10	/* TODO: Docme */
+#define FRAME_IS_CONSTRUCTOR 0x20
+#define FRAME_IS_DESTRUCTOR 0x40
 
 /*
  * Structure containing definition information about basic class methods.

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.1 2007/06/09 23:45:23 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.2 2007/06/14 21:03:55 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -629,7 +629,7 @@ InvokeProcedureMethod(
      * Now invoke the body of the method.
      */
 
-    result = TclObjInterpProcCore(interp, framePtr, nameObj, 0, skip, errProc);
+    result = TclObjInterpProcCore(interp, nameObj, skip, errProc);
     return result;
 }
 
