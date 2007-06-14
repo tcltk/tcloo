@@ -1,3 +1,10 @@
+2007-06-14  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclOOMethod.c (InvokeProcedureMethod):
+	* tclOOInt.h: Adaptation to a change in Tcl HEAD: renumbering the
+	FRAME_IS_... flag values, using the new shorter api to
+	TclObjInterpProcCore.
+
 2007-06-12  Donal K. Fellows  <dkf@users.sf.net>
 
 	* Makefile.in (gdb, gdbtest): Add targets for running a debugger that
