@@ -1,3 +1,11 @@
+2007-06-15  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclOOCall.c (methodNameType, TclOOStashContext)
+	(DupMethodNameRep, FreeMethodNameRep, TclOOGetCallContext):
+	* generic/tclOO.c (AllocObject, ObjectCmd): Cache call contexts in
+	* generic/tclOOInt.h: Tcl_Obj internal representations for (hopefully)
+	some speedup of method invokation.
+
 2007-06-14  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclOOMethod.c (InvokeProcedureMethod):

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.1 2007/05/18 13:17:15 dkf Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.2 2007/06/15 14:26:03 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -58,6 +58,20 @@ static void		AddSimpleClassChainToCallContext(Class *classPtr,
 			    Class *filterDecl);
 static int		CmpStr(const void *ptr1, const void *ptr2);
 static void		InitClassHierarchy(Foundation *fPtr, Class *classPtr);
+static void		DupMethodNameRep(Tcl_Obj *srcPtr, Tcl_Obj *dstPtr);
+static void		FreeMethodNameRep(Tcl_Obj *objPtr);
+
+/*
+ * Object type used to manage type caches attached to method names.
+ */
+
+static Tcl_ObjType methodNameType = {
+    "TclOO method name",
+    FreeMethodNameRep,
+    DupMethodNameRep,
+    NULL,
+    NULL
+};
 
 /*
  * ----------------------------------------------------------------------
@@ -73,10 +87,71 @@ void
 TclOODeleteContext(
     CallContext *contextPtr)
 {
+    if (--contextPtr->refCount >= 1) {
+	return;
+    }
     if (contextPtr->callChain != contextPtr->staticCallChain) {
 	ckfree((char *) contextPtr->callChain);
     }
     ckfree((char *) contextPtr);
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOStashContext --
+ *
+ *	Saves a reference to a method call context in a Tcl_Obj's internal
+ *	representation.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+void
+TclOOStashContext(
+    Tcl_Obj *objPtr,
+    CallContext *contextPtr)
+{
+    if (objPtr->typePtr && objPtr->typePtr->freeIntRepProc) {
+	objPtr->typePtr->freeIntRepProc(objPtr);
+    }
+    objPtr->typePtr = &methodNameType;
+    objPtr->internalRep.otherValuePtr = contextPtr;
+    contextPtr->refCount++;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * DupMethodNameRep, FreeMethodNameRep --
+ *
+ *	Functions to implement the required parts of the Tcl_Obj guts needed
+ *	for caching of method contexts in Tcl_Objs.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static void
+DupMethodNameRep(
+    Tcl_Obj *srcPtr,
+    Tcl_Obj *dstPtr)
+{
+    CallContext *contextPtr = srcPtr->internalRep.otherValuePtr;
+
+    dstPtr->typePtr = &methodNameType;
+    dstPtr->internalRep.otherValuePtr = contextPtr;
+    contextPtr->refCount++;
+}
+
+static void
+FreeMethodNameRep(
+    Tcl_Obj *objPtr)
+{
+    register CallContext *contextPtr = objPtr->internalRep.otherValuePtr;
+
+    TclOODeleteContext(contextPtr);
+    objPtr->internalRep.otherValuePtr = NULL;
+    objPtr->typePtr = NULL;
 }
 
 /*
@@ -469,6 +544,19 @@ TclOOGetCallContext(
 	hPtr = NULL;
 	doFilters = 0;
     } else {
+	if (methodNameObj->typePtr == &methodNameType) {
+	    cb.contextPtr = methodNameObj->internalRep.otherValuePtr;
+	    if ((cb.contextPtr->oPtr->creationEpoch == oPtr->creationEpoch)
+		    && (cb.contextPtr->globalEpoch == fPtr->epoch)
+		    && (cb.contextPtr->localEpoch == oPtr->epoch)
+		    && (cb.contextPtr->flags == flags)) {
+		cb.contextPtr->refCount++;
+		return cb.contextPtr;
+	    }
+	    methodNameObj->internalRep.otherValuePtr = NULL;
+	    methodNameObj->typePtr = NULL;
+	    TclOODeleteContext(cb.contextPtr);
+	}
 	doFilters = 1;
 	hPtr = Tcl_FindHashEntry(cachePtr, (char *) methodNameObj);
 	if (hPtr != NULL && Tcl_GetHashValue(hPtr) != NULL) {
@@ -489,6 +577,7 @@ TclOOGetCallContext(
     cb.contextPtr->localEpoch = oPtr->epoch;
     cb.contextPtr->flags = 0;
     cb.contextPtr->skip = 2;
+    cb.contextPtr->refCount = 1;
     if (flags & (PUBLIC_METHOD|PRIVATE_METHOD|SPECIAL|FILTER_HANDLING)) {
 	cb.contextPtr->flags |=
 		flags&(PUBLIC_METHOD|PRIVATE_METHOD|SPECIAL|FILTER_HANDLING);
