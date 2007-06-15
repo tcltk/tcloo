@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.18 2007/06/11 12:25:42 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.19 2007/06/15 14:26:03 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -347,6 +347,7 @@ AllocObject(
     Tcl_Obj *cmdnameObj;
     Tcl_DString buffer;
     Object *oPtr;
+    int creationEpoch;
 
     oPtr = (Object *) ckalloc(sizeof(Object));
     memset(oPtr, 0, sizeof(Object));
@@ -355,6 +356,7 @@ AllocObject(
 	oPtr->namespacePtr = Tcl_CreateNamespace(interp, nsNameStr, oPtr,
 		ObjectNamespaceDeleted);
 	if (oPtr->namespacePtr != NULL) {
+	    creationEpoch = ++fPtr->nsCount;
 	    goto configNamespace;
 	}
 	Tcl_ResetResult(interp);
@@ -367,6 +369,7 @@ AllocObject(
 	oPtr->namespacePtr = Tcl_CreateNamespace(interp, objName, oPtr,
 		ObjectNamespaceDeleted);
 	if (oPtr->namespacePtr != NULL) {
+	    creationEpoch = fPtr->nsCount;
 	    break;
 	}
 
@@ -392,6 +395,7 @@ AllocObject(
     oPtr->mixins.list = NULL;
     oPtr->classPtr = NULL;
     oPtr->flags = 0;
+    oPtr->creationEpoch = creationEpoch;
     oPtr->metadataPtr = NULL;
 
     /*
@@ -1698,6 +1702,7 @@ ObjectCmd(
 	hPtr = Tcl_FindHashEntry(cachePtr, (char *) objv[1]);
 	if (hPtr != NULL && Tcl_GetHashValue(hPtr) == NULL) {
 	    Tcl_SetHashValue(hPtr, contextPtr);
+	    TclOOStashContext(objv[1], contextPtr);
 	} else {
 	    TclOODeleteContext(contextPtr);
 	}

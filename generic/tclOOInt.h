@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.5 2007/06/14 21:03:55 msofer Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.6 2007/06/15 14:26:03 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -104,6 +104,8 @@ typedef struct Object {
 				 * to the class structure. Everything else has
 				 * this NULL. */
     int flags;
+    int creationEpoch;		/* Unique value to make comparisons of objects
+				 * easier. */
     int epoch;			/* Per-object epoch, incremented when the way
 				 * an object should resolve call chains is
 				 * changed. */
@@ -236,6 +238,7 @@ typedef struct CallContext {
     int flags;			/* Assorted flags, see below. */
     int index;			/* Index into the call chain of the currently
 				 * executing method implementation. */
+    int refCount;		/* Reference count. */
     int skip;
     int numCallChain;		/* Size of the call chain. */
     struct MInvoke *callChain;	/* Array of call chain entries. May point to
@@ -350,6 +353,8 @@ MODULE_SCOPE void	TclOORemoveFromSubclasses(Class *subPtr,
 MODULE_SCOPE void	TclOORemoveFromMixinSubs(Class *subPtr,
 			    Class *mixinPtr);
 MODULE_SCOPE void	TclOODeleteContext(CallContext *contextPtr);
+MODULE_SCOPE void	TclOOStashContext(Tcl_Obj *objPtr,
+			    CallContext *contextPtr);
 MODULE_SCOPE CallContext *TclOOGetCallContext(Foundation *fPtr, Object *oPtr,
 			    Tcl_Obj *methodNameObj, int flags,
 			    Tcl_HashTable *cachePtr);
