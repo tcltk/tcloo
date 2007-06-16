@@ -1,4 +1,10 @@
-2007-06-15  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+2007-06-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (Tcl_NewObjectInstance): When renaming an object
+	during construction, make sure that it is not being renamed to itself.
+	Thanks to Arnulf Wiedemann for spotting this.
+
+2007-06-15  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOCall.c (methodNameType, TclOOStashContext)
 	(DupMethodNameRep, FreeMethodNameRep, TclOOGetCallContext):

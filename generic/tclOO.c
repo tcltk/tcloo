@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.19 2007/06/15 14:26:03 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.20 2007/06/16 14:53:08 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1102,9 +1102,32 @@ Tcl_NewObjectInstance(
 
     if (nameStr != NULL) {
 	Tcl_Obj *cmdnameObj = Tcl_NewObj();
+	Namespace *nsPtr, *dummy;
+	const char *simpleName;
+	Tcl_DString buf;
+	int cmp;
 
 	Tcl_GetCommandFullName(interp, oPtr->command, cmdnameObj);
-	if (TclRenameCommand(interp, TclGetString(cmdnameObj),
+
+	/*
+	 * Take extra care to verify that we are not renaming a command to
+	 * itself.
+	 */
+
+	TclGetNamespaceForQualName(interp, nameStr, NULL, TCL_NAMESPACE_ONLY,
+		&nsPtr, &dummy, &dummy, &simpleName);
+	if (simpleName == NULL || nsPtr == NULL) {
+	    goto skipRename;
+	}
+	Tcl_DStringInit(&buf);
+	Tcl_DStringAppend(&buf, nsPtr->fullName, -1);
+	if (nsPtr->parentPtr) {
+	    Tcl_DStringAppend(&buf, "::", 2);
+	}
+	Tcl_DStringAppend(&buf, simpleName, -1);
+	cmp = strcmp(TclGetString(cmdnameObj), Tcl_DStringValue(&buf));
+	Tcl_DStringFree(&buf);
+	if (cmp && TclRenameCommand(interp, TclGetString(cmdnameObj),
 		nameStr) != TCL_OK) {
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "can't create object \"", nameStr,
@@ -1113,6 +1136,7 @@ Tcl_NewObjectInstance(
 	    Tcl_DeleteCommandFromToken(interp, oPtr->command);
 	    return NULL;
 	}
+    skipRename:
 	Tcl_DecrRefCount(cmdnameObj);
     }
 
