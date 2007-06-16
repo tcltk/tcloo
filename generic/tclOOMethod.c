@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.2 2007/06/14 21:03:55 msofer Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.3 2007/06/16 23:01:32 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -335,6 +335,7 @@ TclOONewProcMethod(
 	return NULL;
     }
     pmPtr->procPtr->cmdPtr = NULL;
+    pmPtr->flags = flags & USE_DECLARER_NS;
 
     if (iPtr->cmdFramePtr) {
 	CmdFrame context = *iPtr->cmdFramePtr;
@@ -455,6 +456,7 @@ TclOONewProcClassMethod(
     if (argsLen == -1) {
 	Tcl_DecrRefCount(argsObj);
     }
+    pmPtr->flags = flags & USE_DECLARER_NS;
 
     if (iPtr->cmdFramePtr) {
 	CmdFrame context = *iPtr->cmdFramePtr;
@@ -551,12 +553,8 @@ InvokeProcedureMethod(
     void (*errProc)(Tcl_Interp *,Tcl_Obj *);
     ExtraFrameInfo efi;
     struct PNI pni;
+    Tcl_Namespace *nsPtr = oPtr->namespacePtr;
 
-    efi.length = 2;
-    memset(&cmd, 0, sizeof(Command));
-    cmd.nsPtr = (Namespace *) oPtr->namespacePtr;
-    cmd.clientData = &efi;
-    pmPtr->procPtr->cmdPtr = &cmd;
     if (contextPtr->flags & CONSTRUCTOR) {
 	Foundation *fPtr = TclOOGetFoundation(interp);
 
@@ -576,9 +574,30 @@ InvokeProcedureMethod(
 	namePtr = TclGetString(nameObj);
 	errProc = MethodErrorHandler;
     }
+
+    /*
+     * Magic to enable things like [incr Tcl], which wants methods to run in
+     * their class's namespace.
+     */
+
+    if (pmPtr->flags & USE_DECLARER_NS) {
+	register Method *mPtr = contextPtr->callChain[contextPtr->index].mPtr;
+
+	if (mPtr->declaringClassPtr != NULL) {
+	    nsPtr = mPtr->declaringClassPtr->thisPtr->namespacePtr;
+	} else {
+	    nsPtr = mPtr->declaringObjectPtr->namespacePtr;
+	}
+    }
+
+    efi.length = 2;
+    memset(&cmd, 0, sizeof(Command));
+    cmd.nsPtr = (Namespace *) nsPtr;
+    cmd.clientData = &efi;
+    pmPtr->procPtr->cmdPtr = &cmd;
     result = TclProcCompileProc(interp, pmPtr->procPtr,
-	    pmPtr->procPtr->bodyPtr, (Namespace *) oPtr->namespacePtr,
-	    "body of method", namePtr);
+	    pmPtr->procPtr->bodyPtr, (Namespace *) nsPtr, "body of method",
+	    namePtr);
     if (result != TCL_OK) {
 	return result;
     }
@@ -588,8 +607,8 @@ InvokeProcedureMethod(
     }
     flags |= FRAME_IS_PROC;
     framePtrPtr = &framePtr;
-    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
-	    oPtr->namespacePtr, flags);
+    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr, nsPtr,
+	    flags);
     if (result != TCL_OK) {
 	return result;
     }
@@ -807,6 +826,7 @@ CloneProcedureMethod(
 
     pm2Ptr->procPtr = pmPtr->procPtr;
     pm2Ptr->procPtr->refCount++;
+    pm2Ptr->flags = pmPtr->flags;
     *newClientData = pm2Ptr;
     return TCL_OK;
 }

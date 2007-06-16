@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.6 2007/06/15 14:26:03 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.7 2007/06/16 23:01:31 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -54,7 +54,21 @@ typedef struct Method {
 
 typedef struct ProcedureMethod {
     Proc *procPtr;
+    int flags;
 } ProcedureMethod;
+
+/*
+ * Flags for use in a ProcedureMethod.
+ *
+ * When the USE_DECLARER_NS flag is set, the method will use the namespace of
+ * the object or class that declared it (or the clone of it, if it was from
+ * such that the implementation of the method came to the particular use)
+ * instead of the namespace of the object on which the method was invoked.
+ * This flag must be distinct from all others that are associated with
+ * methods.
+ */
+
+#define USE_DECLARER_NS		0x80
 
 /*
  * Forwarded methods have the following extra information. It is a
