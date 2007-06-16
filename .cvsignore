@@ -4,3 +4,6 @@ Makefile
 autom4te.cache
 config.*
 pkgIndex.tcl
+.settings
+.project
+.cdtproject
