@@ -1,5 +1,12 @@
 2007-06-16  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclOOMethod.c (InvokeProcedureMethod, TclOONewProcMethod)
+	(TclOONewProcClassMethod, CloneProcedureMethod): Added a mechanism to
+	allow control over whether a method is invoked in the namespace of the
+	object that it was invoked upon (the old behaviour, and still the
+	default) or the class that defined it (required for non-horrible
+	support of Itcl). Not yet exposed to scripts.
+
 	* generic/tclOO.c (Tcl_NewObjectInstance): When renaming an object
 	during construction, make sure that it is not being renamed to itself.
 	Thanks to Arnulf Wiedemann for spotting this.
