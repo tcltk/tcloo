@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.3 2007/06/16 23:01:32 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.4 2007/06/25 14:20:21 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -602,9 +602,6 @@ InvokeProcedureMethod(
 	return result;
     }
 
-    if (contextPtr->callChain[contextPtr->index].isFilter) {
-	flags |= FRAME_IS_FILTER;
-    }
     flags |= FRAME_IS_PROC;
     framePtrPtr = &framePtr;
     result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr, nsPtr,
