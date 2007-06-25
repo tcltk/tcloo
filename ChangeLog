@@ -1,3 +1,10 @@
+2007-06-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOInt.h, generic/tclOOMethod.c (InvokeProcedureMethod):
+	Removed the FRAME_IS_FILTER flag; it was never queried anywhere since
+	it proved more reliable to get the is-filter info from elsewhere.
+	Documented the other call-frame flags.
+
 2007-06-16  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOMethod.c (InvokeProcedureMethod, TclOONewProcMethod)

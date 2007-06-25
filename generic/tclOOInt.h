@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.7 2007/06/16 23:01:31 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.8 2007/06/25 14:20:20 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -273,14 +273,21 @@ typedef struct CallContext {
 #define DESTRUCTOR	  0x10	/* This is a destructor. */
 
 /*
- * Assorted flags for call frames. Note that bit 1 is already taken.
+ * Assorted flags for call frames. Note that bits 1 and 2 are already taken by
+ * Tcl itself.
  */
 
-#define FRAME_IS_METHOD	0x4	/* TODO: Docme */
-#define FRAME_IS_FILTER	0x8	/* TODO: Docme */
-#define FRAME_IS_OO_DEFINE 0x10	/* TODO: Docme */
-#define FRAME_IS_CONSTRUCTOR 0x20
-#define FRAME_IS_DESTRUCTOR 0x40
+#define FRAME_IS_METHOD	0x4	/* The frame is a method body, and the frame's
+				 * clientData field contains a CallContext
+				 * reference. */
+#define FRAME_IS_OO_DEFINE 0x8	/* The frame is part of the inside workings of
+				 * the [oo::define] command; the clientData
+				 * field contains an Object reference. */
+#define FRAME_IS_CONSTRUCTOR 0x10
+				/* The frame is a constructor, and not just a
+				 * normal method. */
+#define FRAME_IS_DESTRUCTOR 0x20/* The frame is a destructor, and not just a
+				 * normal method. */
 
 /*
  * Structure containing definition information about basic class methods.
