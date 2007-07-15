@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.6 2007/06/12 15:01:34 dkf Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.7 2007/07/15 21:07:40 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -627,7 +627,7 @@ InfoObjectVarsCmd(
     }
 
     FOREACH_HASH(name, varPtr, &((Namespace *) oPtr->namespacePtr)->varTable) {
-	if (varPtr->flags & VAR_UNDEFINED) {
+	if (TclIsVarUndefined(varPtr)) {
 	    continue;
 	}
 	if (pattern != NULL && !Tcl_StringMatch(name, pattern)) {
