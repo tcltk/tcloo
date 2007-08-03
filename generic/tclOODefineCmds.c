@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1 2007/05/18 13:17:15 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.2 2007/08/03 12:20:48 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -185,7 +185,7 @@ TclOODefineConstructorObjCmd(
 	Method *mPtr;
 
 	mPtr = TclOONewProcClassMethod(interp, clsPtr, PUBLIC_METHOD, NULL,
-		objv[1], objv[2]);
+		objv[1], objv[2], NULL);
 	if (mPtr == NULL) {
 	    return TCL_ERROR;
 	}
@@ -247,7 +247,7 @@ TclOODefineDestructorObjCmd(
 	Method *mPtr;
 
 	mPtr = TclOONewProcClassMethod(interp, clsPtr, PUBLIC_METHOD, NULL,
-		NULL, objv[1]);
+		NULL, objv[1], NULL);
 	if (mPtr == NULL) {
 	    return TCL_ERROR;
 	}
@@ -506,10 +506,10 @@ TclOODefineMethodObjCmd(
 
 	if (isSelfMethod) {
 	    mPtr = TclOONewProcMethod(interp, oPtr, isPublic, objv[1],
-		    objv[2], objv[3]);
+		    objv[2], objv[3], NULL);
 	} else {
 	    mPtr = TclOONewProcClassMethod(interp, oPtr->classPtr, isPublic,
-		    objv[1], objv[2], objv[3]);
+		    objv[1], objv[2], objv[3], NULL);
 	}
 	if (mPtr == NULL) {
 	    return TCL_ERROR;

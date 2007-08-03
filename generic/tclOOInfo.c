@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.7 2007/07/15 21:07:40 msofer Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.8 2007/08/03 12:20:48 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -610,9 +610,10 @@ InfoObjectVarsCmd(
     Tcl_Obj *const objv[])
 {
     Object *oPtr;
-    const char *pattern = NULL, *name;
+    const char *pattern = NULL;
     FOREACH_HASH_DECLS;
-    Var *varPtr;
+    VarInHash *vihPtr;
+    Tcl_Obj *nameObj, *resultObj;
 
     if (objc != 2 && objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objName ?pattern?");
@@ -625,18 +626,30 @@ InfoObjectVarsCmd(
     if (objc == 3) {
 	pattern = TclGetString(objv[2]);
     }
+    resultObj = Tcl_NewObj();
 
-    FOREACH_HASH(name, varPtr, &((Namespace *) oPtr->namespacePtr)->varTable) {
-	if (TclIsVarUndefined(varPtr)) {
+    /*
+     * Extract the information we need from the object's namespace's table of
+     * variables. Note that this involves horrific knowledge of the guts of
+     * tclVar.c, so we can't leverage our hash-iteration macros properly.
+     */
+
+    FOREACH_HASH_VALUE(vihPtr,
+	    &((Namespace *) oPtr->namespacePtr)->varTable.table) {
+	nameObj = vihPtr->entry.key.objPtr;
+
+	if (TclIsVarUndefined(&vihPtr->var)
+		|| !TclIsVarNamespaceVar(&vihPtr->var)) {
 	    continue;
 	}
-	if (pattern != NULL && !Tcl_StringMatch(name, pattern)) {
+	if (pattern != NULL
+		&& !Tcl_StringMatch(TclGetString(nameObj), pattern)) {
 	    continue;
 	}
-	Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
-		Tcl_NewStringObj(name, -1));
+	Tcl_ListObjAppendElement(NULL, resultObj, nameObj);
     }
 
+    Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
 }
 

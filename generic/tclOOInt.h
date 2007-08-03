@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.8 2007/06/25 14:20:20 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.9 2007/08/03 12:20:49 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -47,15 +47,42 @@ typedef struct Method {
 } Method;
 
 /*
+ * Pre- and post-call callbacks, to allow procedure-like methods to be fine
+ * tuned in their behaviour.
+ */
+
+typedef int (*TclOO_PreCallProc)(Tcl_Interp *interp,
+	Tcl_ObjectContext context, Tcl_Namespace *namespacePtr,
+	int *isFinished);
+typedef int (*TclOO_PostCallProc)(Tcl_Interp *interp,
+	Tcl_ObjectContext context, Tcl_Namespace *namespacePtr, int result);
+
+/*
  * Procedure-like methods have the following extra information. It is a
  * single-field structure because this allows for future expansion without
  * changing vast amounts of code.
  */
 
 typedef struct ProcedureMethod {
-    Proc *procPtr;
-    int flags;
+    int version;		/* Version of this structure. Currently must
+				 * be 0. */
+    Proc *procPtr;		/* Core of the implementation of the method;
+				 * includes the argument definition and the
+				 * body bytecodes. */
+    int flags;			/* Flags to control features. */
+    ProcErrorProc errProc;	/* Replacement error handler. */
+    TclOO_PreCallProc preCallProc;
+				/* Callback to allow for additional setup
+				 * before the method executes. */
+    TclOO_PostCallProc postCallProc;
+				/* Callback to allow for additional cleanup
+				 * after the method executes. */
+    GetFrameInfoValueProc gfivProc;
+				/* Callback to allow for fine tuning of how
+				 * the method reports itself. */
 } ProcedureMethod;
+
+#define TCLOO_PROCEDURE_METHOD_VERSION 0
 
 /*
  * Flags for use in a ProcedureMethod.
@@ -347,13 +374,14 @@ MODULE_SCOPE int	TclOODefineSelfClassObjCmd(ClientData clientData,
 
 MODULE_SCOPE Method *	TclOONewProcMethod(Tcl_Interp *interp, Object *oPtr,
 			    int isPublic, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
-			    Tcl_Obj *bodyObj);
+			    Tcl_Obj *bodyObj, ProcedureMethod **pmPtr);
 MODULE_SCOPE Method *	TclOONewForwardMethod(Tcl_Interp *interp, Object *oPtr,
 			    int isPublic, Tcl_Obj *nameObj,
 			    Tcl_Obj *prefixObj);
 MODULE_SCOPE Method *	TclOONewProcClassMethod(Tcl_Interp *interp,
 			    Class *clsPtr, int isPublic, Tcl_Obj *nameObj,
-			    Tcl_Obj *argsObj, Tcl_Obj *bodyObj);
+			    Tcl_Obj *argsObj, Tcl_Obj *bodyObj,
+			    ProcedureMethod **pmPtr);
 MODULE_SCOPE Method *	TclOONewForwardClassMethod(Tcl_Interp *interp,
 			    Class *clsPtr, int isPublic, Tcl_Obj *nameObj,
 			    Tcl_Obj *prefixObj);

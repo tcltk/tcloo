@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.20 2007/06/16 14:53:08 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.21 2007/08/03 12:20:48 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -276,7 +276,7 @@ Tcloo_Init(
 		"}\n"
 		"return -options $opt $msg", -1);
 	fPtr->classCls->constructorPtr = TclOONewProcClassMethod(interp,
-		fPtr->classCls, 0, NULL, argsPtr, bodyPtr);
+		fPtr->classCls, 0, NULL, argsPtr, bodyPtr, NULL);
     }
 
     /*
@@ -2231,7 +2231,6 @@ ObjectLinkVar(
 
 	if (!TclIsVarNamespaceVar(varPtr)) {
 	    TclSetVarNamespaceVar(varPtr);
-	    varPtr->refCount++;
 	}
 
 	if (TclPtrMakeUpvar(interp, varPtr, varName, 0, -1) != TCL_OK) {

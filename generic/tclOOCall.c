@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.2 2007/06/15 14:26:03 dkf Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.3 2007/08/03 12:20:48 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -45,10 +45,10 @@ static void		AddClassFiltersToCallContext(Object *oPtr,
 			    Tcl_HashTable *doneFilters);
 static void		AddClassMethodNames(Class *clsPtr, int flags,
 			    Tcl_HashTable *namesPtr);
-static void		AddMethodToCallChain(Method *mPtr,
+static inline void	AddMethodToCallChain(Method *mPtr,
 			    struct ChainBuilder *cbPtr,
 			    Tcl_HashTable *doneFilters, Class *filterDecl);
-static void		AddSimpleChainToCallContext(Object *oPtr,
+static inline void	AddSimpleChainToCallContext(Object *oPtr,
 			    Tcl_Obj *methodNameObj, struct ChainBuilder *cbPtr,
 			    Tcl_HashTable *doneFilters, int isPublic,
 			    Class *filterDecl);
@@ -512,6 +512,188 @@ AddClassMethodNames(
 /*
  * ----------------------------------------------------------------------
  *
+ * AddSimpleChainToCallContext --
+ *
+ *	The core of the call-chain construction engine, this handles calling a
+ *	particular method on a particular object. Note that filters and
+ *	unknown handling are already handled by the logic that uses this
+ *	function.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static inline void
+AddSimpleChainToCallContext(
+    Object *oPtr,		/* Object to add call chain entries for. */
+    Tcl_Obj *methodNameObj,	/* Name of method to add the call chain
+				 * entries for. */
+    struct ChainBuilder *cbPtr,	/* Where to add the call chain entries. */
+    Tcl_HashTable *doneFilters,	/* Where to record what call chain entries
+				 * have been processed. */
+    int flags,			/* What sort of call chain are we building. */
+    Class *filterDecl)		/* The class that declared the filter. If
+				 * NULL, either the filter was declared by the
+				 * object or this isn't a filter. */
+{
+    int i;
+
+    if (!(flags & (KNOWN_STATE | SPECIAL))) {
+	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&oPtr->methods,
+		(char *) methodNameObj);
+
+	if (hPtr != NULL) {
+	    Method *mPtr = Tcl_GetHashValue(hPtr);
+
+	    if (flags & PUBLIC_METHOD) {
+		if (!(mPtr->flags & PUBLIC_METHOD)) {
+		    return;
+		} else {
+		    flags |= DEFINITE_PUBLIC;
+		}
+	    } else {
+		flags |= DEFINITE_PROTECTED;
+	    }
+	}
+    }
+    if (!(flags & SPECIAL)) {
+	Tcl_HashEntry *hPtr;
+	Class *mixinPtr, *superPtr;
+
+	FOREACH(mixinPtr, oPtr->mixins) {
+	    AddSimpleClassChainToCallContext(mixinPtr, methodNameObj, cbPtr,
+		    doneFilters, flags, filterDecl);
+	}
+	FOREACH(mixinPtr, oPtr->selfCls->mixins) {
+	    AddSimpleClassChainToCallContext(mixinPtr, methodNameObj, cbPtr,
+		    doneFilters, flags, filterDecl);
+	}
+	FOREACH(superPtr, oPtr->selfCls->classHierarchy) {
+	    int j=i;		/* HACK: save index so can nest FOREACHes. */
+	    FOREACH(mixinPtr, superPtr->mixins) {
+		AddSimpleClassChainToCallContext(mixinPtr, methodNameObj,
+			cbPtr, doneFilters, flags, filterDecl);
+	    }
+	    i=j;
+	}
+	hPtr = Tcl_FindHashEntry(&oPtr->methods, (char *) methodNameObj);
+	if (hPtr != NULL) {
+	    AddMethodToCallChain(Tcl_GetHashValue(hPtr), cbPtr, doneFilters,
+		    filterDecl);
+	}
+    }
+    AddSimpleClassChainToCallContext(oPtr->selfCls, methodNameObj, cbPtr,
+	    doneFilters, flags, filterDecl);
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * AddMethodToCallChain --
+ *
+ *	Utility method that manages the adding of a particular method
+ *	implementation to a call-chain.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static inline void
+AddMethodToCallChain(
+    Method *mPtr,		/* Actual method implementation to add to call
+				 * chain (or NULL, a no-op). */
+    struct ChainBuilder *cbPtr,	/* The call chain to add the method
+				 * implementation to. */
+    Tcl_HashTable *doneFilters,	/* Where to record what filters have been
+				 * processed. If NULL, not processing filters.
+				 * Note that this function does not update
+				 * this hashtable. */
+    Class *filterDecl)		/* The class that declared the filter. If
+				 * NULL, either the filter was declared by the
+				 * object or this isn't a filter. */
+{
+    register CallContext *contextPtr = cbPtr->contextPtr;
+    int i;
+
+    /*
+     * Return if this is just an entry used to record whether this is a public
+     * method. If so, there's nothing real to call and so nothing to add to
+     * the call chain.
+     */
+
+    if (mPtr == NULL || mPtr->typePtr == NULL) {
+	return;
+    }
+
+    /*
+     * Enforce real private method handling here. We will skip adding this
+     * method IF
+     *  1) we are not allowing private methods, AND
+     *  2) this is a private method, AND
+     *  3) this is a class method, AND
+     *  4) this method was not declared by the class of the current object.
+     *
+     * This does mean that only classes really handle private methods. This
+     * should be sufficient for [incr Tcl] support though.
+     */
+
+    if (!(contextPtr->flags & PRIVATE_METHOD)
+	    && (mPtr->flags & PRIVATE_METHOD)
+	    && (mPtr->declaringClassPtr != NULL)
+	    && (mPtr->declaringClassPtr != contextPtr->oPtr->selfCls)) {
+	return;
+    }
+
+    /*
+     * First test whether the method is already in the call chain. Skip over
+     * any leading filters.
+     */
+
+    for (i=cbPtr->filterLength ; i<contextPtr->numCallChain ; i++) {
+	if (contextPtr->callChain[i].mPtr == mPtr
+		&& contextPtr->callChain[i].isFilter == (doneFilters!=NULL)) {
+	    /*
+	     * Call chain semantics states that methods come as *late* in the
+	     * call chain as possible. This is done by copying down the
+	     * following methods. Note that this does not change the number of
+	     * method invokations in the call chain; it just rearranges them.
+	     */
+
+	    Class *declCls = contextPtr->callChain[i].filterDeclarer;
+
+	    for (; i+1<contextPtr->numCallChain ; i++) {
+		contextPtr->callChain[i] = contextPtr->callChain[i+1];
+	    }
+	    contextPtr->callChain[i].mPtr = mPtr;
+	    contextPtr->callChain[i].isFilter = (doneFilters != NULL);
+	    contextPtr->callChain[i].filterDeclarer = declCls;
+	    return;
+	}
+    }
+
+    /*
+     * Need to really add the method. This is made a bit more complex by the
+     * fact that we are using some "static" space initially, and only start
+     * realloc-ing if the chain gets long.
+     */
+
+    if (contextPtr->numCallChain == CALL_CHAIN_STATIC_SIZE) {
+	contextPtr->callChain = (struct MInvoke *)
+		ckalloc(sizeof(struct MInvoke)*(contextPtr->numCallChain+1));
+	memcpy(contextPtr->callChain, contextPtr->staticCallChain,
+		sizeof(struct MInvoke) * (contextPtr->numCallChain + 1));
+    } else if (contextPtr->numCallChain > CALL_CHAIN_STATIC_SIZE) {
+	contextPtr->callChain = (struct MInvoke *)
+		ckrealloc((char *) contextPtr->callChain,
+		sizeof(struct MInvoke) * (contextPtr->numCallChain + 1));
+    }
+    contextPtr->callChain[i].mPtr = mPtr;
+    contextPtr->callChain[i].isFilter = (doneFilters != NULL);
+    contextPtr->callChain[i].filterDeclarer = filterDecl;
+    contextPtr->numCallChain++;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * TclOOGetCallContext --
  *
  *	Responsible for constructing the call context, an ordered list of all
@@ -721,82 +903,6 @@ AddClassFiltersToCallContext(
 /*
  * ----------------------------------------------------------------------
  *
- * AddSimpleChainToCallContext --
- *
- *	The core of the call-chain construction engine, this handles calling a
- *	particular method on a particular object. Note that filters and
- *	unknown handling are already handled by the logic that uses this
- *	function.
- *
- * ----------------------------------------------------------------------
- */
-
-static void
-AddSimpleChainToCallContext(
-    Object *oPtr,		/* Object to add call chain entries for. */
-    Tcl_Obj *methodNameObj,	/* Name of method to add the call chain
-				 * entries for. */
-    struct ChainBuilder *cbPtr,	/* Where to add the call chain entries. */
-    Tcl_HashTable *doneFilters,	/* Where to record what call chain entries
-				 * have been processed. */
-    int flags,			/* What sort of call chain are we building. */
-    Class *filterDecl)		/* The class that declared the filter. If
-				 * NULL, either the filter was declared by the
-				 * object or this isn't a filter. */
-{
-    int i;
-
-    if (!(flags & (KNOWN_STATE | SPECIAL))) {
-	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&oPtr->methods,
-		(char *) methodNameObj);
-
-	if (hPtr != NULL) {
-	    Method *mPtr = Tcl_GetHashValue(hPtr);
-
-	    if (flags & PUBLIC_METHOD) {
-		if (!(mPtr->flags & PUBLIC_METHOD)) {
-		    return;
-		} else {
-		    flags |= DEFINITE_PUBLIC;
-		}
-	    } else {
-		flags |= DEFINITE_PROTECTED;
-	    }
-	}
-    }
-    if (!(flags & SPECIAL)) {
-	Tcl_HashEntry *hPtr;
-	Class *mixinPtr, *superPtr;
-
-	FOREACH(mixinPtr, oPtr->mixins) {
-	    AddSimpleClassChainToCallContext(mixinPtr, methodNameObj, cbPtr,
-		    doneFilters, flags, filterDecl);
-	}
-	FOREACH(mixinPtr, oPtr->selfCls->mixins) {
-	    AddSimpleClassChainToCallContext(mixinPtr, methodNameObj, cbPtr,
-		    doneFilters, flags, filterDecl);
-	}
-	FOREACH(superPtr, oPtr->selfCls->classHierarchy) {
-	    int j=i;		/* HACK: save index so can nest FOREACHes. */
-	    FOREACH(mixinPtr, superPtr->mixins) {
-		AddSimpleClassChainToCallContext(mixinPtr, methodNameObj,
-			cbPtr, doneFilters, flags, filterDecl);
-	    }
-	    i=j;
-	}
-	hPtr = Tcl_FindHashEntry(&oPtr->methods, (char *) methodNameObj);
-	if (hPtr != NULL) {
-	    AddMethodToCallChain(Tcl_GetHashValue(hPtr), cbPtr, doneFilters,
-		    filterDecl);
-	}
-    }
-    AddSimpleClassChainToCallContext(oPtr->selfCls, methodNameObj, cbPtr,
-	    doneFilters, flags, filterDecl);
-}
-
-/*
- * ----------------------------------------------------------------------
- *
  * AddSimpleClassChainToCallContext --
  *
  *	Construct a call-chain from a class hierarchy.
@@ -871,112 +977,6 @@ AddSimpleClassChainToCallContext(
     case 0:
 	return;
     }
-}
-
-/*
- * ----------------------------------------------------------------------
- *
- * AddMethodToCallChain --
- *
- *	Utility method that manages the adding of a particular method
- *	implementation to a call-chain.
- *
- * ----------------------------------------------------------------------
- */
-
-static void
-AddMethodToCallChain(
-    Method *mPtr,		/* Actual method implementation to add to call
-				 * chain (or NULL, a no-op). */
-    struct ChainBuilder *cbPtr,	/* The call chain to add the method
-				 * implementation to. */
-    Tcl_HashTable *doneFilters,	/* Where to record what filters have been
-				 * processed. If NULL, not processing filters.
-				 * Note that this function does not update
-				 * this hashtable. */
-    Class *filterDecl)		/* The class that declared the filter. If
-				 * NULL, either the filter was declared by the
-				 * object or this isn't a filter. */
-{
-    register CallContext *contextPtr = cbPtr->contextPtr;
-    int i;
-
-    /*
-     * Return if this is just an entry used to record whether this is a public
-     * method. If so, there's nothing real to call and so nothing to add to
-     * the call chain.
-     */
-
-    if (mPtr == NULL || mPtr->typePtr == NULL) {
-	return;
-    }
-
-    /*
-     * Enforce real private method handling here. We will skip adding this
-     * method IF
-     *  1) we are not allowing private methods, AND
-     *  2) this is a private method, AND
-     *  3) this is a class method, AND
-     *  4) this method was not declared by the class of the current object.
-     *
-     * This does mean that only classes really handle private methods. This
-     * should be sufficient for [incr Tcl] support though.
-     */
-
-    if (!(contextPtr->flags & PRIVATE_METHOD)
-	    && (mPtr->flags & PRIVATE_METHOD)
-	    && (mPtr->declaringClassPtr != NULL)
-	    && (mPtr->declaringClassPtr != contextPtr->oPtr->selfCls)) {
-	return;
-    }
-
-    /*
-     * First test whether the method is already in the call chain. Skip over
-     * any leading filters.
-     */
-
-    for (i=cbPtr->filterLength ; i<contextPtr->numCallChain ; i++) {
-	if (contextPtr->callChain[i].mPtr == mPtr
-		&& contextPtr->callChain[i].isFilter == (doneFilters!=NULL)) {
-	    /*
-	     * Call chain semantics states that methods come as *late* in the
-	     * call chain as possible. This is done by copying down the
-	     * following methods. Note that this does not change the number of
-	     * method invokations in the call chain; it just rearranges them.
-	     */
-
-	    Class *declCls = contextPtr->callChain[i].filterDeclarer;
-
-	    for (; i+1<contextPtr->numCallChain ; i++) {
-		contextPtr->callChain[i] = contextPtr->callChain[i+1];
-	    }
-	    contextPtr->callChain[i].mPtr = mPtr;
-	    contextPtr->callChain[i].isFilter = (doneFilters != NULL);
-	    contextPtr->callChain[i].filterDeclarer = declCls;
-	    return;
-	}
-    }
-
-    /*
-     * Need to really add the method. This is made a bit more complex by the
-     * fact that we are using some "static" space initially, and only start
-     * realloc-ing if the chain gets long.
-     */
-
-    if (contextPtr->numCallChain == CALL_CHAIN_STATIC_SIZE) {
-	contextPtr->callChain = (struct MInvoke *)
-		ckalloc(sizeof(struct MInvoke)*(contextPtr->numCallChain+1));
-	memcpy(contextPtr->callChain, contextPtr->staticCallChain,
-		sizeof(struct MInvoke) * (contextPtr->numCallChain + 1));
-    } else if (contextPtr->numCallChain > CALL_CHAIN_STATIC_SIZE) {
-	contextPtr->callChain = (struct MInvoke *)
-		ckrealloc((char *) contextPtr->callChain,
-		sizeof(struct MInvoke) * (contextPtr->numCallChain + 1));
-    }
-    contextPtr->callChain[i].mPtr = mPtr;
-    contextPtr->callChain[i].isFilter = (doneFilters != NULL);
-    contextPtr->callChain[i].filterDeclarer = filterDecl;
-    contextPtr->numCallChain++;
 }
 
 /*

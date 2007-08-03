@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.4 2007/06/25 14:20:21 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.5 2007/08/03 12:20:49 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -315,92 +315,35 @@ TclOONewProcMethod(
 				 * NULL. */
     Tcl_Obj *argsObj,		/* The formal argument list for the method,
 				 * which must not be NULL. */
-    Tcl_Obj *bodyObj)		/* The body of the method, which must not be
+    Tcl_Obj *bodyObj,		/* The body of the method, which must not be
 				 * NULL. */
+    ProcedureMethod **pmPtrPtr)	/* Place to write pointer to procedure method
+				 * structure to allow for deeper tuning of the
+				 * structure's contents. NULL if caller is not
+				 * interested. */
 {
-    Interp *iPtr = (Interp *) interp;
-    int argsc;
-    Tcl_Obj **argsv;
+    int argsLen;
     register ProcedureMethod *pmPtr;
-    const char *procName;
+    Tcl_Method method;
 
-    if (Tcl_ListObjGetElements(interp, argsObj, &argsc, &argsv) != TCL_OK) {
+    if (Tcl_ListObjLength(interp, argsObj, &argsLen) != TCL_OK) {
 	return NULL;
     }
     pmPtr = (ProcedureMethod *) ckalloc(sizeof(ProcedureMethod));
-    procName = TclGetString(nameObj);
-    if (TclCreateProc(interp, NULL, procName, argsObj, bodyObj,
-	    &pmPtr->procPtr) != TCL_OK) {
-	ckfree((char *) pmPtr);
-	return NULL;
-    }
-    pmPtr->procPtr->cmdPtr = NULL;
+    pmPtr->version = TCLOO_PROCEDURE_METHOD_VERSION;
     pmPtr->flags = flags & USE_DECLARER_NS;
-
-    if (iPtr->cmdFramePtr) {
-	CmdFrame context = *iPtr->cmdFramePtr;
-
-	if (context.type == TCL_LOCATION_BC) {
-	    /*
-	     * Retrieve source information from the bytecode, if possible. If
-	     * the information is retrieved successfully, context.type will be
-	     * TCL_LOCATION_SOURCE and the reference held by
-	     * context.data.eval.path will be counted.
-	     */
-
-	    TclGetSrcInfoForPc(&context);
-	} else if (context.type == TCL_LOCATION_SOURCE) {
-	    /*
-	     * The copy into 'context' up above has created another reference
-	     * to 'context.data.eval.path'; account for it.
-	     */
-
-	    Tcl_IncrRefCount(context.data.eval.path);
-	}
-
-	if (context.type == TCL_LOCATION_SOURCE) {
-	    /*
-	     * We can account for source location within a proc only if the
-	     * proc body was not created by substitution.
-	     */
-
-	    if (context.line
-		    && (context.nline >= 4) && (context.line[3] >= 0)) {
-		int isNew;
-		CmdFrame *cfPtr = (CmdFrame *) ckalloc(sizeof(CmdFrame));
-		Tcl_HashEntry *hPtr;
-
-		cfPtr->level = -1;
-		cfPtr->type = context.type;
-		cfPtr->line = (int *) ckalloc(sizeof(int));
-		cfPtr->line[0] = context.line[3];
-		cfPtr->nline = 1;
-		cfPtr->framePtr = NULL;
-		cfPtr->nextPtr = NULL;
-
-		cfPtr->data.eval.path = context.data.eval.path;
-		Tcl_IncrRefCount(cfPtr->data.eval.path);
-
-		cfPtr->cmd.str.cmd = NULL;
-		cfPtr->cmd.str.len = 0;
-
-		hPtr = Tcl_CreateHashEntry(iPtr->linePBodyPtr,
-			(char *) pmPtr->procPtr, &isNew);
-		Tcl_SetHashValue(hPtr, cfPtr);
-	    }
-
-	    /*
-	     * 'context' is going out of scope; account for the reference that
-	     * it's holding to the path name.
-	     */
-
-	    Tcl_DecrRefCount(context.data.eval.path);
-	    context.data.eval.path = NULL;
-	}
+    pmPtr->errProc = NULL;
+    pmPtr->preCallProc = NULL;
+    pmPtr->postCallProc = NULL;
+    pmPtr->gfivProc = NULL;
+    method = TclOOMakeProcObjectMethod(interp, oPtr, flags, nameObj, argsObj,
+	    bodyObj, &procMethodType, pmPtr, &pmPtr->procPtr);
+    if (method == NULL) {
+	ckfree((char *) pmPtr);
+    } else if (pmPtrPtr != NULL) {
+	*pmPtrPtr = pmPtr;
     }
-
-    return (Method *) Tcl_NewMethod(interp, (Tcl_Object) oPtr, nameObj,
-	    flags, &procMethodType, pmPtr);
+    return (Method *) method;
 }
 
 /*
@@ -425,13 +368,17 @@ TclOONewProcClassMethod(
     Tcl_Obj *argsObj,		/* The formal argument list for the method,
 				 * which may be NULL; if so, it is equivalent
 				 * to an empty list. */
-    Tcl_Obj *bodyObj)		/* The body of the method, which must not be
+    Tcl_Obj *bodyObj,		/* The body of the method, which must not be
 				 * NULL. */
+    ProcedureMethod **pmPtrPtr)	/* Place to write pointer to procedure method
+				 * structure to allow for deeper tuning of the
+				 * structure's contents. NULL if caller is not
+				 * interested. */
 {
-    Interp *iPtr = (Interp *) interp;
     int argsLen;		/* -1 => delete argsObj before exit */
     register ProcedureMethod *pmPtr;
     const char *procName;
+    Tcl_Method method;
 
     if (argsObj == NULL) {
 	argsLen = -1;
@@ -444,19 +391,67 @@ TclOONewProcClassMethod(
 	procName = (nameObj==NULL ? "<constructor>" : TclGetString(nameObj));
     }
     pmPtr = (ProcedureMethod *) ckalloc(sizeof(ProcedureMethod));
-    if (TclCreateProc(interp, NULL, procName, argsObj, bodyObj,
-	    &pmPtr->procPtr) != TCL_OK) {
-	if (argsLen == -1) {
-	    Tcl_DecrRefCount(argsObj);
-	}
-	ckfree((char *) pmPtr);
-	return NULL;
-    }
-    pmPtr->procPtr->cmdPtr = NULL;
+    pmPtr->version = TCLOO_PROCEDURE_METHOD_VERSION;
+    pmPtr->flags = flags & USE_DECLARER_NS;
+    pmPtr->errProc = NULL;
+    pmPtr->preCallProc = NULL;
+    pmPtr->postCallProc = NULL;
+    pmPtr->gfivProc = NULL;
+    method = TclOOMakeProcClassMethod(interp, clsPtr, flags, nameObj,
+	    procName, argsObj, bodyObj, &procMethodType, pmPtr,
+	    &pmPtr->procPtr);
     if (argsLen == -1) {
 	Tcl_DecrRefCount(argsObj);
     }
-    pmPtr->flags = flags & USE_DECLARER_NS;
+    if (method == NULL) {
+	ckfree((char *) pmPtr);
+    } else if (pmPtrPtr != NULL) {
+	*pmPtrPtr = pmPtr;
+    }
+    return (Method *) method;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOMakeProcObjectMethod --
+ *
+ *	The guts of the code to make a procedure-like method for an object.
+ *	Split apart so that it is easier for other extensions to reuse (in
+ *	particular, it frees them from having to pry so deeply into Tcl's
+ *	guts).
+ *
+ * ----------------------------------------------------------------------
+ */
+
+Tcl_Method
+TclOOMakeProcObjectMethod(
+    Tcl_Interp *interp,		/* The interpreter containing the object. */
+    Object *oPtr,		/* The object to modify. */
+    int flags,			/* Whether this is a public method. */
+    Tcl_Obj *nameObj,		/* The name of the method, which _must not_ be
+				 * NULL. */
+    Tcl_Obj *argsObj,		/* The formal argument list for the method,
+				 * which _must not_ be NULL. */
+    Tcl_Obj *bodyObj,		/* The body of the method, which _must not_ be
+				 * NULL. */
+    const Tcl_MethodType *typePtr,
+				/* The type of the method to create. */
+    ClientData clientData,	/* The per-method type-specific data. */
+    Proc **procPtrPtr)		/* A pointer to the variable in which to write
+				 * the procedure record reference. Presumably
+				 * inside the structure indicated by the
+				 * pointer in clientData. */
+{
+    Interp *iPtr = (Interp *) interp;
+    Proc *procPtr;
+
+    if (TclCreateProc(interp, NULL, TclGetString(nameObj), argsObj, bodyObj,
+	    procPtrPtr) != TCL_OK) {
+	return NULL;
+    }
+    procPtr = *procPtrPtr;
+    procPtr->cmdPtr = NULL;
 
     if (iPtr->cmdFramePtr) {
 	CmdFrame context = *iPtr->cmdFramePtr;
@@ -483,6 +478,7 @@ TclOONewProcClassMethod(
 	    /*
 	     * We can account for source location within a proc only if the
 	     * proc body was not created by substitution.
+	     * (FIXME: check that this is sane and correct!)
 	     */
 
 	    if (context.line
@@ -506,7 +502,7 @@ TclOONewProcClassMethod(
 		cfPtr->cmd.str.len = 0;
 
 		hPtr = Tcl_CreateHashEntry(iPtr->linePBodyPtr,
-			(char *) pmPtr->procPtr, &isNew);
+			(char *) procPtr, &isNew);
 		Tcl_SetHashValue(hPtr, cfPtr);
 	    }
 
@@ -520,8 +516,121 @@ TclOONewProcClassMethod(
 	}
     }
 
-    return (Method *) Tcl_NewClassMethod(interp, (Tcl_Class) clsPtr, nameObj,
-	    flags, &procMethodType, pmPtr);
+    return Tcl_NewMethod(interp, (Tcl_Object) oPtr, nameObj, flags, typePtr,
+	    clientData);
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOMakeProcClassMethod --
+ *
+ *	The guts of the code to make a procedure-like method for a class.
+ *	Split apart so that it is easier for other extensions to reuse (in
+ *	particular, it frees them from having to pry so deeply into Tcl's
+ *	guts).
+ *
+ * ----------------------------------------------------------------------
+ */
+
+Tcl_Method
+TclOOMakeProcClassMethod(
+    Tcl_Interp *interp,		/* The interpreter containing the class. */
+    Class *clsPtr,		/* The class to modify. */
+    int flags,			/* Whether this is a public method. */
+    Tcl_Obj *nameObj,		/* The name of the method, which may be NULL;
+				 * if so, up to caller to manage storage
+				 * (e.g., because it is a constructor or
+				 * destructor). */
+    const char *namePtr,	/* The name of the method as a string, which
+				 * _must not_ be NULL. */
+    Tcl_Obj *argsObj,		/* The formal argument list for the method,
+				 * which _must not_ be NULL. */
+    Tcl_Obj *bodyObj,		/* The body of the method, which _must not_ be
+				 * NULL. */
+    const Tcl_MethodType *typePtr,
+				/* The type of the method to create. */
+    ClientData clientData,	/* The per-method type-specific data. */
+    Proc **procPtrPtr)		/* A pointer to the variable in which to write
+				 * the procedure record reference. Presumably
+				 * inside the structure indicated by the
+				 * pointer in clientData. */
+{
+    Interp *iPtr = (Interp *) interp;
+    Proc *procPtr;
+
+    if (TclCreateProc(interp, NULL, namePtr, argsObj, bodyObj,
+	    procPtrPtr) != TCL_OK) {
+	return NULL;
+    }
+    procPtr = *procPtrPtr;
+    procPtr->cmdPtr = NULL;
+
+    if (iPtr->cmdFramePtr) {
+	CmdFrame context = *iPtr->cmdFramePtr;
+
+	if (context.type == TCL_LOCATION_BC) {
+	    /*
+	     * Retrieve source information from the bytecode, if possible. If
+	     * the information is retrieved successfully, context.type will be
+	     * TCL_LOCATION_SOURCE and the reference held by
+	     * context.data.eval.path will be counted.
+	     */
+
+	    TclGetSrcInfoForPc(&context);
+	} else if (context.type == TCL_LOCATION_SOURCE) {
+	    /*
+	     * The copy into 'context' up above has created another reference
+	     * to 'context.data.eval.path'; account for it.
+	     */
+
+	    Tcl_IncrRefCount(context.data.eval.path);
+	}
+
+	if (context.type == TCL_LOCATION_SOURCE) {
+	    /*
+	     * We can account for source location within a proc only if the
+	     * proc body was not created by substitution.
+	     * (FIXME: check that this is sane and correct!)
+	     */
+
+	    if (context.line
+		    && (context.nline >= 4) && (context.line[3] >= 0)) {
+		int isNew;
+		CmdFrame *cfPtr = (CmdFrame *) ckalloc(sizeof(CmdFrame));
+		Tcl_HashEntry *hPtr;
+
+		cfPtr->level = -1;
+		cfPtr->type = context.type;
+		cfPtr->line = (int *) ckalloc(sizeof(int));
+		cfPtr->line[0] = context.line[3];
+		cfPtr->nline = 1;
+		cfPtr->framePtr = NULL;
+		cfPtr->nextPtr = NULL;
+
+		cfPtr->data.eval.path = context.data.eval.path;
+		Tcl_IncrRefCount(cfPtr->data.eval.path);
+
+		cfPtr->cmd.str.cmd = NULL;
+		cfPtr->cmd.str.len = 0;
+
+		hPtr = Tcl_CreateHashEntry(iPtr->linePBodyPtr,
+			(char *) procPtr, &isNew);
+		Tcl_SetHashValue(hPtr, cfPtr);
+	    }
+
+	    /*
+	     * 'context' is going out of scope; account for the reference that
+	     * it's holding to the path name.
+	     */
+
+	    Tcl_DecrRefCount(context.data.eval.path);
+	    context.data.eval.path = NULL;
+	}
+    }
+
+    return Tcl_NewClassMethod(interp, (Tcl_Class) clsPtr, nameObj, flags,
+	    typePtr, clientData);
 }
 
 /*
@@ -550,7 +659,7 @@ InvokeProcedureMethod(
     Command cmd;
     const char *namePtr;
     Tcl_Obj *nameObj;
-    void (*errProc)(Tcl_Interp *,Tcl_Obj *);
+    ProcErrorProc errProc;
     ExtraFrameInfo efi;
     struct PNI pni;
     Tcl_Namespace *nsPtr = oPtr->namespacePtr;
@@ -574,6 +683,9 @@ InvokeProcedureMethod(
 	namePtr = TclGetString(nameObj);
 	errProc = MethodErrorHandler;
     }
+    if (pmPtr->errProc != NULL) {
+	errProc = pmPtr->errProc;
+    }
 
     /*
      * Magic to enable things like [incr Tcl], which wants methods to run in
@@ -587,6 +699,20 @@ InvokeProcedureMethod(
 	    nsPtr = mPtr->declaringClassPtr->thisPtr->namespacePtr;
 	} else {
 	    nsPtr = mPtr->declaringObjectPtr->namespacePtr;
+	}
+    }
+
+    /*
+     * Give the pre-call callback a chance to do some setup and, possibly,
+     * veto the call.
+     */
+
+    if (pmPtr->preCallProc != NULL) {
+	int isFinished;
+
+	result = pmPtr->preCallProc(interp, context, nsPtr, &isFinished);
+	if (isFinished || result != TCL_OK) {
+	    return result;
 	}
     }
 
@@ -622,10 +748,15 @@ InvokeProcedureMethod(
     efi.fields[0].name = "method";
     efi.fields[0].proc = NULL;
     efi.fields[0].clientData = nameObj;
-    pni.interp = interp;
-    pni.method = Tcl_ObjectContextMethod(context);
-    efi.fields[1].proc = RenderDeclarerName;
-    efi.fields[1].clientData = &pni;
+    if (pmPtr->gfivProc != NULL) {
+	efi.fields[1].proc = pmPtr->gfivProc;
+	efi.fields[1].clientData = pmPtr;
+    } else {
+	pni.interp = interp;
+	pni.method = Tcl_ObjectContextMethod(context);
+	efi.fields[1].proc = RenderDeclarerName;
+	efi.fields[1].clientData = &pni;
+    }
     if (Tcl_MethodDeclarerObject(pni.method) != NULL) {
 	efi.fields[1].name = "object";
     } else {
@@ -646,6 +777,14 @@ InvokeProcedureMethod(
      */
 
     result = TclObjInterpProcCore(interp, nameObj, skip, errProc);
+
+    /*
+     * Give the post-call callback a chance to do some cleanup.
+     */
+
+    if (pmPtr->postCallProc) {
+	result = pmPtr->postCallProc(interp, context, nsPtr, result);
+    }
     return result;
 }
 
@@ -821,9 +960,8 @@ CloneProcedureMethod(
     ProcedureMethod *pm2Ptr = (ProcedureMethod *)
 	    ckalloc(sizeof(ProcedureMethod));
 
-    pm2Ptr->procPtr = pmPtr->procPtr;
+    memcpy(pm2Ptr, pmPtr, sizeof(ProcedureMethod));
     pm2Ptr->procPtr->refCount++;
-    pm2Ptr->flags = pmPtr->flags;
     *newClientData = pm2Ptr;
     return TCL_OK;
 }

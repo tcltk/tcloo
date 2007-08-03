@@ -1,5 +1,5 @@
 # -*- tcl -*-
-# $Id: tclOO.decls,v 1.2 2007/06/11 10:08:43 dkf Exp $
+# $Id: tclOO.decls,v 1.3 2007/08/03 12:20:48 dkf Exp $
 
 # public API
 library tclOO
@@ -94,4 +94,16 @@ declare 22 current {
 interface tclOOInt
 declare 0 current {
     Tcl_Object TclOOGetDefineCmdContext(Tcl_Interp *interp)
+}
+declare 1 current {
+    Tcl_Method TclOOMakeProcObjectMethod(Tcl_Interp *interp, Object *oPtr,
+	    int flags, Tcl_Obj *nameObj, Tcl_Obj *argsObj, Tcl_Obj *bodyObj,
+	    const Tcl_MethodType *typePtr, ClientData clientData,
+	    Proc **procPtrPtr)
+}
+declare 2 current {
+    Tcl_Method TclOOMakeProcClassMethod(Tcl_Interp *interp, Class *clsPtr,
+	    int flags, Tcl_Obj *nameObj, const char *namePtr,
+	    Tcl_Obj *argsObj, Tcl_Obj *bodyObj, const Tcl_MethodType *typePtr,
+	    ClientData clientData, Proc **procPtrPtr)
 }
