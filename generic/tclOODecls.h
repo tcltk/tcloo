@@ -1,5 +1,5 @@
 /*
- * $Id: tclOODecls.h,v 1.2 2007/06/11 10:09:28 dkf Exp $
+ * $Id: tclOODecls.h,v 1.3 2007/08/03 12:21:13 dkf Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  */
@@ -21,7 +21,7 @@ extern const char *TclOOInitializeStubs(
 /* !BEGIN!: Do not edit below this line. */
 
 #define TCLOO_STUBS_EPOCH 0
-#define TCLOO_STUBS_REVISION 24
+#define TCLOO_STUBS_REVISION 26
 
 #if !defined(USE_TCLOO_STUBS)
 
