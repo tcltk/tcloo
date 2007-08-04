@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: Method.3,v 1.2 2007/06/04 14:52:22 dkf Exp $
+'\" RCS: @(#) $Id: Method.3,v 1.3 2007/08/04 21:59:09 dkf Exp $
 '\"
 .so man.macros
 .TH Tcl_Method 3 0.1 TclOO "TclOO Library Functions"
@@ -38,6 +38,9 @@ int
 .sp
 int
 \fBTcl_MethodIsType\fR(\fImethod, methodTypePtr, clientDataPtr\fR)
+.sp
+int
+\fBTcl_ObjectContextInvokeNext\fR(\fIinterp, context, objc, objv, skip\fR)
 .sp
 int
 \fBTcl_ObjectContextIsFiltering\fR(\fIcontext\fR)
@@ -77,6 +80,13 @@ A reference to a method to query.
 .AP Tcl_ObjectContext context in
 A reference to a method-call context. Note that client code \fImust not\fR
 retain a reference to a context.
+.AP int objc in
+The number of arguments to pass to the method implementation.
+.AP "Tcl_Obj *const" *objv in
+An array of arguments to pass to the method implementation.
+.AP int skip in
+The number of arguments passed to the method implementation that do not
+represent "real" arguments.
 .BE
 
 .SH DESCRIPTION
@@ -127,6 +137,17 @@ arguments that are to be skipped (e.g. the object name and method name in a
 normal method call) is read with \fBTcl_ObjectContextSkippedArgs\fR, and the
 context can also report whether it is working as a filter for another method
 through \fBTcl_ObjectContextIsFiltering\fR.
+.PP
+During the execution of a method, the method implementation may choose to
+invoke the stages of the method call chain that come after the current method
+implementation. This (the core of the \fBnext\fR command) is done using
+\fBTcl_ObjectContextInvokeNext\fR. Note that this function does not manipulate
+the call-frame stack, unlike the \fBnext\fR command; if the method
+implementation has pushed one or more extra frames on the stack as part of its
+implementation, it is also responsible for temporarily popping those frames
+from the stack while the \fBTcl_ObjectContextInvokeNext\fR function is
+executing. Note also that the method-call context is \fInever\fR deleted
+during the execution of this function.
 .SH "METHOD TYPES"
 .PP
 The types of methods are described by a pointer to a Tcl_MethodType structure,
