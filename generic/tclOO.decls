@@ -1,5 +1,5 @@
 # -*- tcl -*-
-# $Id: tclOO.decls,v 1.3 2007/08/03 12:20:48 dkf Exp $
+# $Id: tclOO.decls,v 1.4 2007/08/04 21:59:09 dkf Exp $
 
 # public API
 library tclOO
@@ -88,6 +88,11 @@ declare 21 current {
 declare 22 current {
     void Tcl_ObjectSetMetadata(Tcl_Object object,
 	    const Tcl_ObjectMetadataType *typePtr, ClientData metadata)
+}
+declare 23 current {
+    int Tcl_ObjectContextInvokeNext(Tcl_Interp *interp,
+	    Tcl_ObjectContext context, int objc, Tcl_Obj *const *objv,
+	    int skip)
 }
 
 # private API

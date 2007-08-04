@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.21 2007/08/03 12:20:48 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.22 2007/08/04 21:59:09 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1667,7 +1667,7 @@ Tcl_ObjectSetMetadata(
  *
  * ----------------------------------------------------------------------
  */
-
+
 static int
 PublicObjectCmd(
     ClientData clientData,
@@ -2312,6 +2312,72 @@ ObjectVarName(
 /*
  * ----------------------------------------------------------------------
  *
+ * Tcl_ObjectContextInvokeNext --
+ *
+ *	Invokes the next stage of the call chain described in an object
+ *	context. This is the core of the implementation of the [next] command.
+ *	Does not do management of the call-frame stack.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+int
+Tcl_ObjectContextInvokeNext(
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv,
+    int skip)
+{
+    CallContext *contextPtr = (CallContext *) context;
+    int savedIndex = contextPtr->index;
+    int savedSkip = contextPtr->skip;
+    int result;
+
+    if (contextPtr->index+1 >= contextPtr->numCallChain) {
+	/*
+	 * We're at the end of the chain; return the empty string (the most
+	 * useful thing we can do, since it turns out that it's not always
+	 * trivial to detect in source code whether there is a parent
+	 * implementation, what with multiple-inheritance...)
+	 */
+
+	return TCL_OK;
+    }
+
+    /*
+     * Advance to the next method implementation in the chain in the method
+     * call context while we process the body. However, need to adjust the
+     * argument-skip control because we're guaranteed to have a single prefix
+     * arg (i.e., 'next') and not the variable amount that can happen because
+     * method invokations (i.e., '$obj meth' and 'my meth'), constructors
+     * (i.e., '$cls new' and '$cls create obj') and destructors (no args at
+     * all) come through the same code.
+     */
+
+    contextPtr->index++;
+    contextPtr->skip = skip;
+
+    /*
+     * Invoke the (advanced) method call context in the caller context.
+     */
+
+    result = TclOOInvokeContext(interp, contextPtr, objc, objv);
+
+    /*
+     * Restore the call chain context index as we've finished the inner invoke
+     * and want to operate in the outer context again.
+     */
+
+    contextPtr->index = savedIndex;
+    contextPtr->skip = savedSkip;
+
+    return result;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * NextObjCmd --
  *
  *	Implementation of the [next] command. Note that this command is only
@@ -2328,12 +2394,14 @@ NextObjCmd(
     Tcl_Obj *const *objv)
 {
     Interp *iPtr = (Interp *) interp;
-    CallFrame *framePtr = iPtr->varFramePtr, *savedFramePtr;
-    CallContext *contextPtr;
-    int index, result, skip;
+    CallFrame *framePtr = iPtr->varFramePtr;
+    Tcl_ObjectContext context;
+    int result;
 
     /*
-     * Start with sanity checks on the calling context and the method context.
+     * Start with sanity checks on the calling context to make sure that we
+     * are invoked from a suitable method context. If so, we can safely
+     * retrieve the handle to the object call context.
      */
 
     if (framePtr == NULL || !(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
@@ -2341,54 +2409,16 @@ NextObjCmd(
 		" may only be called from inside a method", NULL);
 	return TCL_ERROR;
     }
-
-    contextPtr = framePtr->clientData;
-
-    index = contextPtr->index;
-    if (index+1 >= contextPtr->numCallChain) {
-	/*
-	 * We're at the end of the chain; return the empty string (the most
-	 * useful thing we can do, since it turns out that it's not always
-	 * trivial to detect in source code whether there is a parent
-	 * implementation, what with multiple-inheritance...)
-	 */
-
-	return TCL_OK;
-    }
-
-    skip = contextPtr->skip;
-
-    /*
-     * Advance to the next method implementation in the chain in the method
-     * call context while we process the body. However, need to adjust the
-     * argument-skip control because we're guaranteed to have a single prefix
-     * arg (i.e., 'next') and not the variable amount that can happen because
-     * method invokations (i.e., '$obj meth' and 'my meth'), constructors
-     * (i.e., '$cls new' and '$cls create obj') and destructors (no args at
-     * all) come through the same code. From here on, the skip is always 1.
-     */
-
-    contextPtr->index = index+1;
-    contextPtr->skip = 1;
+    context = framePtr->clientData;
 
     /*
      * Invoke the (advanced) method call context in the caller context. Note
      * that this is like [uplevel 1] and not [eval].
      */
 
-    savedFramePtr = iPtr->varFramePtr;
-    iPtr->varFramePtr = savedFramePtr->callerVarPtr;
-    result = TclOOInvokeContext(interp, contextPtr, objc, objv);
-    iPtr->varFramePtr = savedFramePtr;
-
-    /*
-     * Restore the call chain context index as we've finished the inner invoke
-     * and want to operate in the outer context again.
-     */
-
-    contextPtr->index = index;
-    contextPtr->skip = skip;
-
+    iPtr->varFramePtr = framePtr->callerVarPtr;
+    result = Tcl_ObjectContextInvokeNext(interp, context, objc, objv, 1);
+    iPtr->varFramePtr = framePtr;
     return result;
 }
 
