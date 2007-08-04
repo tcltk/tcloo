@@ -1,5 +1,5 @@
 /*
- * $Id: tclOODecls.h,v 1.3 2007/08/03 12:21:13 dkf Exp $
+ * $Id: tclOODecls.h,v 1.4 2007/08/04 22:00:22 dkf Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  */
@@ -21,7 +21,7 @@ extern const char *TclOOInitializeStubs(
 /* !BEGIN!: Do not edit below this line. */
 
 #define TCLOO_STUBS_EPOCH 0
-#define TCLOO_STUBS_REVISION 26
+#define TCLOO_STUBS_REVISION 27
 
 #if !defined(USE_TCLOO_STUBS)
 
@@ -98,6 +98,10 @@ TCLOOAPI ClientData	Tcl_ObjectGetMetadata (Tcl_Object object,
 TCLOOAPI void		Tcl_ObjectSetMetadata (Tcl_Object object, 
 				const Tcl_ObjectMetadataType * typePtr, 
 				ClientData metadata);
+/* 23 */
+TCLOOAPI int		Tcl_ObjectContextInvokeNext (Tcl_Interp * interp, 
+				Tcl_ObjectContext context, int objc, 
+				Tcl_Obj *const * objv, int skip);
 
 #endif /* !defined(USE_TCLOO_STUBS) */
 
@@ -130,6 +134,7 @@ typedef struct TclOOStubs {
     void (*tcl_ClassSetMetadata) (Tcl_Class clazz, const Tcl_ObjectMetadataType * typePtr, ClientData metadata); /* 20 */
     ClientData (*tcl_ObjectGetMetadata) (Tcl_Object object, const Tcl_ObjectMetadataType * typePtr); /* 21 */
     void (*tcl_ObjectSetMetadata) (Tcl_Object object, const Tcl_ObjectMetadataType * typePtr, ClientData metadata); /* 22 */
+    int (*tcl_ObjectContextInvokeNext) (Tcl_Interp * interp, Tcl_ObjectContext context, int objc, Tcl_Obj *const * objv, int skip); /* 23 */
 } TclOOStubs;
 
 #ifdef __cplusplus
@@ -237,6 +242,10 @@ extern const TclOOStubs *tclOOStubsPtr;
 #ifndef Tcl_ObjectSetMetadata
 #define Tcl_ObjectSetMetadata \
 	(tclOOStubsPtr->tcl_ObjectSetMetadata) /* 22 */
+#endif
+#ifndef Tcl_ObjectContextInvokeNext
+#define Tcl_ObjectContextInvokeNext \
+	(tclOOStubsPtr->tcl_ObjectContextInvokeNext) /* 23 */
 #endif
 
 #endif /* defined(USE_TCLOO_STUBS) */

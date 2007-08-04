@@ -1,5 +1,5 @@
 /*
- * $Id: tclOOStubInit.c,v 1.2 2007/08/03 12:21:14 dkf Exp $
+ * $Id: tclOOStubInit.c,v 1.3 2007/08/04 22:00:22 dkf Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  * It is compiled and linked in with the tclOO package proper.
@@ -38,6 +38,7 @@ TclOOStubs tclOOStubs = {
     Tcl_ClassSetMetadata, /* 20 */
     Tcl_ObjectGetMetadata, /* 21 */
     Tcl_ObjectSetMetadata, /* 22 */
+    Tcl_ObjectContextInvokeNext, /* 23 */
 };
 
 TclOOIntStubs tclOOIntStubs = {
