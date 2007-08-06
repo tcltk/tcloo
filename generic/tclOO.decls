@@ -1,5 +1,5 @@
 # -*- tcl -*-
-# $Id: tclOO.decls,v 1.4 2007/08/04 21:59:09 dkf Exp $
+# $Id: tclOO.decls,v 1.5 2007/08/06 13:13:13 dkf Exp $
 
 # public API
 library tclOO
@@ -111,4 +111,14 @@ declare 2 current {
 	    int flags, Tcl_Obj *nameObj, const char *namePtr,
 	    Tcl_Obj *argsObj, Tcl_Obj *bodyObj, const Tcl_MethodType *typePtr,
 	    ClientData clientData, Proc **procPtrPtr)
+}
+declare 3 current {
+    Method *TclOONewProcMethod(Tcl_Interp *interp, Object *oPtr, int flags,
+	    Tcl_Obj *nameObj, Tcl_Obj *argsObj, Tcl_Obj *bodyObj,
+	    ProcedureMethod **pmPtrPtr)
+}
+declare 4 current {
+    Method *TclOONewProcClassMethod(Tcl_Interp *interp, Class *clsPtr,
+	    int flags, Tcl_Obj *nameObj, Tcl_Obj *argsObj, Tcl_Obj *bodyObj,
+	    ProcedureMethod **pmPtrPtr)
 }

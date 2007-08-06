@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.10 2007/08/06 10:08:05 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.11 2007/08/06 13:13:13 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -376,16 +376,9 @@ MODULE_SCOPE int	TclOODefineSelfClassObjCmd(ClientData clientData,
  * maybe just put in the internal stubs table.
  */
 
-MODULE_SCOPE Method *	TclOONewProcMethod(Tcl_Interp *interp, Object *oPtr,
-			    int isPublic, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
-			    Tcl_Obj *bodyObj, ProcedureMethod **pmPtr);
 MODULE_SCOPE Method *	TclOONewForwardMethod(Tcl_Interp *interp, Object *oPtr,
 			    int isPublic, Tcl_Obj *nameObj,
 			    Tcl_Obj *prefixObj);
-MODULE_SCOPE Method *	TclOONewProcClassMethod(Tcl_Interp *interp,
-			    Class *clsPtr, int isPublic, Tcl_Obj *nameObj,
-			    Tcl_Obj *argsObj, Tcl_Obj *bodyObj,
-			    ProcedureMethod **pmPtr);
 MODULE_SCOPE Method *	TclOONewForwardClassMethod(Tcl_Interp *interp,
 			    Class *clsPtr, int isPublic, Tcl_Obj *nameObj,
 			    Tcl_Obj *prefixObj);
