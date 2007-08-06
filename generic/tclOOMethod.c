@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.5 2007/08/03 12:20:49 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.6 2007/08/06 10:08:05 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -20,9 +20,26 @@
  */
 
 struct PNI {
-    Tcl_Interp *interp;
-    Tcl_Method method;
+    Tcl_Interp *interp;		/* Interpreter in which to compute the name of
+				 * a method. */
+    Tcl_Method method;		/* Method to compute the name of. */
 };
+
+/*
+ * Structure used to contain all the information needed about a call frame
+ * used in a procedure-like method.
+ */
+
+typedef struct {
+    CallFrame *framePtr;	/* Reference to the call frame itself (it's
+				 * actually allocated on the Tcl stack). */
+    ProcErrorProc errProc;	/* The error handler for the body. */
+    Tcl_Obj *nameObj;		/* The "name" of the command. */
+    Command cmd;		/* The command structure. Mostly bogus. */
+    ExtraFrameInfo efi;		/* Extra information used for [info frame]. */
+    struct PNI pni;		/* Specialist information used in the efi
+				 * field for this type of call. */
+} PMFrameData;
 
 /*
  * Function declarations for things defined in this file.
@@ -35,6 +52,10 @@ static Tcl_Obj **	InitEnsembleRewrite(Tcl_Interp *interp, int objc,
 static int		InvokeProcedureMethod(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
+static int		PushMethodCallFrame(Tcl_Interp *interp,
+			    CallContext *contextPtr, ProcedureMethod *pmPtr,
+			    int objc, Tcl_Obj *const *objv,
+			    PMFrameData *fdPtr);
 static void		DeleteProcedureMethod(ClientData clientData);
 static int		CloneProcedureMethod(ClientData clientData,
 			    ClientData *newClientData);
@@ -45,14 +66,12 @@ static void		ConstructorErrorHandler(Tcl_Interp *interp,
 static void		DestructorErrorHandler(Tcl_Interp *interp,
 			    Tcl_Obj *procNameObj);
 static Tcl_Obj *	RenderDeclarerName(ClientData clientData);
-
 static int		InvokeForwardMethod(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
 static void		DeleteForwardMethod(ClientData clientData);
 static int		CloneForwardMethod(ClientData clientData,
 			    ClientData *newClientData);
-
 static int		BasicClassMethodInvoke(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
@@ -330,12 +349,9 @@ TclOONewProcMethod(
 	return NULL;
     }
     pmPtr = (ProcedureMethod *) ckalloc(sizeof(ProcedureMethod));
+    memset(pmPtr, 0, sizeof(ProcedureMethod));
     pmPtr->version = TCLOO_PROCEDURE_METHOD_VERSION;
     pmPtr->flags = flags & USE_DECLARER_NS;
-    pmPtr->errProc = NULL;
-    pmPtr->preCallProc = NULL;
-    pmPtr->postCallProc = NULL;
-    pmPtr->gfivProc = NULL;
     method = TclOOMakeProcObjectMethod(interp, oPtr, flags, nameObj, argsObj,
 	    bodyObj, &procMethodType, pmPtr, &pmPtr->procPtr);
     if (method == NULL) {
@@ -391,12 +407,9 @@ TclOONewProcClassMethod(
 	procName = (nameObj==NULL ? "<constructor>" : TclGetString(nameObj));
     }
     pmPtr = (ProcedureMethod *) ckalloc(sizeof(ProcedureMethod));
+    memset(pmPtr, 0, sizeof(ProcedureMethod));
     pmPtr->version = TCLOO_PROCEDURE_METHOD_VERSION;
     pmPtr->flags = flags & USE_DECLARER_NS;
-    pmPtr->errProc = NULL;
-    pmPtr->preCallProc = NULL;
-    pmPtr->postCallProc = NULL;
-    pmPtr->gfivProc = NULL;
     method = TclOOMakeProcClassMethod(interp, clsPtr, flags, nameObj,
 	    procName, argsObj, bodyObj, &procMethodType, pmPtr,
 	    &pmPtr->procPtr);
@@ -636,7 +649,7 @@ TclOOMakeProcClassMethod(
 /*
  * ----------------------------------------------------------------------
  *
- * InvokeProcedureMethod --
+ * InvokeProcedureMethod, PushMethodCallFrame --
  *
  *	How to invoke a procedure-like method.
  *
@@ -651,40 +664,121 @@ InvokeProcedureMethod(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Arguments as actually seen. */
 {
-    CallContext *contextPtr = (CallContext *) context;
     ProcedureMethod *pmPtr = clientData;
-    int result, flags = FRAME_IS_METHOD, skip = contextPtr->skip;
-    CallFrame *framePtr, **framePtrPtr;
+    int result;
+    register int skip;
+    PMFrameData *fdPtr;		/* Important data that has to have a lifetime
+				 * matched by this function (or rather, by the
+				 * call frame's lifetime). */
+
+    /*
+     * Allocate the special frame data.
+     */
+
+    fdPtr = (PMFrameData *) TclStackAlloc(interp, sizeof(PMFrameData));
+
+    /*
+     * Create a call frame for this method.
+     */
+
+    result = PushMethodCallFrame(interp, (CallContext *) context, pmPtr,
+	    objc, objv, fdPtr);
+    if (result != TCL_OK) {
+	goto done;
+    }
+
+    /*
+     * Give the pre-call callback a chance to do some setup and, possibly,
+     * veto the call.
+     */
+
+    if (pmPtr->preCallProc != NULL) {
+	int isFinished;
+
+	result = pmPtr->preCallProc(pmPtr->clientData, interp, context,
+		(Tcl_CallFrame *) fdPtr->framePtr, &isFinished);
+	if (isFinished || result != TCL_OK) {
+	    Tcl_PopCallFrame(interp);
+	    goto done;
+	}
+    }
+
+    /*
+     * Now invoke the body of the method. Note that we need to take special
+     * action when doing unknown processing to ensure that the missing method
+     * name is passed as an argument.
+     */
+
+    skip = Tcl_ObjectContextSkippedArgs(context);
+    if (((CallContext *) context)->flags & OO_UNKNOWN_METHOD) {
+	skip--;
+    }
+    result = TclObjInterpProcCore(interp, fdPtr->nameObj, skip,
+	    fdPtr->errProc);
+
+    /*
+     * Give the post-call callback a chance to do some cleanup. Note that at
+     * this point the call frame itself is invalid; it's already been popped.
+     */
+
+    if (pmPtr->postCallProc) {
+	result = pmPtr->postCallProc(pmPtr->clientData, interp, context,
+		Tcl_GetObjectNamespace(Tcl_ObjectContextObject(context)),
+		result);
+    }
+
+    /*
+     * Scrap the special frame data now that we're done with it.
+     */
+
+  done:
+    TclStackFree(interp, fdPtr);
+    return result;
+}
+
+static int
+PushMethodCallFrame(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    CallContext *contextPtr,	/* Current method call context. */
+    ProcedureMethod *pmPtr,	/* Information about this procedure-like
+				 * method. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv,	/* Array of arguments. */
+    PMFrameData *fdPtr)		/* Place to store information about the call
+				 * frame. */
+{
     Object *oPtr = contextPtr->oPtr;
-    Command cmd;
-    const char *namePtr;
-    Tcl_Obj *nameObj;
-    ProcErrorProc errProc;
-    ExtraFrameInfo efi;
-    struct PNI pni;
     Tcl_Namespace *nsPtr = oPtr->namespacePtr;
+    int flags = FRAME_IS_METHOD, result;
+    const char *namePtr;
+    CallFrame **framePtrPtr = &fdPtr->framePtr;
+
+    /*
+     * Compute basic information on the basis of the type of method it is.
+     */
 
     if (contextPtr->flags & CONSTRUCTOR) {
 	Foundation *fPtr = TclOOGetFoundation(interp);
 
 	namePtr = "<constructor>";
 	flags |= FRAME_IS_CONSTRUCTOR;
-	nameObj = fPtr->constructorName;
-	errProc = ConstructorErrorHandler;
+	fdPtr->nameObj = fPtr->constructorName;
+	fdPtr->errProc = ConstructorErrorHandler;
     } else if (contextPtr->flags & DESTRUCTOR) {
 	Foundation *fPtr = TclOOGetFoundation(interp);
 
 	namePtr = "<destructor>";
 	flags |= FRAME_IS_DESTRUCTOR;
-	nameObj = fPtr->destructorName;
-	errProc = DestructorErrorHandler;
+	fdPtr->nameObj = fPtr->destructorName;
+	fdPtr->errProc = DestructorErrorHandler;
     } else {
-	nameObj = Tcl_MethodName(Tcl_ObjectContextMethod(context));
-	namePtr = TclGetString(nameObj);
-	errProc = MethodErrorHandler;
+	fdPtr->nameObj = Tcl_MethodName(
+		Tcl_ObjectContextMethod((Tcl_ObjectContext) contextPtr));
+	namePtr = TclGetString(fdPtr->nameObj);
+	fdPtr->errProc = MethodErrorHandler;
     }
     if (pmPtr->errProc != NULL) {
-	errProc = pmPtr->errProc;
+	fdPtr->errProc = pmPtr->errProc;
     }
 
     /*
@@ -703,24 +797,14 @@ InvokeProcedureMethod(
     }
 
     /*
-     * Give the pre-call callback a chance to do some setup and, possibly,
-     * veto the call.
+     * Compile the body. This operation may fail.
      */
 
-    if (pmPtr->preCallProc != NULL) {
-	int isFinished;
-
-	result = pmPtr->preCallProc(interp, context, nsPtr, &isFinished);
-	if (isFinished || result != TCL_OK) {
-	    return result;
-	}
-    }
-
-    efi.length = 2;
-    memset(&cmd, 0, sizeof(Command));
-    cmd.nsPtr = (Namespace *) nsPtr;
-    cmd.clientData = &efi;
-    pmPtr->procPtr->cmdPtr = &cmd;
+    fdPtr->efi.length = 2;
+    memset(&fdPtr->cmd, 0, sizeof(Command));
+    fdPtr->cmd.nsPtr = (Namespace *) nsPtr;
+    fdPtr->cmd.clientData = &fdPtr->efi;
+    pmPtr->procPtr->cmdPtr = &fdPtr->cmd;
     result = TclProcCompileProc(interp, pmPtr->procPtr,
 	    pmPtr->procPtr->bodyPtr, (Namespace *) nsPtr, "body of method",
 	    namePtr);
@@ -728,64 +812,47 @@ InvokeProcedureMethod(
 	return result;
     }
 
+    /*
+     * Make the stack frame and fill it out with information about this call.
+     * This operation may fail.
+     */
+
     flags |= FRAME_IS_PROC;
-    framePtrPtr = &framePtr;
     result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr, nsPtr,
 	    flags);
     if (result != TCL_OK) {
 	return result;
     }
 
-    framePtr->clientData = contextPtr;
-    framePtr->objc = objc;
-    framePtr->objv = objv;	/* ref counts for args are incremented below */
-    framePtr->procPtr = pmPtr->procPtr;
+    fdPtr->framePtr->clientData = contextPtr;
+    fdPtr->framePtr->objc = objc;
+    fdPtr->framePtr->objv = objv;
+    fdPtr->framePtr->procPtr = pmPtr->procPtr;
 
     /*
-     * Finish filling out the extra frame info.
+     * Finish filling out the extra frame info so that [info frame] works.
      */
 
-    efi.fields[0].name = "method";
-    efi.fields[0].proc = NULL;
-    efi.fields[0].clientData = nameObj;
+    fdPtr->efi.fields[0].name = "method";
+    fdPtr->efi.fields[0].proc = NULL;
+    fdPtr->efi.fields[0].clientData = fdPtr->nameObj;
     if (pmPtr->gfivProc != NULL) {
-	efi.fields[1].proc = pmPtr->gfivProc;
-	efi.fields[1].clientData = pmPtr;
+	fdPtr->efi.fields[1].proc = pmPtr->gfivProc;
+	fdPtr->efi.fields[1].clientData = pmPtr;
     } else {
-	pni.interp = interp;
-	pni.method = Tcl_ObjectContextMethod(context);
-	efi.fields[1].proc = RenderDeclarerName;
-	efi.fields[1].clientData = &pni;
+	fdPtr->pni.interp = interp;
+	fdPtr->pni.method = Tcl_ObjectContextMethod((Tcl_ObjectContext)
+		contextPtr);
+	fdPtr->efi.fields[1].proc = RenderDeclarerName;
+	fdPtr->efi.fields[1].clientData = &fdPtr->pni;
     }
-    if (Tcl_MethodDeclarerObject(pni.method) != NULL) {
-	efi.fields[1].name = "object";
+    if (Tcl_MethodDeclarerObject(fdPtr->pni.method) != NULL) {
+	fdPtr->efi.fields[1].name = "object";
     } else {
-	efi.fields[1].name = "class";
+	fdPtr->efi.fields[1].name = "class";
     }
 
-    /*
-     * Ensure that the method name itself is part of the arguments when we're
-     * doing unknown processing.
-     */
-
-    if (contextPtr->flags & OO_UNKNOWN_METHOD) {
-	skip--;
-    }
-
-    /*
-     * Now invoke the body of the method.
-     */
-
-    result = TclObjInterpProcCore(interp, nameObj, skip, errProc);
-
-    /*
-     * Give the post-call callback a chance to do some cleanup.
-     */
-
-    if (pmPtr->postCallProc) {
-	result = pmPtr->postCallProc(interp, context, nsPtr, result);
-    }
-    return result;
+    return TCL_OK;
 }
 
 /*
@@ -948,6 +1015,9 @@ DeleteProcedureMethod(
     register ProcedureMethod *pmPtr = clientData;
 
     TclProcDeleteProc(pmPtr->procPtr);
+    if (pmPtr->deleteClientdataProc) {
+	pmPtr->deleteClientdataProc(pmPtr->clientData);
+    }
     ckfree((char *) pmPtr);
 }
 
@@ -962,6 +1032,9 @@ CloneProcedureMethod(
 
     memcpy(pm2Ptr, pmPtr, sizeof(ProcedureMethod));
     pm2Ptr->procPtr->refCount++;
+    if (pmPtr->cloneClientdataProc) {
+	pm2Ptr->clientData = pmPtr->cloneClientdataProc(pmPtr->clientData);
+    }
     *newClientData = pm2Ptr;
     return TCL_OK;
 }

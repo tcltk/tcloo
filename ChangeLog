@@ -1,3 +1,11 @@
+2007-08-06  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclOOMethod.c (InvokeProcedureMethod, PushMethodCallFrame):
+	Reorganize so that frame management is clearer and better supportive
+	of Arnulf's requirements. This involves added a clientData pointer,
+	moving a callback, and breaking out things so that less is held on the
+	C stack, which is already fairly full...
+
 2007-08-04  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c (Tcl_InvokeNextContext): Added function to allow

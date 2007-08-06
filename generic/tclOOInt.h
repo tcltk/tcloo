@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.9 2007/08/03 12:20:49 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.10 2007/08/06 10:08:05 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -51,11 +51,12 @@ typedef struct Method {
  * tuned in their behaviour.
  */
 
-typedef int (*TclOO_PreCallProc)(Tcl_Interp *interp,
-	Tcl_ObjectContext context, Tcl_Namespace *namespacePtr,
-	int *isFinished);
-typedef int (*TclOO_PostCallProc)(Tcl_Interp *interp,
+typedef int (*TclOO_PreCallProc)(ClientData clientData, Tcl_Interp *interp,
+	Tcl_ObjectContext context, Tcl_CallFrame *framePtr, int *isFinished);
+typedef int (*TclOO_PostCallProc)(ClientData clientData, Tcl_Interp *interp,
 	Tcl_ObjectContext context, Tcl_Namespace *namespacePtr, int result);
+typedef void (*TclOO_PmCDDeleteProc)(ClientData clientData);
+typedef ClientData (*TclOO_PmCDCloneProc)(ClientData clientData);
 
 /*
  * Procedure-like methods have the following extra information. It is a
@@ -70,6 +71,9 @@ typedef struct ProcedureMethod {
 				 * includes the argument definition and the
 				 * body bytecodes. */
     int flags;			/* Flags to control features. */
+    ClientData clientData;
+    TclOO_PmCDDeleteProc deleteClientdataProc;
+    TclOO_PmCDCloneProc cloneClientdataProc;
     ProcErrorProc errProc;	/* Replacement error handler. */
     TclOO_PreCallProc preCallProc;
 				/* Callback to allow for additional setup
