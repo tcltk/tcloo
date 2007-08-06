@@ -1,5 +1,5 @@
 /*
- * $Id: tclOOIntDecls.h,v 1.3 2007/08/04 22:00:22 dkf Exp $
+ * $Id: tclOOIntDecls.h,v 1.4 2007/08/06 13:14:07 dkf Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  */
@@ -7,7 +7,7 @@
 /* !BEGIN!: Do not edit below this line. */
 
 #define TCLOOINT_STUBS_EPOCH 0
-#define TCLOOINT_STUBS_REVISION 27
+#define TCLOOINT_STUBS_REVISION 29
 
 #if !defined(USE_TCLOO_STUBS)
 
@@ -30,6 +30,16 @@ TCLOOAPI Tcl_Method	TclOOMakeProcClassMethod (Tcl_Interp * interp,
 				Tcl_Obj * bodyObj, 
 				const Tcl_MethodType * typePtr, 
 				ClientData clientData, Proc ** procPtrPtr);
+/* 3 */
+TCLOOAPI Method *	TclOONewProcMethod (Tcl_Interp * interp, 
+				Object * oPtr, int flags, Tcl_Obj * nameObj, 
+				Tcl_Obj * argsObj, Tcl_Obj * bodyObj, 
+				ProcedureMethod ** pmPtrPtr);
+/* 4 */
+TCLOOAPI Method *	TclOONewProcClassMethod (Tcl_Interp * interp, 
+				Class * clsPtr, int flags, Tcl_Obj * nameObj, 
+				Tcl_Obj * argsObj, Tcl_Obj * bodyObj, 
+				ProcedureMethod ** pmPtrPtr);
 
 #endif /* !defined(USE_TCLOO_STUBS) */
 
@@ -42,6 +52,8 @@ typedef struct TclOOIntStubs {
     Tcl_Object (*tclOOGetDefineCmdContext) (Tcl_Interp * interp); /* 0 */
     Tcl_Method (*tclOOMakeProcObjectMethod) (Tcl_Interp * interp, Object * oPtr, int flags, Tcl_Obj * nameObj, Tcl_Obj * argsObj, Tcl_Obj * bodyObj, const Tcl_MethodType * typePtr, ClientData clientData, Proc ** procPtrPtr); /* 1 */
     Tcl_Method (*tclOOMakeProcClassMethod) (Tcl_Interp * interp, Class * clsPtr, int flags, Tcl_Obj * nameObj, const char * namePtr, Tcl_Obj * argsObj, Tcl_Obj * bodyObj, const Tcl_MethodType * typePtr, ClientData clientData, Proc ** procPtrPtr); /* 2 */
+    Method * (*tclOONewProcMethod) (Tcl_Interp * interp, Object * oPtr, int flags, Tcl_Obj * nameObj, Tcl_Obj * argsObj, Tcl_Obj * bodyObj, ProcedureMethod ** pmPtrPtr); /* 3 */
+    Method * (*tclOONewProcClassMethod) (Tcl_Interp * interp, Class * clsPtr, int flags, Tcl_Obj * nameObj, Tcl_Obj * argsObj, Tcl_Obj * bodyObj, ProcedureMethod ** pmPtrPtr); /* 4 */
 } TclOOIntStubs;
 
 #ifdef __cplusplus
@@ -69,6 +81,14 @@ extern const TclOOIntStubs *tclOOIntStubsPtr;
 #ifndef TclOOMakeProcClassMethod
 #define TclOOMakeProcClassMethod \
 	(tclOOIntStubsPtr->tclOOMakeProcClassMethod) /* 2 */
+#endif
+#ifndef TclOONewProcMethod
+#define TclOONewProcMethod \
+	(tclOOIntStubsPtr->tclOONewProcMethod) /* 3 */
+#endif
+#ifndef TclOONewProcClassMethod
+#define TclOONewProcClassMethod \
+	(tclOOIntStubsPtr->tclOONewProcClassMethod) /* 4 */
 #endif
 
 #endif /* defined(USE_TCLOO_STUBS) */
