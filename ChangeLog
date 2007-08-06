@@ -1,5 +1,8 @@
 2007-08-06  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
+	* generic/tclOO.decls (TclOONewProcMethod, TclOONewProcClassMethod):
+	Added to internal stubs table.
+
 	* generic/tclOOMethod.c (InvokeProcedureMethod, PushMethodCallFrame):
 	Reorganize so that frame management is clearer and better supportive
 	of Arnulf's requirements. This involves added a clientData pointer,
