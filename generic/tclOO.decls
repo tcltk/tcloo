@@ -1,5 +1,5 @@
 # -*- tcl -*-
-# $Id: tclOO.decls,v 1.5 2007/08/06 13:13:13 dkf Exp $
+# $Id: tclOO.decls,v 1.6 2007/08/07 08:46:46 dkf Exp $
 
 # public API
 library tclOO
@@ -95,7 +95,7 @@ declare 23 current {
 	    int skip)
 }
 
-# private API
+# private API, exposed to support advanced OO systems that plug in on top
 interface tclOOInt
 declare 0 current {
     Tcl_Object TclOOGetDefineCmdContext(Tcl_Interp *interp)
@@ -121,4 +121,9 @@ declare 4 current {
     Method *TclOONewProcClassMethod(Tcl_Interp *interp, Class *clsPtr,
 	    int flags, Tcl_Obj *nameObj, Tcl_Obj *argsObj, Tcl_Obj *bodyObj,
 	    ProcedureMethod **pmPtrPtr)
+}
+declare 5 current {
+    int TclOOObjectCmdCore(Object *oPtr, Tcl_Interp *interp, int objc,
+	    Tcl_Obj *const *objv, int publicOnly, Tcl_HashTable *cachePtr,
+	    Class *startCls);
 }

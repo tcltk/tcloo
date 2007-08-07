@@ -1,4 +1,10 @@
-2007-08-06  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+2007-08-07  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (TclOOObjectCmdCore): Renamed from ObjectCmd and
+	exposed in stubs table. Added mechanism to allow callers to start the
+	chain part way through, though this is not used in the TclOO core.
+
+2007-08-06  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.decls (TclOONewProcMethod, TclOONewProcClassMethod):
 	Added to internal stubs table.
@@ -14,7 +20,7 @@
 	* generic/tclOO.c (Tcl_InvokeNextContext): Added function to allow
 	third party method implementations to traverse the call chain.
 
-2007-08-03  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+2007-08-03  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOCall.c: Use 'inline' where possible.
 
@@ -74,8 +80,7 @@
 2007-06-11  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c (ClassCreateNs): Exposed the ability to create
-	* doc/class.n: objects with particular namespaces for names to
-	scripts.
+	* doc/class.n: objects with particular namespaces for names to scripts
 
 	* generic/tclOO.c (Tcl_NewObjectInstance, Tcl_CopyObjectInstance):
 	* doc/Class.3: Extended the C API to allow control over the naming of
@@ -160,8 +165,8 @@
 
 	* doc/self.n: Added some documentation for [self].
 
-	* generic/tclOO.c (InvokeForwardMethod, ObjectUnknown): Better fix
-	for the unknown method handling.
+	* generic/tclOO.c (InvokeForwardMethod, ObjectUnknown): Better fix for
+	the unknown method handling.
 	* doc/object.n: Document it correctly.
 
 2007-05-30  Donal K. Fellows  <dkf@users.sf.net>

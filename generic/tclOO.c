@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.22 2007/08/04 21:59:09 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.23 2007/08/07 08:46:46 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -62,9 +62,6 @@ static Method *		CloneObjectMethod(Tcl_Interp *interp, Object *oPtr,
 			    Method *mPtr, Tcl_Obj *namePtr);
 static void		KillFoundation(ClientData clientData,
 			    Tcl_Interp *interp);
-static int		ObjectCmd(Object *oPtr, Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv, int publicOnly,
-			    Tcl_HashTable *cachePtr);
 static void		ObjectNamespaceDeleted(ClientData clientData);
 static void		ObjectRenamedTrace(ClientData clientData,
 			    Tcl_Interp *interp, const char *oldName,
@@ -1659,11 +1656,12 @@ Tcl_ObjectSetMetadata(
 /*
  * ----------------------------------------------------------------------
  *
- * PublicObjectCmd, PrivateObjectCmd, ObjectCmd --
+ * PublicObjectCmd, PrivateObjectCmd, TclOOObjectCmdCore --
  *
  *	Main entry point for object invokations. The Public* and Private*
- *	wrapper functions are just thin wrappers round the main ObjectCmd
- *	function that does call chain creation, management and invokation.
+ *	wrapper functions are just thin wrappers round the main
+ *	TclOOObjectCmdCore function that does call chain creation, management
+ *	and invokation.
  *
  * ----------------------------------------------------------------------
  */
@@ -1675,8 +1673,8 @@ PublicObjectCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    return ObjectCmd(clientData, interp, objc, objv, PUBLIC_METHOD,
-	    &((Object *)clientData)->publicContextCache);
+    return TclOOObjectCmdCore(clientData, interp, objc, objv, PUBLIC_METHOD,
+	    &((Object *)clientData)->publicContextCache, NULL);
 }
 
 static int
@@ -1686,19 +1684,23 @@ PrivateObjectCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    return ObjectCmd(clientData, interp, objc, objv, 0,
-	    &((Object *)clientData)->privateContextCache);
+    return TclOOObjectCmdCore(clientData, interp, objc, objv, 0,
+	    &((Object *)clientData)->privateContextCache, NULL);
 }
 
-static int
-ObjectCmd(
+int
+TclOOObjectCmdCore(
     Object *oPtr,		/* The object being invoked. */
     Tcl_Interp *interp,		/* The interpreter containing the object. */
     int objc,			/* How many arguments are being passed in. */
     Tcl_Obj *const *objv,	/* The array of arguments. */
     int flags,			/* Whether this is an invokation through the
 				 * public or the private command interface. */
-    Tcl_HashTable *cachePtr)	/* What call chain cache to use. */
+    Tcl_HashTable *cachePtr,	/* What call chain cache to use. */
+    Class *startCls)		/* Where to start in the call chain, or NULL
+				 * if we are to start at the front with
+				 * filters and the object's methods (which is
+				 * the normal case). */
 {
     CallContext *contextPtr;
     int result;
@@ -1707,6 +1709,10 @@ ObjectCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "method ?arg ...?");
 	return TCL_ERROR;
     }
+
+    /*
+     * Get the call chain.
+     */
 
     contextPtr = TclOOGetCallContext(TclOOGetFoundation(interp), oPtr,
 	    objv[1], flags | (oPtr->flags & FILTER_HANDLING), cachePtr);
@@ -1717,15 +1723,51 @@ ObjectCmd(
 	return TCL_ERROR;
     }
 
+    /*
+     * Check to see if we need to apply magical tricks to start part way
+     * through the call chain.
+     */
+
+    if (startCls != NULL) {
+	while (contextPtr->index<contextPtr->numCallChain) {
+	    struct MInvoke *miPtr = &contextPtr->callChain[contextPtr->index];
+
+	    if (miPtr->isFilter || miPtr->mPtr->declaringClassPtr!=startCls) {
+		contextPtr->index++;
+	    } else {
+		break;
+	    }
+	}
+	if (contextPtr->index >= contextPtr->numCallChain) {
+	    result = TCL_ERROR;
+	    Tcl_SetResult(interp, "no valid method implementation",
+		    TCL_STATIC);
+	    Tcl_Preserve(oPtr);		/* just to match... */
+	    goto disposeChain;
+	}
+    }
+
+    /*
+     * Invoke the call chain, locking the object structure against deletion
+     * for the duration.
+     */
+
     Tcl_Preserve(oPtr);
     result = TclOOInvokeContext(interp, contextPtr, objc, objv);
+
+    /*
+     * Dispose of the call chain, either back into the ether or into the
+     * chain cache.
+     */
+
+  disposeChain:
     if (!(contextPtr->flags & OO_UNKNOWN_METHOD)
 	    && !(oPtr->flags & OBJECT_DELETED)) {
-	Tcl_HashEntry *hPtr;
+	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(cachePtr, (char *) objv[1]);
 
-	hPtr = Tcl_FindHashEntry(cachePtr, (char *) objv[1]);
 	if (hPtr != NULL && Tcl_GetHashValue(hPtr) == NULL) {
 	    Tcl_SetHashValue(hPtr, contextPtr);
+	    contextPtr->index = 0;
 	    TclOOStashContext(objv[1], contextPtr);
 	} else {
 	    TclOODeleteContext(contextPtr);
@@ -1733,8 +1775,12 @@ ObjectCmd(
     } else {
 	TclOODeleteContext(contextPtr);
     }
-    Tcl_Release(oPtr);
 
+    /*
+     * Drop the lock on the object's structure.
+     */
+
+    Tcl_Release(oPtr);
     return result;
 }
 
