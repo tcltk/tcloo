@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.11 2007/08/06 13:13:13 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.12 2007/08/08 12:21:21 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -376,40 +376,39 @@ MODULE_SCOPE int	TclOODefineSelfClassObjCmd(ClientData clientData,
  * maybe just put in the internal stubs table.
  */
 
-MODULE_SCOPE Method *	TclOONewForwardMethod(Tcl_Interp *interp, Object *oPtr,
-			    int isPublic, Tcl_Obj *nameObj,
-			    Tcl_Obj *prefixObj);
-MODULE_SCOPE Method *	TclOONewForwardClassMethod(Tcl_Interp *interp,
-			    Class *clsPtr, int isPublic, Tcl_Obj *nameObj,
-			    Tcl_Obj *prefixObj);
-MODULE_SCOPE void	TclOONewBasicClassMethod(Tcl_Interp *interp,
-			    Class *clsPtr, const DeclaredClassMethod *dcm);
-MODULE_SCOPE void	TclOODeleteMethod(Method *method);
-MODULE_SCOPE void	TclOOInitInfo(Tcl_Interp *interp);
 MODULE_SCOPE void	TclOOAddToInstances(Object *oPtr, Class *clsPtr);
-MODULE_SCOPE void	TclOOAddToSubclasses(Class *subPtr, Class *superPtr);
 MODULE_SCOPE void	TclOOAddToMixinSubs(Class *subPtr, Class *mixinPtr);
-MODULE_SCOPE Proc *	TclOOGetProcFromMethod(Method *mPtr);
-MODULE_SCOPE Tcl_Obj *	TclOOGetFwdFromMethod(Method *mPtr);
-MODULE_SCOPE int	TclOOIsReachable(Class *targetPtr, Class *startPtr);
-MODULE_SCOPE Tcl_Obj *	TclOOObjectName(Tcl_Interp *interp, Object *oPtr);
-MODULE_SCOPE void	TclOORemoveFromInstances(Object *oPtr, Class *clsPtr);
-MODULE_SCOPE void	TclOORemoveFromSubclasses(Class *subPtr,
-			    Class *superPtr);
-MODULE_SCOPE void	TclOORemoveFromMixinSubs(Class *subPtr,
-			    Class *mixinPtr);
+MODULE_SCOPE void	TclOOAddToSubclasses(Class *subPtr, Class *superPtr);
 MODULE_SCOPE void	TclOODeleteContext(CallContext *contextPtr);
-MODULE_SCOPE void	TclOOStashContext(Tcl_Obj *objPtr,
-			    CallContext *contextPtr);
+MODULE_SCOPE void	TclOODeleteMethod(Method *method);
 MODULE_SCOPE CallContext *TclOOGetCallContext(Foundation *fPtr, Object *oPtr,
 			    Tcl_Obj *methodNameObj, int flags,
 			    Tcl_HashTable *cachePtr);
+MODULE_SCOPE Foundation	*TclOOGetFoundation(Tcl_Interp *interp);
+MODULE_SCOPE Tcl_Obj *	TclOOGetFwdFromMethod(Method *mPtr);
+MODULE_SCOPE Proc *	TclOOGetProcFromMethod(Method *mPtr);
+MODULE_SCOPE int	TclOOGetSortedMethodList(Object *oPtr, int flags,
+			    const char ***stringsPtr);
+MODULE_SCOPE void	TclOOInitInfo(Tcl_Interp *interp);
 MODULE_SCOPE int	TclOOInvokeContext(Tcl_Interp *interp,
 			    CallContext *contextPtr, int objc,
 			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOOGetSortedMethodList(Object *oPtr, int flags,
-			    const char ***stringsPtr);
-MODULE_SCOPE Foundation	*TclOOGetFoundation(Tcl_Interp *interp);
+MODULE_SCOPE void	TclOONewBasicClassMethod(Tcl_Interp *interp,
+			    Class *clsPtr, const DeclaredClassMethod *dcm);
+MODULE_SCOPE Method *	TclOONewForwardClassMethod(Tcl_Interp *interp,
+			    Class *clsPtr, int isPublic, Tcl_Obj *nameObj,
+			    Tcl_Obj *prefixObj);
+MODULE_SCOPE Method *	TclOONewForwardMethod(Tcl_Interp *interp,
+			    Object *oPtr, int isPublic, Tcl_Obj *nameObj,
+			    Tcl_Obj *prefixObj);
+MODULE_SCOPE Tcl_Obj *	TclOOObjectName(Tcl_Interp *interp, Object *oPtr);
+MODULE_SCOPE void	TclOORemoveFromInstances(Object *oPtr, Class *clsPtr);
+MODULE_SCOPE void	TclOORemoveFromMixinSubs(Class *subPtr,
+			    Class *mixinPtr);
+MODULE_SCOPE void	TclOORemoveFromSubclasses(Class *subPtr,
+			    Class *superPtr);
+MODULE_SCOPE void	TclOOStashContext(Tcl_Obj *objPtr,
+			    CallContext *contextPtr);
 
 /*
  * Include all the private API, generated from tclOO.decls.
