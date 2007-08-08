@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.4 2007/06/12 12:58:35 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.5 2007/08/08 12:26:38 dkf Exp $
 
 lappend auto_path .
 package require TclOO
@@ -827,12 +827,16 @@ test oo-16.9 {OO: object introspection} -body {
     oo::class create Ac
     oo::class create Bc; oo::define Bc superclass Ac
     oo::class create Cc; oo::define Cc superclass Bc
-    Cc create D
-    list [info object isa typeof D oo::class] \
-	[info object isa  typeof D Ac]
+    oo::class create Dc; oo::define Dc mixin Cc
+    Cc create E
+    Dc create F
+    list [info object isa    typeof E oo::class] \
+	    [info object isa typeof E Ac] \
+	    [info object isa typeof F Bc] \
+	    [info object isa typeof F Cc]
 } -cleanup {
     catch {Ac destroy}
-} -result {0 1}
+} -result {0 1 1 1}
 test oo-16.10 {OO: object introspection} -setup {
     oo::object create foo
 } -body {
