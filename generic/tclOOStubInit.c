@@ -1,5 +1,5 @@
 /*
- * $Id: tclOOStubInit.c,v 1.5 2007/08/07 08:47:11 dkf Exp $
+ * $Id: tclOOStubInit.c,v 1.6 2007/08/08 12:26:58 dkf Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  * It is compiled and linked in with the tclOO package proper.
@@ -52,6 +52,7 @@ TclOOIntStubs tclOOIntStubs = {
     TclOONewProcMethod, /* 3 */
     TclOONewProcClassMethod, /* 4 */
     TclOOObjectCmdCore, /* 5 */
+    TclOOIsReachable, /* 6 */
 };
 
 /* !END!: Do not edit above this line. */
