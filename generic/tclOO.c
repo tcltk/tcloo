@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.23 2007/08/07 08:46:46 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.24 2007/08/08 12:21:20 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2824,11 +2824,16 @@ TclOOIsReachable(
     if (startPtr == targetPtr) {
 	return 1;
     }
-    if (startPtr->superclasses.num == 1) {
+    if (startPtr->superclasses.num == 1 && startPtr->mixins.num == 0) {
 	startPtr = startPtr->superclasses.list[0];
 	goto tailRecurse;
     }
     FOREACH(superPtr, startPtr->superclasses) {
+	if (TclOOIsReachable(targetPtr, superPtr)) {
+	    return 1;
+	}
+    }
+    FOREACH(superPtr, startPtr->mixins) {
 	if (TclOOIsReachable(targetPtr, superPtr)) {
 	    return 1;
 	}

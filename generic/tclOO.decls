@@ -1,5 +1,5 @@
 # -*- tcl -*-
-# $Id: tclOO.decls,v 1.6 2007/08/07 08:46:46 dkf Exp $
+# $Id: tclOO.decls,v 1.7 2007/08/08 12:21:21 dkf Exp $
 
 # public API
 library tclOO
@@ -125,5 +125,8 @@ declare 4 current {
 declare 5 current {
     int TclOOObjectCmdCore(Object *oPtr, Tcl_Interp *interp, int objc,
 	    Tcl_Obj *const *objv, int publicOnly, Tcl_HashTable *cachePtr,
-	    Class *startCls);
+	    Class *startCls)
+}
+declare 6 current {
+    int TclOOIsReachable(Class *targetPtr, Class *startPtr)
 }

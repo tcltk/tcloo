@@ -1,3 +1,9 @@
+2007-08-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (TclOOIsReachable): The is-a relationship should
+	follow the class mixin hierarchy too, and this function is a
+	reasonable addition to the exported API (currently private).
+
 2007-08-07  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c (TclOOObjectCmdCore): Renamed from ObjectCmd and
