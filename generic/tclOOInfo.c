@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.8 2007/08/03 12:20:48 dkf Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.9 2007/08/13 13:33:15 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -119,14 +119,21 @@ TclOOInitInfo(
 
     infoCmd = Tcl_FindCommand(interp, "info", NULL, TCL_GLOBAL_ONLY);
     if (infoCmd != NULL && Tcl_IsEnsemble(infoCmd)) {
-	Tcl_Obj *mapDict;
+	Tcl_Obj *mapDict, *objectObj, *classObj;
 
 	Tcl_GetEnsembleMappingDict(NULL, infoCmd, &mapDict);
 	if (mapDict != NULL) {
-	    Tcl_DictObjPut(NULL, mapDict, Tcl_NewStringObj("object", -1),
+	    objectObj = Tcl_NewStringObj("object", -1);
+	    classObj = Tcl_NewStringObj("class", -1);
+
+	    Tcl_IncrRefCount(objectObj);
+	    Tcl_IncrRefCount(classObj);
+	    Tcl_DictObjPut(NULL, mapDict, objectObj,
 		    Tcl_NewStringObj("::oo::InfoObject", -1));
-	    Tcl_DictObjPut(NULL, mapDict, Tcl_NewStringObj("class", -1),
+	    Tcl_DictObjPut(NULL, mapDict, classObj,
 		    Tcl_NewStringObj("::oo::InfoClass", -1));
+	    Tcl_DecrRefCount(objectObj);
+	    Tcl_DecrRefCount(classObj);
 	    Tcl_SetEnsembleMappingDict(NULL, infoCmd, mapDict);
 	}
     }
