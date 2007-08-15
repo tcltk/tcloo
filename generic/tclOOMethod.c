@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.6 2007/08/06 10:08:05 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.7 2007/08/15 18:08:43 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -699,6 +699,7 @@ InvokeProcedureMethod(
 		(Tcl_CallFrame *) fdPtr->framePtr, &isFinished);
 	if (isFinished || result != TCL_OK) {
 	    Tcl_PopCallFrame(interp);
+	    TclStackFree(interp, fdPtr->framePtr);
 	    goto done;
 	}
     }
