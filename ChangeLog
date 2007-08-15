@@ -1,3 +1,8 @@
+2007-08-15  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclOOMethod.c (InvokeProcedureMethod): Plug a memory leak
+	found by Arnulf Wiedemann.
+
 2007-08-13  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/tclOOInfo.c (TclOOInitInfo): Stop a potential memory leak in
