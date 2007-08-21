@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.3 2007/08/03 12:20:48 dkf Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.4 2007/08/21 21:32:03 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -679,7 +679,7 @@ AddMethodToCallChain(
 	contextPtr->callChain = (struct MInvoke *)
 		ckalloc(sizeof(struct MInvoke)*(contextPtr->numCallChain+1));
 	memcpy(contextPtr->callChain, contextPtr->staticCallChain,
-		sizeof(struct MInvoke) * (contextPtr->numCallChain + 1));
+		sizeof(struct MInvoke) * contextPtr->numCallChain);
     } else if (contextPtr->numCallChain > CALL_CHAIN_STATIC_SIZE) {
 	contextPtr->callChain = (struct MInvoke *)
 		ckrealloc((char *) contextPtr->callChain,
