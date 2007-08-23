@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.8 2007/08/20 20:34:07 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.9 2007/08/23 15:33:39 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -852,7 +852,7 @@ PushMethodCallFrame(
 	fdPtr->efi.fields[1].proc = RenderDeclarerName;
 	fdPtr->efi.fields[1].clientData = &fdPtr->pni;
 	fdPtr->pni.interp = interp;
-	fdPtr->pni.method = method
+	fdPtr->pni.method = method;
     }
 
     return TCL_OK;
