@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.24 2007/08/08 12:21:20 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.25 2007/09/03 09:49:40 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -60,6 +60,7 @@ static Method *		CloneClassMethod(Tcl_Interp *interp, Class *clsPtr,
 			    Method *mPtr, Tcl_Obj *namePtr);
 static Method *		CloneObjectMethod(Tcl_Interp *interp, Object *oPtr,
 			    Method *mPtr, Tcl_Obj *namePtr);
+static void		InitFoundation(Tcl_Interp *interp);
 static void		KillFoundation(ClientData clientData,
 			    Tcl_Interp *interp);
 static void		ObjectNamespaceDeleted(ClientData clientData);
@@ -139,13 +140,12 @@ static char initScript[] =
 /*     " tcloo.tcl OO_LIBRARY oo::library;"; */
 
 extern struct TclOOStubAPI tclOOStubAPI;
-
-Foundation *
-TclOOGetFoundation(
-    Tcl_Interp *interp)
-{
-    return Tcl_GetAssocData(interp, "tcl/tip257/foundation", NULL);
-}
+
+/*
+ * Key into the interpreter assocData table for the foundation structure ref.
+ */
+
+#define FOUNDATION_KEY "tcl/tip257/foundation"
 
 /*
  * ----------------------------------------------------------------------
@@ -168,28 +168,21 @@ int DLLEXPORT
 Tcloo_Init(
     Tcl_Interp *interp)		/* The interpreter to install into. */
 {
-    Foundation *fPtr;
-    int i;
-    Tcl_DString buffer;
-
     if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL) {
 	return TCL_ERROR;
     }
 
     /*
-     * Construct the foundation of the object system. This is a structure
-     * holding references to the magical bits that need to be known about in
-     * other places.
+     * Build the core of the OO system.
      */
 
-    fPtr = (Foundation *) ckalloc(sizeof(Foundation));
-    Tcl_SetAssocData(interp, "tcl/tip257/foundation", KillFoundation, fPtr);
-    memset(fPtr, 0, sizeof(Foundation));
-    fPtr->ooNs = Tcl_CreateNamespace(interp, "::oo", fPtr, NULL);
-    Tcl_Export(interp, fPtr->ooNs, "[a-z]*", 1);
-    fPtr->defineNs = Tcl_CreateNamespace(interp, "::oo::define", NULL, NULL);
-    fPtr->helpersNs = Tcl_CreateNamespace(interp, "::oo::Helpers", NULL,
-	    NULL);
+    InitFoundation(interp);
+
+    /*
+     * Create non-object commands and plug ourselves into the Tcl [info]
+     * ensemble.
+     */
+
     Tcl_CreateObjCommand(interp, "::oo::Helpers::next", NextObjCmd, NULL,
 	    NULL);
     Tcl_CreateObjCommand(interp, "::oo::Helpers::self", SelfObjCmd, NULL,
@@ -197,14 +190,71 @@ Tcloo_Init(
     Tcl_CreateObjCommand(interp, "::oo::define", TclOODefineObjCmd, NULL,
 	    NULL);
     Tcl_CreateObjCommand(interp, "::oo::copy", CopyObjectCmd, NULL, NULL);
-    Tcl_DStringInit(&buffer);
-    for (i=0 ; defineCmds[i].name ; i++) {
-	Tcl_DStringAppend(&buffer, "::oo::define::", 14);
-	Tcl_DStringAppend(&buffer, defineCmds[i].name, -1);
-	Tcl_CreateObjCommand(interp, Tcl_DStringValue(&buffer),
-		defineCmds[i].objProc, (void *) defineCmds[i].flag, NULL);
-	Tcl_DStringFree(&buffer);
+    TclOOInitInfo(interp);
+
+    /*
+     * Run our initialization script and, if that works, declare the package
+     * to be fully provided.
+     */
+
+    if (Tcl_Eval(interp, initScript) != TCL_OK) {
+	return TCL_ERROR;
     }
+
+    return Tcl_PkgProvideEx(interp, "TclOO", OO_VERSION, &tclOOStubAPI);
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOGetFoundation --
+ *
+ *	Get a reference to the OO core class system.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+Foundation *
+TclOOGetFoundation(
+    Tcl_Interp *interp)
+{
+    return Tcl_GetAssocData(interp, FOUNDATION_KEY, NULL);
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InitFoundation --
+ *
+ *	Set up the core of the OO core class system. This is a structure
+ *	holding references to the magical bits that need to be known about in
+ *	other places, plus the oo::object and oo::class classes.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static void
+InitFoundation(
+    Tcl_Interp *interp)
+{
+    Foundation *fPtr = (Foundation *) ckalloc(sizeof(Foundation));
+    Tcl_Obj *namePtr, *argsPtr, *bodyPtr;
+    Tcl_DString buffer;
+    int i;
+
+    /*
+     * Initialize the structure that holds the OO system core. This is
+     * attached to the interpreter via an assocData entry; not very efficient,
+     * but the best we can do without hacking the core more.
+     */
+
+    memset(fPtr, 0, sizeof(Foundation));
+    Tcl_SetAssocData(interp, FOUNDATION_KEY, KillFoundation, fPtr);
+    fPtr->ooNs = Tcl_CreateNamespace(interp, "::oo", fPtr, NULL);
+    Tcl_Export(interp, fPtr->ooNs, "[a-z]*", 1);
+    fPtr->defineNs = Tcl_CreateNamespace(interp, "::oo::define", NULL, NULL);
+    fPtr->helpersNs = Tcl_CreateNamespace(interp, "::oo::Helpers", NULL,
+	    NULL);
     fPtr->epoch = 0;
     fPtr->nsCount = 0;
     fPtr->unknownMethodNameObj = Tcl_NewStringObj("unknown", -1);
@@ -213,6 +263,19 @@ Tcloo_Init(
     Tcl_IncrRefCount(fPtr->unknownMethodNameObj);
     Tcl_IncrRefCount(fPtr->constructorName);
     Tcl_IncrRefCount(fPtr->destructorName);
+
+    /*
+     * Create the subcommands in the oo::define space.
+     */
+
+    Tcl_DStringInit(&buffer);
+    for (i=0 ; defineCmds[i].name ; i++) {
+	Tcl_DStringAppend(&buffer, "::oo::define::", 14);
+	Tcl_DStringAppend(&buffer, defineCmds[i].name, -1);
+	Tcl_CreateObjCommand(interp, Tcl_DStringValue(&buffer),
+		defineCmds[i].objProc, (void *) defineCmds[i].flag, NULL);
+	Tcl_DStringFree(&buffer);
+    }
 
     /*
      * While the foundation is in assocData, this call is not needed.
@@ -249,44 +312,25 @@ Tcloo_Init(
     }
 
     /*
-     * Finish setting up the class of classes.
+     * Finish setting up the class of classes by marking the 'new' method as
+     * private; classes, unlike general objects, must have explicit names. We
+     * also need to create the constructor for classes.
      */
 
-    {
-	Tcl_Obj *namePtr, *argsPtr, *bodyPtr;
+    namePtr = Tcl_NewStringObj("new", -1);
+    Tcl_NewMethod(interp, (Tcl_Object) fPtr->classCls->thisPtr,
+	    namePtr /* keeps ref */, 0 /* ==private */, NULL, NULL);
 
-	/*
-	 * Mark the 'new' method in oo::class as private; classes, unlike
-	 * general objects, must have explicit names.
-	 */
-
-	namePtr = Tcl_NewStringObj("new", -1);
-	Tcl_NewMethod(interp, (Tcl_Object) fPtr->classCls->thisPtr, namePtr,
-		0 /* ==private */, NULL, NULL);
-
-	argsPtr = Tcl_NewStringObj("{definitionScript {}}", -1);
-	bodyPtr = Tcl_NewStringObj(
-		"if {[catch {define [self] $definitionScript} msg opt]} {\n"
-		"set ei [split [dict get $opt -errorinfo] \\n]\n"
-		"dict set opt -errorinfo [join [lrange $ei 0 end-2] \\n]\n"
-		"dict set opt -errorline 0xdeadbeef\n"
-		"}\n"
-		"return -options $opt $msg", -1);
-	fPtr->classCls->constructorPtr = TclOONewProcClassMethod(interp,
-		fPtr->classCls, 0, NULL, argsPtr, bodyPtr, NULL);
-    }
-
-    /*
-     * Finish setting up the [info object] and [info class] commands.
-     */
-
-    TclOOInitInfo(interp);
-
-    if (Tcl_Eval(interp, initScript) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    return Tcl_PkgProvideEx(interp, "TclOO", OO_VERSION, &tclOOStubAPI);
+    argsPtr = Tcl_NewStringObj("{definitionScript {}}", -1);
+    bodyPtr = Tcl_NewStringObj(
+	    "if {[catch {define [self] $definitionScript} msg opt]} {\n"
+	    "set ei [split [dict get $opt -errorinfo] \\n]\n"
+	    "dict set opt -errorinfo [join [lrange $ei 0 end-2] \\n]\n"
+	    "dict set opt -errorline 0xdeadbeef\n"
+	    "}\n"
+	    "return -options $opt $msg", -1);
+    fPtr->classCls->constructorPtr = TclOONewProcClassMethod(interp,
+	    fPtr->classCls, 0, NULL, argsPtr, bodyPtr, NULL);
 }
 
 /*
@@ -308,6 +352,10 @@ KillFoundation(
 				 * foundation. */
 {
     Foundation *fPtr = clientData;
+
+    if (!Tcl_InterpDeleted(interp)) {
+	Tcl_DeleteAssocData(interp, FOUNDATION_KEY);
+    }
 
     Tcl_DecrRefCount(fPtr->unknownMethodNameObj);
     Tcl_DecrRefCount(fPtr->constructorName);
