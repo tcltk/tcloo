@@ -1,3 +1,8 @@
+2007-09-03  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (InitFoundation): Divide the initialization code
+	into two more manageable pieces.
+
 2007-08-21  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOCall.c (AddMethodToCallChain): Prevent memory overruns
