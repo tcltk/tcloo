@@ -1,6 +1,6 @@
-# $Id: configure.in,v 1.9 2007/08/03 12:20:48 dkf Exp $
+# $Id: configure.in,v 1.10 2007/09/28 15:15:08 dkf Exp $
 
-AC_REVISION($Revision: 1.9 $)
+AC_REVISION($Revision: 1.10 $)
 AC_INIT([TclOO],[0.1])
 AC_CONFIG_AUX_DIR(tclconfig)
 
@@ -47,5 +47,5 @@ AS_IF([test "${SDX}" = "none"],[
 AS_IF([test "${SDX}" = "none"],[
     AC_MSG_WARN([cannot find sdx; building starkits will fail; building as a normal library still supported])])
 
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES(Makefile tclooConfig.sh)
 AC_OUTPUT

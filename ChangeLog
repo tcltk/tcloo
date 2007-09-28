@@ -1,3 +1,8 @@
+2007-09-28  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* tclooConfig.sh.in: Added file that describes "useful" configuration
+	about TclOO so that people can build against it.
+
 2007-09-03  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c (InitFoundation): Divide the initialization code
