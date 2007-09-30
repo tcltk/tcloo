@@ -8,13 +8,11 @@
 #
 # The information in this file is specific to a single platform.
 #
-# RCS: @(#) $$
+# RCS: @(#) $Id: tclooConfig.sh.in,v 1.3 2007/09/30 23:15:41 dkf Exp $
 
-TCLOO_STUB_LIB_FILE="@PKG_STUB_LIB_FILE@"
-TCLOO_LIB_FILE="@PKG_LIB_FILE@"
-TCLOO_PUBLIC_INCLUDE_DIR="@includedir@"
-TCLOO_PRIVATE_INCLUDE_DIR="@srcdir@/generic"
-TCLOO_PREFIX="@prefix@"
-TCLOO_EXEC_PREFIX="@exec_prefix@"
-TCLOO_SRC_DIR="@srcdir@"
+TCLOO_STUB_LIB_SPEC="@TCLOO_STUB_LIB_SPEC@"
+TCLOO_LIB_SPEC="@TCLOO_LIB_SPEC@"
+TCLOO_INCLUDE_SPEC="@TCLOO_INCLUDE_SPEC@"
+TCLOO_CFLAGS=-DUSE_TCLOO_STUBS
+TCLOO_PRIVATE_INCLUDE_SPEC="-I@srcdir@/generic"
 TCLOO_VERSION="@PACKAGE_VERSION@"
