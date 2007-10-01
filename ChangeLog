@@ -1,5 +1,7 @@
 2007-10-01  Donal K. Fellows  <dkf@users.sf.net>
 
+	* README.txt: Added a readme as part of preparation for release.
+
 	* configure.in (TCLOO_*_SPEC): Added more bits to make the config
 	descriptor file much more likely to be relevant.
 
