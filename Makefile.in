@@ -73,7 +73,7 @@ PKG_KIT_ROOT=$(PKG_DIR)-$(PLATFORM)
 PKG_KIT=$(PKG_KIT_ROOT).kit
 pkglibdir=$(libdir)/$(PKG_DIR)
 top_builddir=.
-TCL_VERSION_REQ=8.5a7
+TCL_VERSION_REQ=8.5b1
 EXTRA_PATH=$(top_builddir):$(TCL_BIN_DIR)
 TCLSH=$(TCLSH_ENV) "$(TCLSH_PROGRAM)"
 CONFIG_CLEAN_FILES=Makefile
@@ -300,12 +300,16 @@ dist: dist-clean
 	chmod 664 $(DIST_DIR)/tclconfig/tcl.m4
 	chmod +x $(DIST_DIR)/tclconfig/install-sh
 
-	list='demos doc generic library mac tests unix win'; \
+	list='demos generic library mac tests unix win'; \
 	for p in $$list; do \
 	    if test -d $(srcdir)/$$p ; then \
 		mkdir $(DIST_DIR)/$$p; \
 		cp -p $(srcdir)/$$p/*.* $(DIST_DIR)/$$p/; \
 	    fi; \
+	done
+	mkdir $(DIST_DIR)/doc
+	for p in $(srcdir)/doc/*.?; do \
+	    soelim -I $(srcdir)/doc $$p >$(DIST_DIR)/doc/`basename $$p`; \
 	done
 
 	(cd $(DIST_ROOT); $(COMPRESS);)

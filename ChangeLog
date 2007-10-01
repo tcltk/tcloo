@@ -1,3 +1,11 @@
+2007-10-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	=== RELEASE OF TCLOO VERSION 0.1 ===
+
+	* Makefile.in (TCL_VERSION_REQ): Updated to require the correct
+	public version instead of a private version that was never released.
+	(dist): Updated so that manual pages are run through 'soelim'.
+
 2007-10-01  Donal K. Fellows  <dkf@users.sf.net>
 
 	* README.txt: Added a readme as part of preparation for release.
