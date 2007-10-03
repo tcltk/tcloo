@@ -1,3 +1,8 @@
+2007-10-03  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* tclooConfig.sh.in, configure.in: Made more robust when configure is
+	called with a relative directory name.
+
 2007-10-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	=== RELEASE OF TCLOO VERSION 0.1 ===
