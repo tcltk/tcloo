@@ -1,7 +1,7 @@
-# $Id: configure.in,v 1.13 2007/10/03 14:21:40 dkf Exp $
+# $Id: configure.in,v 1.14 2007/10/03 22:01:22 dkf Exp $
 
-AC_REVISION($Revision: 1.13 $)
-AC_INIT([TclOO],[0.1])
+AC_REVISION($Revision: 1.14 $)
+AC_INIT([TclOO],[0.1.1])
 AC_CONFIG_AUX_DIR(tclconfig)
 
 TEA_INIT([3.6])
