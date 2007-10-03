@@ -1,6 +1,6 @@
-# $Id: configure.in,v 1.12 2007/10/03 12:40:05 dkf Exp $
+# $Id: configure.in,v 1.13 2007/10/03 14:21:40 dkf Exp $
 
-AC_REVISION($Revision: 1.12 $)
+AC_REVISION($Revision: 1.13 $)
 AC_INIT([TclOO],[0.1])
 AC_CONFIG_AUX_DIR(tclconfig)
 
@@ -56,10 +56,10 @@ case ${TCLOO_PRIVATE_INCLUDE_DIR} in
 esac
 eval "TCLOO_INCLUDE_SPEC=\"-I${includedir}\""
 if test ${TCL_LIB_VERSIONS_OK} = nodots; then
-    eval "TCLOO_LIB_SPEC=\"-L${libdir} -l${PACKAGE_NAME}${TCL_TRIM_DOTS}\""
+    eval "TCLOO_LIB_SPEC=\"-L${libdir}/${PACKAGE_NAME}${PACKAGE_VERSION} -l${PACKAGE_NAME}${TCL_TRIM_DOTS}\""
     eval "TCLOO_STUB_LIB_SPEC=\"-L${libdir} -l${PACKAGE_NAME}stub${TCL_TRIM_DOTS}\""
 else
-    eval "TCLOO_LIB_SPEC=\"-L${libdir} -l${PACKAGE_NAME}${PACKAGE_VERSION}\""
+    eval "TCLOO_LIB_SPEC=\"-L${libdir}/${PACKAGE_NAME}${PACKAGE_VERSION} -l${PACKAGE_NAME}${PACKAGE_VERSION}\""
     eval "TCLOO_STUB_LIB_SPEC=\"-L${libdir} -l${PACKAGE_NAME}stub${PACKAGE_VERSION}\""
 fi
 AC_SUBST(TCLOO_INCLUDE_SPEC)
