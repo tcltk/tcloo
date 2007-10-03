@@ -78,7 +78,7 @@ EXTRA_PATH=$(top_builddir):$(TCL_BIN_DIR)
 TCLSH=$(TCLSH_ENV) "$(TCLSH_PROGRAM)"
 CONFIG_CLEAN_FILES=Makefile
 COMPILE=$(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
-VPATH=.:$(SRC_DIR)/generic:$(SRC_DIR)/unix:$(SRC_DIR)/win:$(SRC_DIR)/macosx
+VPATH=$(SRC_DIR)/generic:$(SRC_DIR)/unix:$(SRC_DIR)/win:$(SRC_DIR)/macosx:$(SRC_DIR)
 TESTFLAGS=
 KIT_PKG_ROOT=$(PKG_KIT_ROOT).vfs/lib/$(PACKAGE_NAME)
 # The quoting is horrific, I know!
