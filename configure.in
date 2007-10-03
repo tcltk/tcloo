@@ -1,6 +1,6 @@
-# $Id: configure.in,v 1.14 2007/10/03 22:01:22 dkf Exp $
+# $Id: configure.in,v 1.15 2007/10/03 22:54:58 dkf Exp $
 
-AC_REVISION($Revision: 1.14 $)
+AC_REVISION($Revision: 1.15 $)
 AC_INIT([TclOO],[0.1.1])
 AC_CONFIG_AUX_DIR(tclconfig)
 
@@ -49,18 +49,18 @@ AS_IF([test "${SDX}" = "none"],[
 
 # TODO: Adapt this for OSX Frameworks...
 # This next bit is a bit ugly, but it makes things for tclooConfig.sh...
-eval "TCLOO_PRIVATE_INCLUDE_DIR=\"${srcdir}/generic\""
+eval "TCLOO_PRIVATE_INCLUDE_DIR=\"`${CYGPATH} ${srcdir}/generic`\""
 case ${TCLOO_PRIVATE_INCLUDE_DIR} in
     /*) TCLOO_PRIVATE_INCLUDE_SPEC="-I${TCLOO_PRIVATE_INCLUDE_DIR}" ;;
     *)  TCLOO_PRIVATE_INCLUDE_SPEC="-I`pwd`/${TCLOO_PRIVATE_INCLUDE_DIR}" ;;
 esac
-eval "TCLOO_INCLUDE_SPEC=\"-I${includedir}\""
+eval "TCLOO_INCLUDE_SPEC=\"-I`${CYGPATH} ${includedir}`\""
 if test ${TCL_LIB_VERSIONS_OK} = nodots; then
-    eval "TCLOO_LIB_SPEC=\"-L${libdir}/${PACKAGE_NAME}${PACKAGE_VERSION} -l${PACKAGE_NAME}${TCL_TRIM_DOTS}\""
-    eval "TCLOO_STUB_LIB_SPEC=\"-L${libdir} -l${PACKAGE_NAME}stub${TCL_TRIM_DOTS}\""
+    eval "TCLOO_LIB_SPEC=\"-L`${CYGPATH} ${libdir}/${PACKAGE_NAME}${PACKAGE_VERSION}` -l${PACKAGE_NAME}${TCL_TRIM_DOTS}\""
+    eval "TCLOO_STUB_LIB_SPEC=\"-L`${CYGPATH} ${libdir}` -l${PACKAGE_NAME}stub${TCL_TRIM_DOTS}\""
 else
-    eval "TCLOO_LIB_SPEC=\"-L${libdir}/${PACKAGE_NAME}${PACKAGE_VERSION} -l${PACKAGE_NAME}${PACKAGE_VERSION}\""
-    eval "TCLOO_STUB_LIB_SPEC=\"-L${libdir} -l${PACKAGE_NAME}stub${PACKAGE_VERSION}\""
+    eval "TCLOO_LIB_SPEC=\"-L`${CYGPATH} ${libdir}/${PACKAGE_NAME}${PACKAGE_VERSION}` -l${PACKAGE_NAME}${PACKAGE_VERSION}\""
+    eval "TCLOO_STUB_LIB_SPEC=\"-L`${CYGPATH} ${libdir}` -l${PACKAGE_NAME}stub${PACKAGE_VERSION}\""
 fi
 AC_SUBST(TCLOO_INCLUDE_SPEC)
 AC_SUBST(TCLOO_PRIVATE_INCLUDE_SPEC)
