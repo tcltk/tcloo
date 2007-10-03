@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.4 2007/08/21 21:32:03 dkf Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.5 2007/10/03 15:30:55 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -254,7 +254,7 @@ InitClassHierarchy(
     }
     if (classPtr->classHierarchyEpoch != fPtr->epoch) {
 	int i;
-	Class *superPtr;
+	Class *superPtr = NULL;		/* Silence gcc warning. */
 
 	if (classPtr->classHierarchy.num != 0) {
 	    ckfree((char *) classPtr->classHierarchy.list);
