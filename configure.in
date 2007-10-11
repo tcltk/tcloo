@@ -1,6 +1,6 @@
-# $Id: configure.in,v 1.15 2007/10/03 22:54:58 dkf Exp $
+# $Id: configure.in,v 1.16 2007/10/11 09:51:10 das Exp $
 
-AC_REVISION($Revision: 1.15 $)
+AC_REVISION($Revision: 1.16 $)
 AC_INIT([TclOO],[0.1.1])
 AC_CONFIG_AUX_DIR(tclconfig)
 
@@ -23,8 +23,8 @@ TEA_ADD_INCLUDES([-I. -I\"`${CYGPATH} ${srcdir}/generic`\"])
 TEA_PRIVATE_TCL_HEADERS
 TEA_ENABLE_THREADS
 TEA_ENABLE_SHARED
-TEA_ENABLE_SYMBOLS
 TEA_CONFIG_CFLAGS
+TEA_ENABLE_SYMBOLS
 
 CLEANFILES="$CLEANFILES pkgIndex.tcl"
 AC_SUBST(CLEANFILES)
@@ -34,7 +34,7 @@ AC_DEFINE(BUILD_tcloo,[1],[Set to 1 when building package])
 TEA_MAKE_LIB
 
 TEA_PROG_TCLSH
-CONFIGURE_OUTPUTS="Makefile config.cache config.log config.status"
+CONFIGURE_OUTPUTS="Makefile tclooConfig.sh config.cache config.log config.status"
 AC_SUBST(CONFIGURE_OUTPUTS)
 
 AC_PATH_PROG(SDX, sdx, none)
@@ -57,10 +57,10 @@ esac
 eval "TCLOO_INCLUDE_SPEC=\"-I`${CYGPATH} ${includedir}`\""
 if test ${TCL_LIB_VERSIONS_OK} = nodots; then
     eval "TCLOO_LIB_SPEC=\"-L`${CYGPATH} ${libdir}/${PACKAGE_NAME}${PACKAGE_VERSION}` -l${PACKAGE_NAME}${TCL_TRIM_DOTS}\""
-    eval "TCLOO_STUB_LIB_SPEC=\"-L`${CYGPATH} ${libdir}` -l${PACKAGE_NAME}stub${TCL_TRIM_DOTS}\""
+    eval "TCLOO_STUB_LIB_SPEC=\"-L`${CYGPATH} ${libdir}/${PACKAGE_NAME}${PACKAGE_VERSION}` -l${PACKAGE_NAME}stub${TCL_TRIM_DOTS}\""
 else
     eval "TCLOO_LIB_SPEC=\"-L`${CYGPATH} ${libdir}/${PACKAGE_NAME}${PACKAGE_VERSION}` -l${PACKAGE_NAME}${PACKAGE_VERSION}\""
-    eval "TCLOO_STUB_LIB_SPEC=\"-L`${CYGPATH} ${libdir}` -l${PACKAGE_NAME}stub${PACKAGE_VERSION}\""
+    eval "TCLOO_STUB_LIB_SPEC=\"-L`${CYGPATH} ${libdir}/${PACKAGE_NAME}${PACKAGE_VERSION}` -l${PACKAGE_NAME}stub${PACKAGE_VERSION}\""
 fi
 AC_SUBST(TCLOO_INCLUDE_SPEC)
 AC_SUBST(TCLOO_PRIVATE_INCLUDE_SPEC)
