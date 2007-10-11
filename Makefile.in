@@ -44,11 +44,11 @@ STLIB_LD=@STLIB_LD@
 TCL_SRC_DIR=@TCL_SRC_DIR@
 TCL_BIN_DIR=@TCL_BIN_DIR@
 # Not actually used, but can help when tracing errors
-TCL_LIBS=@TCL_LIBS@
-TCLSH_PROGRAM=@TCLSH_PROG@
+#TCL_LIBS=@TCL_LIBS@
+TCLSH_PROG=@TCLSH_PROG@
 INCLUDES=@PKG_INCLUDES@ @TCL_INCLUDES@
-EXTRA_CFLAGS=@PKG_CFLAGS@
-DEFS=@DEFS@ $(EXTRA_CFLAGS)
+PKG_CFLAGS=@PKG_CFLAGS@
+DEFS=@DEFS@ $(PKG_CFLAGS)
 CPPFLAGS=@CPPFLAGS@
 LIBS=@PKG_LIBS@ @LIBS@ @MATH_LIBS@
 AR=@AR@
@@ -59,7 +59,7 @@ RC=@RC@
 TCLSH_ENV=TCL_LIBRARY="`$(CYGPATH) $(TCL_SRC_DIR)/library`" \
 	  @LD_LIBRARY_PATH_VAR@="$(EXTRA_PATH):$(@LD_LIBRARY_PATH_VAR@)" \
 	  PATH="$(EXTRA_PATH):$(PATH)" \
-	  TCLLIBPATH="$(top_builddir)"
+	  TCLLIBPATH="$(TCLLIBPATH)"
 
 #========================================================================
 # None of these assignments are substituted by configure
@@ -75,8 +75,10 @@ pkglibdir=$(libdir)/$(PKG_DIR)
 top_builddir=.
 TCL_VERSION_REQ=8.5b1
 EXTRA_PATH=$(top_builddir):$(TCL_BIN_DIR)
+TCLLIBPATH = $(top_builddir)
+TCLSH_PROGRAM="$(TCLSH_PROG)"
 TCLSH=$(TCLSH_ENV) "$(TCLSH_PROGRAM)"
-CONFIG_CLEAN_FILES=Makefile
+CONFIG_CLEAN_FILES="Makefile tclooConfig.sh"
 COMPILE=$(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
 VPATH=$(SRC_DIR)/generic:$(SRC_DIR)/unix:$(SRC_DIR)/win:$(SRC_DIR)/macosx:$(SRC_DIR)
 TESTFLAGS=
@@ -89,7 +91,7 @@ RES=res.o
 ITERATIONS=1000
 
 #========================================================================
-# This is something that if found by executing a Tcl script
+# This is something that is found by executing a Tcl script
 #========================================================================
 
 PLATFORM:=$(shell echo 'package require platform;puts [platform::generic]' | $(TCLSH))
@@ -108,9 +110,10 @@ kit: sdx_valid $(PKG_KIT)
 # Basic installation rules
 #========================================================================
 
-install-package:
+install-package: package
 	@mkdir -p $(DESTDIR)$(pkglibdir)
 	$(INSTALL_PROGRAM) $(PKG_LIB_FILE) $(DESTDIR)$(pkglibdir)/$(PKG_LIB_FILE)
+	$(RANLIB) $(DESTDIR)$(pkglibdir)/$(PKG_LIB_FILE)
 	$(INSTALL_DATA) pkgIndex.tcl $(DESTDIR)$(pkglibdir)/pkgIndex.tcl
 	$(INSTALL_DATA) tclooConfig.sh $(DESTDIR)$(pkglibdir)/tclooConfig.sh
 #	for p in $(SRC_DIR)/library/*.tcl ; do \
@@ -126,10 +129,11 @@ install-headers:
 	    destp=`basename $$p`; \
 	    $(INSTALL_DATA) $(SRC_DIR)/$$p $(DESTDIR)$(includedir)/$$destp ; \
 	done;
-install-libraries:
-	@echo "Installing $(PKG_STUB_LIB_FILE) in $(DESTDIR)$(libdir)"
-	@mkdir -p $(DESTDIR)$(libdir)
-	$(INSTALL_PROGRAM) $(PKG_STUB_LIB_FILE) $(DESTDIR)$(libdir)
+install-libraries: libraries
+	@echo "Installing $(PKG_STUB_LIB_FILE) in $(DESTDIR)$(pkglibdir)"
+	@mkdir -p $(DESTDIR)$(pkglibdir)
+	$(INSTALL_PROGRAM) $(PKG_STUB_LIB_FILE) $(DESTDIR)$(pkglibdir)
+	$(RANLIB_STUB) $(DESTDIR)$(pkglibdir)/$(PKG_STUB_LIB_FILE)
 
 #========================================================================
 # Install documentation. Unix manpages should go in the $(mandir) directory.

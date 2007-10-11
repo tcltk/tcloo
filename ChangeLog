@@ -1,3 +1,11 @@
+2007-10-11  Daniel Steffen  <das@users.sourceforge.net>
+
+	* Makefile.in:	RANLIB static libraries during install; add install
+	* configure.in:	target dependencies; rename a few makefile vars to make
+	overriding them the same as in TEA; distclean tclooConfig.sh; change
+	stub lib install location from libdir to TEA standard pkglibdir.
+	* configure:	autoconf-2.59
+
 2007-10-03  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* tclooConfig.sh.in, configure.in: Made more robust when configure is
