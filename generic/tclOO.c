@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.25 2007/09/03 09:49:40 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.26 2007/10/12 15:21:09 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1751,6 +1751,7 @@ TclOOObjectCmdCore(
 				 * the normal case). */
 {
     CallContext *contextPtr;
+    Tcl_Obj *methodNamePtr;
     int result;
 
     if (objc < 2) {
@@ -1759,15 +1760,32 @@ TclOOObjectCmdCore(
     }
 
     /*
+     * Give plugged in code a chance to remap the method name.
+     */
+
+    methodNamePtr = objv[1];
+    if (oPtr->mapMethodNameProc != NULL) {
+	methodNamePtr = Tcl_DuplicateObj(methodNamePtr);
+	result = oPtr->mapMethodNameProc(interp, oPtr, startCls,
+		methodNamePtr);
+	if (result != TCL_OK) {
+	    Tcl_DecrRefCount(methodNamePtr);
+	    return result;
+	}
+    }
+    Tcl_IncrRefCount(methodNamePtr);
+
+    /*
      * Get the call chain.
      */
 
     contextPtr = TclOOGetCallContext(TclOOGetFoundation(interp), oPtr,
-	    objv[1], flags | (oPtr->flags & FILTER_HANDLING), cachePtr);
+	    methodNamePtr, flags | (oPtr->flags & FILTER_HANDLING), cachePtr);
     if (contextPtr == NULL) {
 	Tcl_AppendResult(interp, "impossible to invoke method \"",
-		TclGetString(objv[1]),
+		TclGetString(methodNamePtr),
 		"\": no defined method or unknown method", NULL);
+	Tcl_DecrRefCount(methodNamePtr);
 	return TCL_ERROR;
     }
 
@@ -1811,12 +1829,13 @@ TclOOObjectCmdCore(
   disposeChain:
     if (!(contextPtr->flags & OO_UNKNOWN_METHOD)
 	    && !(oPtr->flags & OBJECT_DELETED)) {
-	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(cachePtr, (char *) objv[1]);
+	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(cachePtr,
+		(char *) methodNamePtr);
 
 	if (hPtr != NULL && Tcl_GetHashValue(hPtr) == NULL) {
 	    Tcl_SetHashValue(hPtr, contextPtr);
 	    contextPtr->index = 0;
-	    TclOOStashContext(objv[1], contextPtr);
+	    TclOOStashContext(methodNamePtr, contextPtr);
 	} else {
 	    TclOODeleteContext(contextPtr);
 	}
@@ -1829,6 +1848,7 @@ TclOOObjectCmdCore(
      */
 
     Tcl_Release(oPtr);
+    Tcl_DecrRefCount(methodNamePtr);
     return result;
 }
 
