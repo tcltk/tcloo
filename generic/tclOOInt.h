@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.12 2007/08/08 12:21:21 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.13 2007/10/12 15:21:09 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -57,6 +57,8 @@ typedef int (*TclOO_PostCallProc)(ClientData clientData, Tcl_Interp *interp,
 	Tcl_ObjectContext context, Tcl_Namespace *namespacePtr, int result);
 typedef void (*TclOO_PmCDDeleteProc)(ClientData clientData);
 typedef ClientData (*TclOO_PmCDCloneProc)(ClientData clientData);
+typedef int (*TclOO_MapMethodNameProc)(Tcl_Interp *interp, struct Object *oPtr,
+	struct Class *startClsPtr, Tcl_Obj *methodObj);
 
 /*
  * Procedure-like methods have the following extra information. It is a
@@ -162,6 +164,9 @@ typedef struct Object {
     Tcl_Obj *cachedNameObj;	/* Cache of the name of the object. */
     Tcl_HashTable publicContextCache;	/* Place to keep unused contexts. */
     Tcl_HashTable privateContextCache;	/* Place to keep unused contexts. */
+    TclOO_MapMethodNameProc mapMethodNameProc;
+				/* Function to allow remapping of method
+				 * names. For itcl-ng. */
 } Object;
 
 #define OBJECT_DELETED	1	/* Flag to say that an object has been

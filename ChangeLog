@@ -1,3 +1,8 @@
+2007-10-12  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclOO.c (TclOOObjectCmdCore): Added method name remapping
+	support for Arnulf. [Patch 1791215]
+
 2007-10-11  Daniel Steffen  <das@users.sourceforge.net>
 
 	* Makefile.in:	RANLIB static libraries during install; add install
