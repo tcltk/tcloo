@@ -1,6 +1,7 @@
-# $Id: configure.in,v 1.16 2007/10/11 09:51:10 das Exp $
+# $Id: configure.in,v 1.17 2007/10/18 15:18:11 dkf Exp $
 
-AC_REVISION($Revision: 1.16 $)
+AC_REVISION($Revision: 1.17 $)
+dnl Also *must* update generic/tclOO.h when changing the version number.
 AC_INIT([TclOO],[0.1.1])
 AC_CONFIG_AUX_DIR(tclconfig)
 
