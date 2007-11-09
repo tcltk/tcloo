@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.5 2007/10/03 15:30:55 dkf Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.6 2007/11/09 13:57:51 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -338,9 +338,16 @@ TclOOGetSortedMethodList(
     Class *mixinPtr;
     Tcl_Obj *namePtr;
     Method *mPtr;
+    int isWantedIn;
     void *isWanted;
 
     Tcl_InitObjHashTable(&names);
+
+    /*
+     * Name the bits used in the names table values.
+     */
+#define IN_LIST 1
+#define NO_IMPLEMENTATION 2
 
     /*
      * Process method names due to the object.
@@ -354,9 +361,10 @@ TclOOGetSortedMethodList(
 	}
 	hPtr = Tcl_CreateHashEntry(&names, (char *) namePtr, &isNew);
 	if (isNew) {
-	    isWanted = (void *) (!(flags & PUBLIC_METHOD)
-		    || mPtr->flags & PUBLIC_METHOD);
-	    Tcl_SetHashValue(hPtr, isWanted);
+	    isWantedIn = ((!(flags & PUBLIC_METHOD)
+		    || mPtr->flags & PUBLIC_METHOD) ? IN_LIST : 0);
+	    isWantedIn |= (mPtr->typePtr == NULL ? NO_IMPLEMENTATION : 0);
+	    Tcl_SetHashValue(hPtr, (void *) isWantedIn);
 	}
     }
 
@@ -371,8 +379,17 @@ TclOOGetSortedMethodList(
 
 		hPtr = Tcl_CreateHashEntry(&names, (char *) namePtr, &isNew);
 		if (isNew) {
-		    isWanted = (void *) 1;
-		    Tcl_SetHashValue(hPtr, isWanted);
+		    isWantedIn = IN_LIST;
+		    if (mPtr->typePtr == NULL) {
+			isWantedIn |= NO_IMPLEMENTATION;
+		    }
+		    Tcl_SetHashValue(hPtr, (void *) isWantedIn);
+		} else if (mPtr->typePtr != NULL) {
+		    isWantedIn = (int) Tcl_GetHashValue(hPtr);
+		    if (isWantedIn & NO_IMPLEMENTATION) {
+			isWantedIn &= ~NO_IMPLEMENTATION;
+			Tcl_SetHashValue(hPtr, (void *) isWantedIn);
+		    }
 		}
 	    }
 	}
@@ -405,7 +422,10 @@ TclOOGetSortedMethodList(
 
 	strings = (const char **) ckalloc(sizeof(char *) * names.numEntries);
 	FOREACH_HASH(namePtr, isWanted, &names) {
-	    if (!(flags & PUBLIC_METHOD) || isWanted) {
+	    if (!(flags & PUBLIC_METHOD) || (((int)isWanted) & IN_LIST)) {
+		if (((int)isWanted) & NO_IMPLEMENTATION) {
+		    continue;
+		}
 		strings[i++] = TclGetString(namePtr);
 	    }
 	}
@@ -488,8 +508,14 @@ AddClassMethodNames(
 	    hPtr = Tcl_CreateHashEntry(namesPtr, (char *) namePtr, &isNew);
 	    if (isNew) {
 		int isWanted = (!(flags & PUBLIC_METHOD)
-			|| (mPtr->flags & PUBLIC_METHOD));
+			|| (mPtr->flags & PUBLIC_METHOD)) ? IN_LIST : 0;
 
+		Tcl_SetHashValue(hPtr, (void *) isWanted);
+	    } else if ((((int)Tcl_GetHashValue(hPtr)) & NO_IMPLEMENTATION)
+		    && mPtr->typePtr != NULL) {
+		int isWanted = (int) Tcl_GetHashValue(hPtr);
+
+		isWanted &= ~NO_IMPLEMENTATION;
 		Tcl_SetHashValue(hPtr, (void *) isWanted);
 	    }
 	}

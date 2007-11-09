@@ -1,3 +1,9 @@
+2007-11-09  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclOOCall.c (TclOOGetSortedMethodList): Ensure that export
+	cannot cause the wrong list of methods to be printed in error
+	messages. [Bug 1824958]
+
 2007-10-18  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/tclOO.h (OO_VERSION): Forgot to update this when bumping the
