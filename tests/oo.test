@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.5 2007/08/08 12:26:38 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.6 2007/11/09 13:57:51 dkf Exp $
 
 lappend auto_path .
 package require TclOO
@@ -198,6 +198,24 @@ test oo-4.2 {basic test of OO functionality: unexport} {
     oo::define $o unexport foo
     lappend result [catch {$o foo} msg] $msg [$o destroy]
 } {foo {} 1 {unknown method "foo": must be destroy} {}}
+test oo-4.3 {exporting and error messages, Bug 1824958} -setup {
+    oo::class create testClass
+} -cleanup {
+    testClass destroy
+} -body {
+    oo::define testClass self.export Bad
+    testClass Bad
+} -returnCodes 1 -result {unknown method "Bad": must be create, destroy or new}
+test oo-4.4 {exporting a class method from an object} -setup {
+    oo::class create testClass
+    testClass create testObject
+} -cleanup {
+    testClass destroy
+} -body {
+    oo::define testClass method Good {} { return ok }
+    oo::define testObject export Good
+    testObject Good
+} -result ok
 
 test oo-5.1 {OO: manipulation of classes as objects} -setup {
     set obj [oo::object new]
