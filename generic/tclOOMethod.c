@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.9 2007/08/23 15:33:39 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.10 2007/11/16 22:46:49 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1158,7 +1158,7 @@ InvokeForwardMethod(
      * can ignore here.
      */
 
-    TclListObjGetElements(fmPtr->prefixObj, numPrefixes, prefixObjs);
+    Tcl_ListObjGetElements(NULL, fmPtr->prefixObj, &numPrefixes, &prefixObjs);
     argObjs = InitEnsembleRewrite(interp, objc, objv, skip,
 	    numPrefixes, prefixObjs, &len);
 

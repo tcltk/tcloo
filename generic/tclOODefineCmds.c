@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.2 2007/08/03 12:20:48 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.3 2007/11/16 22:46:49 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -115,7 +115,7 @@ TclOODefineObjCmd(
 	}
 	Tcl_ListObjAppendElement(NULL, objPtr, obj2Ptr);
 	Tcl_ListObjReplace(NULL, objPtr, 1, 0, objc-3, objv+3);
-	TclListObjGetElements(objPtr, dummy, objs);
+	Tcl_ListObjGetElements(NULL, objPtr, &dummy, &objs);
 
 	result = Tcl_EvalObjv(interp, objc-2, objs, TCL_EVAL_INVOKE);
 	Tcl_DecrRefCount(objPtr);
