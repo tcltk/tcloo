@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.9 2007/08/13 13:33:15 dkf Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.10 2007/12/02 09:08:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -134,7 +134,7 @@ TclOOInitInfo(
 		    Tcl_NewStringObj("::oo::InfoClass", -1));
 	    Tcl_DecrRefCount(objectObj);
 	    Tcl_DecrRefCount(classObj);
-	    Tcl_SetEnsembleMappingDict(NULL, infoCmd, mapDict);
+	    Tcl_SetEnsembleMappingDict(interp, infoCmd, mapDict);
 	}
     }
 }

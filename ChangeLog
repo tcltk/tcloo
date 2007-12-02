@@ -1,3 +1,8 @@
+2007-12-02  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOInfo.c (TclOOInitInfo): Updating the ensemble map now
+	requires a non-NULL interp argument. [Bug 1841743]
+
 2007-11-09  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/tclOOCall.c (TclOOGetSortedMethodList): Ensure that export
