@@ -1,5 +1,10 @@
 2007-12-30  Donal K. Fellows  <dkf@users.sf.net>
 
+	* configure.in: Corrected which headers are installed by default and
+	* Makefile.in:	factored out the private headers which are only
+	installed if specially requested (use 'make install-private-headers'
+	to get them). [Bug 1847311]
+
 	* win/TclOO.rc: Relocated from top-level directory as it is only
 	relevant to Windows builds. [Bug 1816147]
 
