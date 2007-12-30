@@ -9,6 +9,7 @@
 PKG_OBJECTS=@PKG_OBJECTS@
 PKG_STUB_OBJECTS=@PKG_STUB_OBJECTS@
 PKG_HEADERS=@PKG_HEADERS@
+PKG_PRIVATE_HEADERS=@PKG_PRIVATE_HEADERS@
 PKG_LIB_FILE=@PKG_LIB_FILE@
 PKG_STUB_LIB_FILE=@PKG_STUB_LIB_FILE@
 SHELL=@SHELL@
@@ -125,6 +126,14 @@ install-headers:
 	@echo "Installing header files in $(DESTDIR)$(includedir)"
 	@mkdir -p $(DESTDIR)$(includedir)
 	@list='$(PKG_HEADERS)'; for p in $$list; do \
+	    echo "Installing $(SRC_DIR)/$$p" ; \
+	    destp=`basename $$p`; \
+	    $(INSTALL_DATA) $(SRC_DIR)/$$p $(DESTDIR)$(includedir)/$$destp ; \
+	done;
+install-private-headers:
+	@echo "Installing private header files in $(DESTDIR)$(includedir)"
+	@mkdir -p $(DESTDIR)$(includedir)
+	@list='$(PKG_PRIVATE_HEADERS)'; for p in $$list; do \
 	    echo "Installing $(SRC_DIR)/$$p" ; \
 	    destp=`basename $$p`; \
 	    $(INSTALL_DATA) $(SRC_DIR)/$$p $(DESTDIR)$(includedir)/$$destp ; \

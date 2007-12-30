@@ -1,6 +1,6 @@
-# $Id: configure.in,v 1.17 2007/10/18 15:18:11 dkf Exp $
+# $Id: configure.in,v 1.18 2007/12/30 01:55:26 dkf Exp $
 
-AC_REVISION($Revision: 1.17 $)
+AC_REVISION($Revision: 1.18 $)
 dnl Also *must* update generic/tclOO.h when changing the version number.
 AC_INIT([TclOO],[0.1.1])
 AC_CONFIG_AUX_DIR(tclconfig)
@@ -19,7 +19,18 @@ AS_IF([test ${TEA_PLATFORM} = "windows"], [
     RC=windres
     AC_SUBST(RC)])
 TEA_ADD_STUB_SOURCES(tclOOStubLib.c)
-TEA_ADD_HEADERS([generic/tclOO.h generic/tclOOInt.h])
+TEA_ADD_HEADERS([generic/tclOO.h generic/tclOODecls.h])
+# These ought to have some TEA support too, but don't (yet)
+# TEA_ADD_PRIVATE_HEADERS([generic/tclOOInt.h generic/tclOOIntDecls.h])
+    vars="generic/tclOOInt.h generic/tclOOIntDecls.h"
+    for i in $vars; do
+	# check for existence, be strict because it should be present!
+	if test ! -f "${srcdir}/$i" ; then
+	    AC_MSG_ERROR([could not find header file '${srcdir}/$i'])
+	fi
+	PKG_PRIVATE_HEADERS="$PKG_PRIVATE_HEADERS $i"
+    done
+    AC_SUBST(PKG_PRIVATE_HEADERS)
 TEA_ADD_INCLUDES([-I. -I\"`${CYGPATH} ${srcdir}/generic`\"])
 TEA_PRIVATE_TCL_HEADERS
 TEA_ENABLE_THREADS
