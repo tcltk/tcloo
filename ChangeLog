@@ -1,5 +1,8 @@
 2007-12-30  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclOODecls.h: Added changes forgotten when adapting from the
+	Tile sources. [Bug 1847318]
+
 	* configure.in: Corrected which headers are installed by default and
 	* Makefile.in:	factored out the private headers which are only
 	installed if specially requested (use 'make install-private-headers'
