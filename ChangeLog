@@ -1,3 +1,8 @@
+2007-12-30  Donal K. Fellows  <dkf@users.sf.net>
+
+	* win/TclOO.rc: Relocated from top-level directory as it is only
+	relevant to Windows builds.
+
 2007-12-02  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOInfo.c (TclOOInitInfo): Updating the ensemble map now
