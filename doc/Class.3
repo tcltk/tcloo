@@ -4,14 +4,14 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: Class.3,v 1.5 2007/06/11 10:08:44 dkf Exp $
+'\" RCS: @(#) $Id: Class.3,v 1.6 2008/01/03 14:41:56 dkf Exp $
 '\"
 .so man.macros
 .TH Tcl_Class 3 0.1 TclOO "TclOO Library Functions"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Tcl_ClassGetMetadata, Tcl_ClassSetMetadata, Tcl_CopyObjectInstance, Tcl_GetClassAsObject, Tcl_GetObjectAsClass, Tcl_GetObjectCommand, Tcl_GetObjectNamespace, Tcl_NewObjectInstance, Tcl_ObjectDeleted, Tcl_ClassGetMetadata, Tcl_ClassSetMetadata \- manipulate objects and classes
+Tcl_ClassGetMetadata, Tcl_ClassSetMetadata, Tcl_CopyObjectInstance, Tcl_GetClassAsObject, Tcl_GetObjectAsClass, Tcl_GetObjectCommand, Tcl_GetObjectNamespace, Tcl_NewObjectInstance, Tcl_ObjectDeleted, Tcl_ObjectGetMetadata, Tcl_ObjectGetMethodNameMapper, Tcl_ObjectSetMetadata, Tcl_ObjectSetMethodNameMapper \- manipulate objects and classes
 .SH SYNOPSIS
 .nf
 \fB#include <tclOO.h>\fR
@@ -49,8 +49,13 @@ ClientData
 \fBTcl_ClassGetMetadata\fR(\fIclass, metaTypePtr\fR)
 .sp
 \fBTcl_ClassSetMetadata\fR(\fIclass, metaTypePtr, metadata\fR)
+.sp
+Tcl_ObjectMapMethodNameProc
+\fBTcl_ObjectGetMethodNameMapper\fR(\fIobject\fR)
+.sp
+\fBTcl_ObjectSetMethodNameMapper\fR(\fIobject\fR, \fImapMethodNameProc\fR)
 .SH ARGUMENTS
-.AS "Tcl_ObjectMetadataType" metaTypePtr in/out
+.AS "Tcl_ObjectMapMethodNameProc" "mapMethodNameProc" in/out
 .AP Tcl_Interp *interp in/out
 Interpreter providing the context for looking up or creating an object, and
 into whose result error messages will be written on failure.
@@ -73,14 +78,16 @@ The arguments to the command to create the instance of the class.
 .AP int skip in
 The number of arguments at the start of the argument array, \fIobjv\fR, that
 are not arguments to any constructors.
-.AP "Tcl_ObjectMetadataType" *metaTypePtr in
+.AP Tcl_ObjectMetadataType *metaTypePtr in
 The type of \fImetadata\fR being set with \fBTcl_ClassSetMetadata\fR or
 retrieved with \fBTcl_ClassGetMetadata\fR.
 .AP ClientData metadata in
 An item of metadata to attach to the class, or NULL to remove the metadata
 associated with a particular \fImetaTypePtr\fR.
+.AP "Tcl_ObjectMapMethodNameProc" "mapMethodNameProc"
+A pointer to a function to call to adjust the mapping of objects and method
+names to implementations, or NULL when no such mapping is required.
 .BE
-
 .SH DESCRIPTION
 .PP
 Objects are typed entities that have a set of operations ("methods")
@@ -177,6 +184,34 @@ typedef ClientData (*\fBTcl_ObjectMetadataCloneProc\fR) (
 The \fImetadata\fR argument gives the address of the metadata to be cloned,
 and the result of the function must either be the cloned metadata or NULL if
 the metadata is to not be cloned.
+.SH "OBJECT METHOD NAME MAPPING"
+It is possible to control, on a per-object basis, what methods are invoked
+when a particular method is invoked. Normally this is done by looking up the
+method name in the object and then in the class hierarchy, but fine control of
+exactly what the value used to perform the look up is afforded through the
+ability to set a method name mapper callback via
+\fBTcl_ObjectSetMethodNameMapper\fR (and its introspection counterpart,
+\fBTcl_ObjectGetMethodNameMapper\fR, which returns the current mapper). The
+current mapper (if any) is invoked immediately before looking up what chain of
+method implementations is to be used.
+.SS "TCL_OBJECTMAPMETHODNAMEPROC FUNCTION SIGNATURE"
+The \fITcl_ObjectMapMethodNameProc\fR callback is defined as follows:
+.PP
+.CS
+typedef int (*\fBTcl_ObjectMapMethodNameProc\fR)(Tcl_Interp *\fIinterp\fR,
+        Tcl_Object \fIobject\fR, Tcl_Class *\fIstartClsPtr\fR,
+        Tcl_Obj *\fImethodNameObj\fR);
+.CE
+.PP
+The \fIinterp\fR parameter (and the integer result) follow normal Tcl result
+rules for error reporting. The \fIobject\fR parameter says which object is
+being processed. The \fIstartClsPtr\fR parameter points to a variable that
+contains the first class to provide a definition in the method chain to
+process, or NULL if the whole chain is to be processed (the argument itself is
+never NULL); this variable may be updated by the callback. The
+\fImethodNameObj\fR parameter gives an unshared object containing the name of
+the method being invoked, as provided by the user; this object may be updated
+by the callback.
 .SH "SEE ALSO"
 class(n), copy(n), define(n), Method(3), object(n)
 .SH KEYWORDS

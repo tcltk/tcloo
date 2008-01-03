@@ -1,7 +1,9 @@
 2008-01-03  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c (TclOOObjectCmdCore): Tweaked the signature of
-	the itcl-ng remapping callback. [Patch 1791215]
+	the itcl-ng method remapping callback. [Patch 1791215]
+	(Tcl_ObjectSetMethodNameMapper): Added getter and setter functions
+	for the method remapping callback. [FRQ 1842588]
 
 2007-12-30  Donal K. Fellows  <dkf@users.sf.net>
 

@@ -1,5 +1,5 @@
 # -*- tcl -*-
-# $Id: tclOO.decls,v 1.7 2007/08/08 12:21:21 dkf Exp $
+# $Id: tclOO.decls,v 1.8 2008/01/03 14:41:56 dkf Exp $
 
 # public API
 library tclOO
@@ -93,6 +93,14 @@ declare 23 current {
     int Tcl_ObjectContextInvokeNext(Tcl_Interp *interp,
 	    Tcl_ObjectContext context, int objc, Tcl_Obj *const *objv,
 	    int skip)
+}
+declare 24 current {
+    Tcl_ObjectMapMethodNameProc Tcl_ObjectGetMethodNameMapper(
+	    Tcl_Object object)
+}
+declare 25 current {
+    void Tcl_ObjectSetMethodNameMapper(Tcl_Object object,
+	    Tcl_ObjectMapMethodNameProc mapMethodNameProc)
 }
 
 # private API, exposed to support advanced OO systems that plug in on top

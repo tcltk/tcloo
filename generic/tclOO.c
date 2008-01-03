@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.27 2008/01/03 00:15:03 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.28 2008/01/03 14:41:56 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1765,10 +1765,15 @@ TclOOObjectCmdCore(
 
     methodNamePtr = objv[1];
     if (oPtr->mapMethodNameProc != NULL) {
+	register Class **startClsPtr = &startCls;
+
 	methodNamePtr = Tcl_DuplicateObj(methodNamePtr);
-	result = oPtr->mapMethodNameProc(interp, oPtr, &startCls,
-		methodNamePtr);
+	result = oPtr->mapMethodNameProc(interp, (Tcl_Object) oPtr,
+		(Tcl_Class *) startClsPtr, methodNamePtr);
 	if (result != TCL_OK) {
+	    if (result == TCL_ERROR) {
+		Tcl_AddErrorInfo(interp, "\n    (while mapping method name)");
+	    }
 	    Tcl_DecrRefCount(methodNamePtr);
 	    return result;
 	}
@@ -3010,6 +3015,21 @@ Tcl_GetClassAsObject(
     Tcl_Class clazz)
 {
     return (Tcl_Object) ((Class *)clazz)->thisPtr;
+}
+
+Tcl_ObjectMapMethodNameProc
+Tcl_ObjectGetMethodNameMapper(
+    Tcl_Object object)
+{
+    return ((Object *) object)->mapMethodNameProc;
+}
+
+void
+Tcl_ObjectSetMethodNameMapper(
+    Tcl_Object object,
+    Tcl_ObjectMapMethodNameProc mapMethodNameProc)
+{
+    ((Object *) object)->mapMethodNameProc = mapMethodNameProc;
 }
 
 /*
