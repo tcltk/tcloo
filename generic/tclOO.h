@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.3 2007/10/18 15:16:02 dkf Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.4 2008/01/03 14:41:57 dkf Exp $
  */
 
 #ifndef TCLOO_H_INCLUDED
@@ -52,6 +52,8 @@ typedef int (*Tcl_MethodCloneProc)(ClientData oldClientData,
 	ClientData *newClientData);
 typedef void (*Tcl_ObjectMetadataDeleteProc)(ClientData clientData);
 typedef ClientData (*Tcl_ObjectMetadataCloneProc)(ClientData clientData);
+typedef int (*Tcl_ObjectMapMethodNameProc)(Tcl_Interp *interp,
+	Tcl_Object object, Tcl_Class *startClsPtr, Tcl_Obj *methodNameObj);
 
 /*
  * The type of a method implementation. This describes how to call the method
