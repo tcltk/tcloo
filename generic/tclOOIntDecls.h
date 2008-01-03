@@ -1,5 +1,5 @@
 /*
- * $Id: tclOOIntDecls.h,v 1.6 2007/08/08 12:26:58 dkf Exp $
+ * $Id: tclOOIntDecls.h,v 1.7 2008/01/03 15:11:46 dkf Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  */
@@ -7,7 +7,7 @@
 /* !BEGIN!: Do not edit below this line. */
 
 #define TCLOOINT_STUBS_EPOCH 0
-#define TCLOOINT_STUBS_REVISION 31
+#define TCLOOINT_STUBS_REVISION 35
 
 #if !defined(USE_TCLOO_STUBS)
 
@@ -48,6 +48,14 @@ TCLOOAPI int		TclOOObjectCmdCore (Object * oPtr,
 /* 6 */
 TCLOOAPI int		TclOOIsReachable (Class * targetPtr, 
 				Class * startPtr);
+/* 7 */
+TCLOOAPI Method *	TclOONewForwardClassMethod (Tcl_Interp * interp, 
+				Class * clsPtr, int isPublic, 
+				Tcl_Obj * nameObj, Tcl_Obj * prefixObj);
+/* 8 */
+TCLOOAPI Method *	TclOONewForwardMethod (Tcl_Interp * interp, 
+				Object * oPtr, int isPublic, 
+				Tcl_Obj * nameObj, Tcl_Obj * prefixObj);
 
 #endif /* !defined(USE_TCLOO_STUBS) */
 
@@ -64,6 +72,8 @@ typedef struct TclOOIntStubs {
     Method * (*tclOONewProcClassMethod) (Tcl_Interp * interp, Class * clsPtr, int flags, Tcl_Obj * nameObj, Tcl_Obj * argsObj, Tcl_Obj * bodyObj, ProcedureMethod ** pmPtrPtr); /* 4 */
     int (*tclOOObjectCmdCore) (Object * oPtr, Tcl_Interp * interp, int objc, Tcl_Obj *const * objv, int publicOnly, Tcl_HashTable * cachePtr, Class * startCls); /* 5 */
     int (*tclOOIsReachable) (Class * targetPtr, Class * startPtr); /* 6 */
+    Method * (*tclOONewForwardClassMethod) (Tcl_Interp * interp, Class * clsPtr, int isPublic, Tcl_Obj * nameObj, Tcl_Obj * prefixObj); /* 7 */
+    Method * (*tclOONewForwardMethod) (Tcl_Interp * interp, Object * oPtr, int isPublic, Tcl_Obj * nameObj, Tcl_Obj * prefixObj); /* 8 */
 } TclOOIntStubs;
 
 #ifdef __cplusplus
@@ -107,6 +117,14 @@ extern const TclOOIntStubs *tclOOIntStubsPtr;
 #ifndef TclOOIsReachable
 #define TclOOIsReachable \
 	(tclOOIntStubsPtr->tclOOIsReachable) /* 6 */
+#endif
+#ifndef TclOONewForwardClassMethod
+#define TclOONewForwardClassMethod \
+	(tclOOIntStubsPtr->tclOONewForwardClassMethod) /* 7 */
+#endif
+#ifndef TclOONewForwardMethod
+#define TclOONewForwardMethod \
+	(tclOOIntStubsPtr->tclOONewForwardMethod) /* 8 */
 #endif
 
 #endif /* defined(USE_TCLOO_STUBS) */
