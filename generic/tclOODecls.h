@@ -1,5 +1,5 @@
 /*
- * $Id: tclOODecls.h,v 1.8 2007/12/30 15:01:10 dkf Exp $
+ * $Id: tclOODecls.h,v 1.9 2008/01/03 15:11:46 dkf Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  */
@@ -18,7 +18,7 @@ extern const char *TclOOInitializeStubs(
 /* !BEGIN!: Do not edit below this line. */
 
 #define TCLOO_STUBS_EPOCH 0
-#define TCLOO_STUBS_REVISION 31
+#define TCLOO_STUBS_REVISION 35
 
 #if !defined(USE_TCLOO_STUBS)
 
@@ -99,6 +99,12 @@ TCLOOAPI void		Tcl_ObjectSetMetadata (Tcl_Object object,
 TCLOOAPI int		Tcl_ObjectContextInvokeNext (Tcl_Interp * interp, 
 				Tcl_ObjectContext context, int objc, 
 				Tcl_Obj *const * objv, int skip);
+/* 24 */
+TCLOOAPI Tcl_ObjectMapMethodNameProc Tcl_ObjectGetMethodNameMapper (
+				Tcl_Object object);
+/* 25 */
+TCLOOAPI void		Tcl_ObjectSetMethodNameMapper (Tcl_Object object, 
+				Tcl_ObjectMapMethodNameProc mapMethodNameProc);
 
 #endif /* !defined(USE_TCLOO_STUBS) */
 
@@ -132,6 +138,8 @@ typedef struct TclOOStubs {
     ClientData (*tcl_ObjectGetMetadata) (Tcl_Object object, const Tcl_ObjectMetadataType * typePtr); /* 21 */
     void (*tcl_ObjectSetMetadata) (Tcl_Object object, const Tcl_ObjectMetadataType * typePtr, ClientData metadata); /* 22 */
     int (*tcl_ObjectContextInvokeNext) (Tcl_Interp * interp, Tcl_ObjectContext context, int objc, Tcl_Obj *const * objv, int skip); /* 23 */
+    Tcl_ObjectMapMethodNameProc (*tcl_ObjectGetMethodNameMapper) (Tcl_Object object); /* 24 */
+    void (*tcl_ObjectSetMethodNameMapper) (Tcl_Object object, Tcl_ObjectMapMethodNameProc mapMethodNameProc); /* 25 */
 } TclOOStubs;
 
 #ifdef __cplusplus
@@ -243,6 +251,14 @@ extern const TclOOStubs *tclOOStubsPtr;
 #ifndef Tcl_ObjectContextInvokeNext
 #define Tcl_ObjectContextInvokeNext \
 	(tclOOStubsPtr->tcl_ObjectContextInvokeNext) /* 23 */
+#endif
+#ifndef Tcl_ObjectGetMethodNameMapper
+#define Tcl_ObjectGetMethodNameMapper \
+	(tclOOStubsPtr->tcl_ObjectGetMethodNameMapper) /* 24 */
+#endif
+#ifndef Tcl_ObjectSetMethodNameMapper
+#define Tcl_ObjectSetMethodNameMapper \
+	(tclOOStubsPtr->tcl_ObjectSetMethodNameMapper) /* 25 */
 #endif
 
 #endif /* defined(USE_TCLOO_STUBS) */
