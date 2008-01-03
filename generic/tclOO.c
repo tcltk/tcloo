@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.26 2007/10/12 15:21:09 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.27 2008/01/03 00:15:03 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1766,7 +1766,7 @@ TclOOObjectCmdCore(
     methodNamePtr = objv[1];
     if (oPtr->mapMethodNameProc != NULL) {
 	methodNamePtr = Tcl_DuplicateObj(methodNamePtr);
-	result = oPtr->mapMethodNameProc(interp, oPtr, startCls,
+	result = oPtr->mapMethodNameProc(interp, oPtr, &startCls,
 		methodNamePtr);
 	if (result != TCL_OK) {
 	    Tcl_DecrRefCount(methodNamePtr);
