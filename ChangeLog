@@ -1,5 +1,9 @@
 2008-01-03  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclOO.decls: Moved TclOONewForwardClassMethod and
+	TclOONewForwardMethod to private stub API from pure-internal. [FRQ
+	1842600]
+
 	* generic/tclOO.c (TclOOObjectCmdCore): Tweaked the signature of
 	the itcl-ng method remapping callback. [Patch 1791215]
 	(Tcl_ObjectSetMethodNameMapper): Added getter and setter functions

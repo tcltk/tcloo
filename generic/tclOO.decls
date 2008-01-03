@@ -1,5 +1,5 @@
 # -*- tcl -*-
-# $Id: tclOO.decls,v 1.8 2008/01/03 14:41:56 dkf Exp $
+# $Id: tclOO.decls,v 1.9 2008/01/03 15:06:57 dkf Exp $
 
 # public API
 library tclOO
@@ -137,4 +137,12 @@ declare 5 current {
 }
 declare 6 current {
     int TclOOIsReachable(Class *targetPtr, Class *startPtr)
+}
+declare 7 current {
+    Method *TclOONewForwardClassMethod(Tcl_Interp *interp, Class *clsPtr,
+	    int isPublic, Tcl_Obj *nameObj, Tcl_Obj *prefixObj)
+}
+declare 8 current {
+    Method *TclOONewForwardMethod(Tcl_Interp *interp, Object *oPtr,
+	    int isPublic, Tcl_Obj *nameObj, Tcl_Obj *prefixObj)
 }
