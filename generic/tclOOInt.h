@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.13 2007/10/12 15:21:09 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.14 2008/01/03 00:15:04 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -58,7 +58,7 @@ typedef int (*TclOO_PostCallProc)(ClientData clientData, Tcl_Interp *interp,
 typedef void (*TclOO_PmCDDeleteProc)(ClientData clientData);
 typedef ClientData (*TclOO_PmCDCloneProc)(ClientData clientData);
 typedef int (*TclOO_MapMethodNameProc)(Tcl_Interp *interp, struct Object *oPtr,
-	struct Class *startClsPtr, Tcl_Obj *methodObj);
+	struct Class **startClsPtrPtr, Tcl_Obj *methodObj);
 
 /*
  * Procedure-like methods have the following extra information. It is a
