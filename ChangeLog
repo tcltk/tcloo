@@ -1,3 +1,12 @@
+2008-01-05  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (TclOOInvokeObject):		    New functions to
+	* generic/tclOOMethod.c (TclOONewProcClassMethodEx) make itcl-ng
+	(TclOONewProcInstanceMethodEx):			    integration much
+	simpler. Adapted from [Patch 1791190], but with internal names as they
+	expose concepts which do not square completely with the way TclOO
+	officially "works".
+
 2008-01-03  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.decls: Moved TclOONewForwardClassMethod and
