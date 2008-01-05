@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.10 2007/11/16 22:46:49 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.11 2008/01/05 22:50:48 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1360,6 +1360,87 @@ Tcl_MethodIsPublic(
     Tcl_Method method)
 {
     return (((Method *)method)->flags & PUBLIC_METHOD) ? 1 : 0;
+}
+
+/*
+ * Extended method construction for itcl-ng.
+ */
+
+Tcl_Method
+TclOONewProcInstanceMethodEx(
+    Tcl_Interp *interp,		/* The interpreter containing the object. */
+    Tcl_Object oPtr,		/* The object to modify. */
+    TclOO_PreCallProc preCallPtr,
+    TclOO_PostCallProc postCallPtr,
+    ProcErrorProc errProc,
+    ClientData clientData,
+    Tcl_Obj *nameObj,		/* The name of the method, which must not be
+				 * NULL. */
+    Tcl_Obj *argsObj,		/* The formal argument list for the method,
+				 * which must not be NULL. */
+    Tcl_Obj *bodyObj,		/* The body of the method, which must not be
+				 * NULL. */
+    int flags,			/* Whether this is a public method. */
+    void **internalTokenPtr)	/* If non-NULL, points to a variable that gets
+				 * the reference to the ProcedureMethod
+				 * structure. */
+{
+    ProcedureMethod *pmPtr;
+    Tcl_Method method = (Tcl_Method) TclOONewProcMethod(interp,
+	    (Object *) oPtr, flags, nameObj, argsObj, bodyObj, &pmPtr);
+
+    if (method == NULL) {
+	return NULL;
+    }
+    pmPtr->flags = flags & USE_DECLARER_NS;
+    pmPtr->preCallProc = preCallPtr;
+    pmPtr->postCallProc = postCallPtr;
+    pmPtr->errProc = errProc;
+    pmPtr->clientData = clientData;
+    if (internalTokenPtr != NULL) {
+	*internalTokenPtr = pmPtr;
+    }
+    return method;
+}
+
+Tcl_Method
+TclOONewProcClassMethodEx(
+    Tcl_Interp *interp,		/* The interpreter containing the class. */
+    Tcl_Class clsPtr,		/* The class to modify. */
+    TclOO_PreCallProc preCallPtr,
+    TclOO_PostCallProc postCallPtr,
+    ProcErrorProc errProc,
+    ClientData clientData,
+    Tcl_Obj *nameObj,		/* The name of the method, which may be NULL;
+				 * if so, up to caller to manage storage
+				 * (e.g., because it is a constructor or
+				 * destructor). */
+    Tcl_Obj *argsObj,		/* The formal argument list for the method,
+				 * which may be NULL; if so, it is equivalent
+				 * to an empty list. */
+    Tcl_Obj *bodyObj,		/* The body of the method, which must not be
+				 * NULL. */
+    int flags,			/* Whether this is a public method. */
+    void **internalTokenPtr)	/* If non-NULL, points to a variable that gets
+				 * the reference to the ProcedureMethod
+				 * structure. */
+{
+    ProcedureMethod *pmPtr;
+    Tcl_Method method = (Tcl_Method) TclOONewProcClassMethod(interp,
+	    (Class *) clsPtr, flags, nameObj, argsObj, bodyObj, &pmPtr);
+
+    if (method == NULL) {
+	return NULL;
+    }
+    pmPtr->flags = flags & USE_DECLARER_NS;
+    pmPtr->preCallProc = preCallPtr;
+    pmPtr->postCallProc = postCallPtr;
+    pmPtr->errProc = errProc;
+    pmPtr->clientData = clientData;
+    if (internalTokenPtr != NULL) {
+	*internalTokenPtr = pmPtr;
+    }
+    return method;
 }
 
 /*

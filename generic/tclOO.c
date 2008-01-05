@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.28 2008/01/03 14:41:56 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.29 2008/01/05 22:50:48 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1704,7 +1704,7 @@ Tcl_ObjectSetMetadata(
 /*
  * ----------------------------------------------------------------------
  *
- * PublicObjectCmd, PrivateObjectCmd, TclOOObjectCmdCore --
+ * PublicObjectCmd, PrivateObjectCmd, TclOOInvokeObject, TclOOObjectCmdCore --
  *
  *	Main entry point for object invokations. The Public* and Private*
  *	wrapper functions are just thin wrappers round the main
@@ -1734,6 +1734,42 @@ PrivateObjectCmd(
 {
     return TclOOObjectCmdCore(clientData, interp, objc, objv, 0,
 	    &((Object *)clientData)->privateContextCache, NULL);
+}
+
+int
+TclOOInvokeObject(
+    Tcl_Interp *interp,		/* Interpreter for commands, variables,
+				 * results, error reporting, etc. */
+    Tcl_Object object,		/* The object to invoke. */
+    Tcl_Class startCls,		/* Where in the class chain to start the
+				 * invoke from, or NULL to traverse the whole
+				 * chain including filters. */
+    int publicPrivate,		/* Whether this is an invoke from a public
+				 * context (PUBLIC_METHOD), a private context
+				 * (PRIVATE_METHOD), or a *really* private
+				 * context (any other value; conventionally
+				 * 0). */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Array of argument objects. It is assumed
+				 * that the name of the method to invoke will
+				 * be at index 1. */
+{
+    switch (publicPrivate) {
+    case PUBLIC_METHOD:
+	return TclOOObjectCmdCore((Object *) object, interp, objc, objv,
+		PUBLIC_METHOD, &((Object *)object)->publicContextCache,
+		(Class *) startCls);
+    case PRIVATE_METHOD:
+	/*
+	 * Is this the right cache?
+	 */
+	return TclOOObjectCmdCore((Object *) object, interp, objc, objv,
+		PRIVATE_METHOD, &((Object *)object)->publicContextCache,
+		(Class *) startCls);
+    default:
+	return TclOOObjectCmdCore((Object *) object, interp, objc, objv, 0,
+		&((Object *)object)->privateContextCache, (Class *) startCls);
+    }
 }
 
 int

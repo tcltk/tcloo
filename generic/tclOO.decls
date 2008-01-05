@@ -1,5 +1,5 @@
 # -*- tcl -*-
-# $Id: tclOO.decls,v 1.9 2008/01/03 15:06:57 dkf Exp $
+# $Id: tclOO.decls,v 1.10 2008/01/05 22:50:48 dkf Exp $
 
 # public API
 library tclOO
@@ -145,4 +145,23 @@ declare 7 current {
 declare 8 current {
     Method *TclOONewForwardMethod(Tcl_Interp *interp, Object *oPtr,
 	    int isPublic, Tcl_Obj *nameObj, Tcl_Obj *prefixObj)
+}
+declare 9 current {
+    Tcl_Method TclOONewProcInstanceMethodEx(Tcl_Interp *interp,
+	    Tcl_Object oPtr, TclOO_PreCallProc preCallPtr,
+	    TclOO_PostCallProc postCallPtr, ProcErrorProc errProc,
+	    ClientData clientData, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
+	    Tcl_Obj *bodyObj, int flags, void **internalTokenPtr)
+}
+declare 10 current {
+    Tcl_Method TclOONewProcClassMethodEx(Tcl_Interp *interp, Tcl_Class clsPtr,
+	    TclOO_PreCallProc preCallPtr, TclOO_PostCallProc postCallPtr,
+	    ProcErrorProc errProc, ClientData clientData, Tcl_Obj *nameObj,
+	    Tcl_Obj *argsObj, Tcl_Obj *bodyObj, int flags,
+	    void **internalTokenPtr)
+}
+declare 11 current {
+    int TclOOInvokeObject(Tcl_Interp *interp, Tcl_Object object,
+	    Tcl_Class startCls, int publicPrivate, int objc,
+	    Tcl_Obj *const *objv)
 }
