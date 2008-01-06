@@ -1,5 +1,5 @@
 /*
- * $Id: tclOODecls.h,v 1.12 2008/01/06 02:15:26 dkf Exp $
+ * $Id: tclOODecls.h,v 1.13 2008/01/06 12:28:40 dkf Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  */
@@ -9,9 +9,9 @@
 extern const char *TclOOInitializeStubs(
 	Tcl_Interp *, const char *version, int epoch, int revision);
 #define Tcl_OOInitStubs(interp) TclOOInitializeStubs( \
-	interp, OO_VERSION, TCLOO_STUBS_EPOCH, TCLOO_STUBS_REVISION)
+	interp, TCLOO_VERSION, TCLOO_STUBS_EPOCH, TCLOO_STUBS_REVISION)
 #else
-#define Tcl_OOInitStubs(interp) Tcl_PkgRequire(interp, "TclOO", OO_VERSION)
+#define Tcl_OOInitStubs(interp) Tcl_PkgRequire(interp, "TclOO", TCLOO_VERSION)
 #endif
 
 
