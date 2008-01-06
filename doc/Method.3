@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: Method.3,v 1.3 2007/08/04 21:59:09 dkf Exp $
+'\" RCS: @(#) $Id: Method.3,v 1.4 2008/01/06 15:10:19 dkf Exp $
 '\"
 .so man.macros
 .TH Tcl_Method 3 0.1 TclOO "TclOO Library Functions"
@@ -159,7 +159,7 @@ typedef const struct {
     const char *\fIname\fR;
     Tcl_MethodCallProc \fIcallProc\fR;
     Tcl_MethodDeleteProc \fIdeleteProc\fR;
-    Tcl_MethodCloneProc \fIcloneProc\fR;
+    Tcl_CloneProc \fIcloneProc\fR;
 } \fBTcl_MethodType\fR;
 .CE
 .PP
@@ -210,22 +210,24 @@ typedef void (*\fBTcl_MethodDeleteProc\fR) (
 The \fIclientData\fR argument to a Tcl_MethodDeleteProc will be the same as
 the value passed to the \fIclientData\fR argument to \fBTcl_NewMethod\fR or
 \fBTcl_NewClassMethod\fR when the method was created.
-.SS "TCL_METHODCLONEPROC FUNCTION SIGNATURE"
+.SS "TCL_CLONEPROC FUNCTION SIGNATURE"
 .PP
 Functions matching this signature are used to copy a method when the object or
 class is copied using \fBTcl_CopyObjectInstance\fR (or \fBoo::copy\fR).
 .PP
 .CS
-typedef int (*\fBTcl_MethodCloneProc\fR) (
-        ClientData \fIoldClientData\fR, ClientData *\fInewClientData\fR);
+typedef int (*\fBTcl_CloneProc\fR) (
+        Tcl_Interp *\fIinterp\fR,
+        ClientData \fIoldClientData\fR,
+        ClientData *\fInewClientDataPtr\fR);
 .CE
 .PP
-The \fIoldClientData\fR field to a Tcl_MethodCloneProc gives the value from
-the method being copied from, and the \fInewClientData\fR field will point to
-a variable in which to write the value for the method being copied to. The
-function should return TCL_OK and write into \fInewClientData\fR if the method
-is to be copied, and return TCL_ERROR otherwise (when the method will be
-silently not copied).
+The \fIinterp\fR argument gives a place to write an error message when the
+attempt to clone the object is to fail, in which case the clone procedure must
+also return TCL_ERROR; it should return TCL_OK otherwise.
+The \fIoldClientData\fR field to a Tcl_CloneProc gives the value from the
+method being copied from, and the \fInewClientDataPtr\fR field will point to
+a variable in which to write the value for the method being copied to.
 .SH "SEE ALSO"
 class(n), define(n), Class(3), object(n)
 .SH KEYWORDS

@@ -1,7 +1,17 @@
 2008-01-06  Donal K. Fellows  <dkf@users.sf.net>
 
-	* generic/tclOO.h (TCLOO_VERSION): Rename of OO_VERSION. [Bug 1864851]
+	* .../tclOO.h (Tcl_CloneProc, Tcl_MethodType, Tcl_ObjectMetadataType):
+	* generic/tclOOMethod.c (CloneProcedureMethod, CloneForwardMethod):
+	* generic/tclOO.c (Tcl_CopyObjectInstance, CloneObjectMethod)
+	(CloneClassMethod): Redefined cloning system to allow user code to
+	reject a request to create a copy of an object. Allows some objects to
+	become genuinely unique, which is necessary when they contain really
+	precious OS resources. [FRQ 1863642]
 
+	***POTENTIAL INCOMPATIBILITY***
+	For any code that used the old cloning functions.
+
+	* generic/tclOO.h (TCLOO_VERSION): Rename of OO_VERSION.
 	* generic/tclOOStubLib.c, generic/tclOODecls.h: Corrected macro usage
 	so that only one #def is involved in stub usage. [Bug 1864851]
 

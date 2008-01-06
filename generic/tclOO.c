@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.30 2008/01/06 12:28:39 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.31 2008/01/06 15:10:19 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -56,9 +56,10 @@ static Class *		AllocClass(Tcl_Interp *interp, Object *useThisObj,
 			    Foundation *fPtr);
 static Object *		AllocObject(Tcl_Interp *interp, const char *nameStr,
 			    const char *nsNameStr);
-static Method *		CloneClassMethod(Tcl_Interp *interp, Class *clsPtr,
-			    Method *mPtr, Tcl_Obj *namePtr);
-static Method *		CloneObjectMethod(Tcl_Interp *interp, Object *oPtr,
+static int		CloneClassMethod(Tcl_Interp *interp, Class *clsPtr,
+			    Method *mPtr, Tcl_Obj *namePtr,
+			    Method **newMPtrPtr);
+static int		CloneObjectMethod(Tcl_Interp *interp, Object *oPtr,
 			    Method *mPtr, Tcl_Obj *namePtr);
 static void		InitFoundation(Tcl_Interp *interp);
 static void		KillFoundation(ClientData clientData,
@@ -1287,7 +1288,10 @@ Tcl_CopyObjectInstance(
      */
 
     FOREACH_HASH(keyPtr, mPtr, &oPtr->methods) {
-	(void) CloneObjectMethod(interp, o2Ptr, mPtr, keyPtr);
+	if (CloneObjectMethod(interp, o2Ptr, mPtr, keyPtr) != TCL_OK) {
+	    Tcl_DeleteCommandFromToken(interp, o2Ptr->command);
+	    return NULL;
+	}
     }
 
     /*
@@ -1335,9 +1339,14 @@ Tcl_CopyObjectInstance(
 
 	FOREACH_HASH(metadataTypePtr, value, oPtr->metadataPtr) {
 	    if (metadataTypePtr->cloneProc == NULL) {
-		continue;
+		duplicate = value;
+	    } else {
+		if (metadataTypePtr->cloneProc(interp, value,
+			&duplicate) != TCL_OK) {
+		    Tcl_DeleteCommandFromToken(interp, o2Ptr->command);
+		    return NULL;
+		}
 	    }
-	    duplicate = metadataTypePtr->cloneProc(value);
 	    if (duplicate != NULL) {
 		Tcl_ObjectSetMetadata((Tcl_Object) o2Ptr, metadataTypePtr,
 			duplicate);
@@ -1414,15 +1423,25 @@ Tcl_CopyObjectInstance(
 	 */
 
 	FOREACH_HASH(keyPtr, mPtr, &clsPtr->classMethods) {
-	    (void) CloneClassMethod(interp, cls2Ptr, mPtr, keyPtr);
+	    if (CloneClassMethod(interp, cls2Ptr, mPtr, keyPtr,
+		    NULL) != TCL_OK) {
+		Tcl_DeleteCommandFromToken(interp, o2Ptr->command);
+		return NULL;
+	    }
 	}
 	if (clsPtr->constructorPtr) {
-	    cls2Ptr->constructorPtr = CloneClassMethod(interp, cls2Ptr,
-		    clsPtr->constructorPtr, NULL);
+	    if (CloneClassMethod(interp, cls2Ptr, clsPtr->constructorPtr,
+		    NULL, &cls2Ptr->constructorPtr) != TCL_OK) {
+		Tcl_DeleteCommandFromToken(interp, o2Ptr->command);
+		return NULL;
+	    }
 	}
 	if (clsPtr->destructorPtr) {
-	    cls2Ptr->destructorPtr = CloneClassMethod(interp, cls2Ptr,
-		    clsPtr->destructorPtr, NULL);
+	    if (CloneClassMethod(interp, cls2Ptr, clsPtr->destructorPtr, NULL,
+		    &cls2Ptr->destructorPtr) != TCL_OK) {
+		Tcl_DeleteCommandFromToken(interp, o2Ptr->command);
+		return NULL;
+	    }
 	}
 
 	/*
@@ -1435,9 +1454,14 @@ Tcl_CopyObjectInstance(
 
 	    FOREACH_HASH(metadataTypePtr, value, clsPtr->metadataPtr) {
 		if (metadataTypePtr->cloneProc == NULL) {
-		    continue;
+		    duplicate = value;
+		} else {
+		    if (metadataTypePtr->cloneProc(interp, value,
+			    &duplicate) != TCL_OK) {
+			Tcl_DeleteCommandFromToken(interp, o2Ptr->command);
+			return NULL;
+		    }
 		}
-		duplicate = metadataTypePtr->cloneProc(value);
 		if (duplicate != NULL) {
 		    Tcl_ClassSetMetadata((Tcl_Class) cls2Ptr, metadataTypePtr,
 			    duplicate);
@@ -1461,7 +1485,7 @@ Tcl_CopyObjectInstance(
  * ----------------------------------------------------------------------
  */
 
-static Method *
+static int
 CloneObjectMethod(
     Tcl_Interp *interp,
     Object *oPtr,
@@ -1469,48 +1493,56 @@ CloneObjectMethod(
     Tcl_Obj *namePtr)
 {
     if (mPtr->typePtr == NULL) {
-	return (Method *) Tcl_NewMethod(interp, (Tcl_Object) oPtr, namePtr,
+	(void) Tcl_NewMethod(interp, (Tcl_Object) oPtr, namePtr,
 		mPtr->flags & PUBLIC_METHOD, NULL, NULL);
     } else if (mPtr->typePtr->cloneProc) {
 	ClientData newClientData;
 
-	if (mPtr->typePtr->cloneProc(mPtr->clientData,
+	if (mPtr->typePtr->cloneProc(interp, mPtr->clientData,
 		&newClientData) != TCL_OK) {
-	    return NULL;
+	    return TCL_ERROR;
 	}
-	return (Method *) Tcl_NewMethod(interp, (Tcl_Object) oPtr, namePtr,
+	(void) Tcl_NewMethod(interp, (Tcl_Object) oPtr, namePtr,
 		mPtr->flags & PUBLIC_METHOD, mPtr->typePtr, newClientData);
     } else {
-	return (Method *) Tcl_NewMethod(interp, (Tcl_Object) oPtr, namePtr,
+	(void) Tcl_NewMethod(interp, (Tcl_Object) oPtr, namePtr,
 		mPtr->flags & PUBLIC_METHOD, mPtr->typePtr, mPtr->clientData);
     }
+    return TCL_OK;
 }
 
-static Method *
+static int
 CloneClassMethod(
     Tcl_Interp *interp,
     Class *clsPtr,
     Method *mPtr,
-    Tcl_Obj *namePtr)
+    Tcl_Obj *namePtr,
+    Method **m2PtrPtr)
 {
+    Method *m2Ptr;
+
     if (mPtr->typePtr == NULL) {
-	return (Method *) Tcl_NewClassMethod(interp, (Tcl_Class) clsPtr,
+	m2Ptr = (Method *) Tcl_NewClassMethod(interp, (Tcl_Class) clsPtr,
 		namePtr, mPtr->flags & PUBLIC_METHOD, NULL, NULL);
     } else if (mPtr->typePtr->cloneProc) {
 	ClientData newClientData;
 
-	if (mPtr->typePtr->cloneProc(mPtr->clientData,
+	if (mPtr->typePtr->cloneProc(interp, mPtr->clientData,
 		&newClientData) != TCL_OK) {
-	    return NULL;
+	    return TCL_ERROR;
 	}
-	return (Method *) Tcl_NewClassMethod(interp, (Tcl_Class) clsPtr,
+	m2Ptr = (Method *) Tcl_NewClassMethod(interp, (Tcl_Class) clsPtr,
 		namePtr, mPtr->flags & PUBLIC_METHOD, mPtr->typePtr,
 		newClientData);
     } else {
-	return (Method *) Tcl_NewClassMethod(interp, (Tcl_Class) clsPtr,
+	m2Ptr = (Method *) Tcl_NewClassMethod(interp, (Tcl_Class) clsPtr,
 		namePtr, mPtr->flags & PUBLIC_METHOD, mPtr->typePtr,
 		mPtr->clientData);
     }
+    if (m2PtrPtr != NULL) {
+	*m2PtrPtr = m2Ptr;
+    }
+    return TCL_OK;
 }
 
 /*
