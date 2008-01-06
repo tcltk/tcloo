@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.6 2008/01/06 15:10:20 dkf Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.7 2008/01/06 15:13:38 dkf Exp $
  */
 
 #ifndef TCLOO_H_INCLUDED
@@ -27,7 +27,7 @@
  * Must match version at top of ../configure.in
  */
 
-#define TCLOO_VERSION "0.1.1"
+#define TCLOO_VERSION "0.2a0"
 #define TCLOO_PATCHLEVEL TCLOO_VERSION
 
 /*

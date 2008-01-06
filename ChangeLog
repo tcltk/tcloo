@@ -1,5 +1,8 @@
 2008-01-06  Donal K. Fellows  <dkf@users.sf.net>
 
+	* configure.in:			   Bump version to pre-0.2 now that
+	* generic/tclOO.h (TCLOO_VERSION): there's been an API change.
+
 	* .../tclOO.h (Tcl_CloneProc, Tcl_MethodType, Tcl_ObjectMetadataType):
 	* generic/tclOOMethod.c (CloneProcedureMethod, CloneForwardMethod):
 	* generic/tclOO.c (Tcl_CopyObjectInstance, CloneObjectMethod)
