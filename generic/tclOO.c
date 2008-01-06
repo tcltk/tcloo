@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.29 2008/01/05 22:50:48 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.30 2008/01/06 12:28:39 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -134,8 +134,8 @@ static const DeclaredClassMethod clsMethods[] = {
 };
 
 static char initScript[] =
-    "namespace eval ::oo { variable version " OO_VERSION " };"
-    "namespace eval ::oo { variable patchlevel " OO_PATCHLEVEL " };";
+    "namespace eval ::oo { variable version " TCLOO_VERSION " };"
+    "namespace eval ::oo { variable patchlevel " TCLOO_PATCHLEVEL " };";
 /*     "tcl_findLibrary tcloo $oo::version $oo::version" */
 /*     " tcloo.tcl OO_LIBRARY oo::library;"; */
 
@@ -201,7 +201,7 @@ Tcloo_Init(
 	return TCL_ERROR;
     }
 
-    return Tcl_PkgProvideEx(interp, "TclOO", OO_VERSION, &tclOOStubAPI);
+    return Tcl_PkgProvideEx(interp, "TclOO", TCLOO_VERSION, &tclOOStubAPI);
 }
 
 /*
