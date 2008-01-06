@@ -1,5 +1,5 @@
 /*
- * $Id: tclOODecls.h,v 1.10 2008/01/05 22:51:33 dkf Exp $
+ * $Id: tclOODecls.h,v 1.11 2008/01/06 00:47:36 kennykb Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  */
