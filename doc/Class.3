@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: Class.3,v 1.6 2008/01/03 14:41:56 dkf Exp $
+'\" RCS: @(#) $Id: Class.3,v 1.7 2008/01/06 15:10:16 dkf Exp $
 '\"
 .so man.macros
 .TH Tcl_Class 3 0.1 TclOO "TclOO Library Functions"
@@ -141,7 +141,7 @@ typedef const struct {
     int \fIversion\fR;
     const char *\fIname\fR;
     Tcl_ObjectMetadataDeleteProc \fIdeleteProc\fR;
-    Tcl_ObjectMetadataCloneProc \fIcloneProc\fR;
+    Tcl_CloneProc \fIcloneProc\fR;
 } \fBTcl_ObjectMetadataType\fR;
 .CE
 .PP
@@ -157,8 +157,8 @@ field must not be NULL.
 .PP
 The \fIcloneProc\fR field gives a function that is used to copy a piece of
 metadata (used when a copy of an object is created using
-\fBTcl_CopyObjectInstance\fR); if NULL, the metadata will not be cloned at all
-to the copy.
+\fBTcl_CopyObjectInstance\fR); if NULL, the metadata will be just directly
+copied.
 .SS "TCL_OBJECTMETADATADELETEPROC FUNCTION SIGNATURE"
 .PP
 Functions matching this signature are used to delete metadata associated with
@@ -171,19 +171,25 @@ typedef void (*\fBTcl_ObjectMetadataDeleteProc\fR) (
 .PP
 The \fImetadata\fR argument gives the address of the metadata to be
 deleted.
-.SS "TCL_OBJECTMETADATACLONEPROC FUNCTION SIGNATURE"
+.SS "TCL_CLONEPROC FUNCTION SIGNATURE"
 .PP
 Functions matching this signature are used to create copies of metadata
 associated with a class or object.
 .PP
 .CS
-typedef ClientData (*\fBTcl_ObjectMetadataCloneProc\fR) (
-        ClientData \fImetadata\fR);
+typedef int (*\fBTcl_CloneProc\fR) (
+        Tcl_Interp *\fIinterp\fR,
+        ClientData \fIsrcMetadata\fR,
+        ClientData *\fIdstMetadataPtr\fR);
 .CE
 .PP
-The \fImetadata\fR argument gives the address of the metadata to be cloned,
-and the result of the function must either be the cloned metadata or NULL if
-the metadata is to not be cloned.
+The \fIinterp\fR argument gives a place to write an error message when the
+attempt to clone the object is to fail, in which case the clone procedure must
+also return TCL_ERROR; it should return TCL_OK otherwise.
+The \fIsrcMetadata\fR argument gives the address of the metadata to be cloned,
+and the cloned metadata should be written into the variable pointed to by
+\fIdstMetadataPtr\fR; a NULL should be written if the metadata is to not be
+cloned but the overall object copy operation is still to succeed.
 .SH "OBJECT METHOD NAME MAPPING"
 It is possible to control, on a per-object basis, what methods are invoked
 when a particular method is invoked. Normally this is done by looking up the

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.11 2008/01/05 22:50:48 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.12 2008/01/06 15:10:20 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -57,8 +57,8 @@ static int		PushMethodCallFrame(Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv,
 			    PMFrameData *fdPtr);
 static void		DeleteProcedureMethod(ClientData clientData);
-static int		CloneProcedureMethod(ClientData clientData,
-			    ClientData *newClientData);
+static int		CloneProcedureMethod(Tcl_Interp *interp,
+			    ClientData clientData, ClientData *newClientData);
 static void		MethodErrorHandler(Tcl_Interp *interp,
 			    Tcl_Obj *procNameObj);
 static void		ConstructorErrorHandler(Tcl_Interp *interp,
@@ -70,8 +70,8 @@ static int		InvokeForwardMethod(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
 static void		DeleteForwardMethod(ClientData clientData);
-static int		CloneForwardMethod(ClientData clientData,
-			    ClientData *newClientData);
+static int		CloneForwardMethod(Tcl_Interp *interp,
+			    ClientData clientData, ClientData *newClientData);
 static int		BasicClassMethodInvoke(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
@@ -1026,6 +1026,7 @@ DeleteProcedureMethod(
 
 static int
 CloneProcedureMethod(
+    Tcl_Interp *interp,
     ClientData clientData,
     ClientData *newClientData)
 {
@@ -1189,6 +1190,7 @@ DeleteForwardMethod(
 
 static int
 CloneForwardMethod(
+    Tcl_Interp *interp,
     ClientData clientData,
     ClientData *newClientData)
 {

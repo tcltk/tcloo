@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.5 2008/01/06 12:28:40 dkf Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.6 2008/01/06 15:10:20 dkf Exp $
  */
 
 #ifndef TCLOO_H_INCLUDED
@@ -48,10 +48,9 @@ typedef struct Tcl_ObjectContext_ *Tcl_ObjectContext;
 typedef int (*Tcl_MethodCallProc)(ClientData clientData, Tcl_Interp *interp,
 	Tcl_ObjectContext objectContext, int objc, Tcl_Obj *const *objv);
 typedef void (*Tcl_MethodDeleteProc)(ClientData clientData);
-typedef int (*Tcl_MethodCloneProc)(ClientData oldClientData,
+typedef int (*Tcl_CloneProc)(Tcl_Interp *interp, ClientData oldClientData,
 	ClientData *newClientData);
 typedef void (*Tcl_ObjectMetadataDeleteProc)(ClientData clientData);
-typedef ClientData (*Tcl_ObjectMetadataCloneProc)(ClientData clientData);
 typedef int (*Tcl_ObjectMapMethodNameProc)(Tcl_Interp *interp,
 	Tcl_Object object, Tcl_Class *startClsPtr, Tcl_Obj *methodNameObj);
 
@@ -72,8 +71,7 @@ typedef struct {
 				/* How to delete this method's type-specific
 				 * data, or NULL if the type-specific data
 				 * does not need deleting. */
-    Tcl_MethodCloneProc cloneProc;
-				/* How to copy this method's type-specific
+    Tcl_CloneProc cloneProc;	/* How to copy this method's type-specific
 				 * data, or NULL if the type-specific data can
 				 * be copied directly. */
 } Tcl_MethodType;
@@ -100,9 +98,9 @@ typedef struct {
     Tcl_ObjectMetadataDeleteProc deleteProc;
 				/* How to delete the metadata. This must not
 				 * be NULL. */
-    Tcl_ObjectMetadataCloneProc cloneProc;
-				/* How to clone the metadata. If NULL, the
-				 * metadata will not be copied. */
+    Tcl_CloneProc cloneProc;	/* How to copy the metadata, or NULL if the
+				 * type-specific data can be copied
+				 * directly. */
 } Tcl_ObjectMetadataType;
 
 /*
