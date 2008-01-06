@@ -1,11 +1,11 @@
 /*
- * $Id: tclOOStubLib.c,v 1.2 2007/12/30 15:08:17 dkf Exp $
+ * $Id: tclOOStubLib.c,v 1.3 2008/01/06 02:15:26 dkf Exp $
  * ORIGINAL SOURCE: tk/generic/tkStubLib.c, version 1.9 2004/03/17
  */
 
 #include "tcl.h"
 
-#define USE_TCL_OO_STUBS 1
+#define USE_TCLOO_STUBS 1
 #include "tclOO.h"
 #include "tclOOInt.h"
 
