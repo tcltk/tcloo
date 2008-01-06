@@ -1,8 +1,13 @@
+2008-01-06  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOStubLib.c, generic/tclOODecls.h: Corrected macro usage
+	so that only one #def is involved in stub usage. [Bug 1864851]
+
 2008-01-06  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclOODecls.h: Removed superfluous '\r' characters that
 	caused syntax errors when compiling with mingw.
-	
+
 2008-01-05  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c (TclOOInvokeObject):		    New functions to

@@ -1,11 +1,11 @@
 /*
- * $Id: tclOODecls.h,v 1.11 2008/01/06 00:47:36 kennykb Exp $
+ * $Id: tclOODecls.h,v 1.12 2008/01/06 02:15:26 dkf Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  */
 
 
-#if defined(USE_TCL_OO_STUBS)
+#if defined(USE_TCLOO_STUBS)
 extern const char *TclOOInitializeStubs(
 	Tcl_Interp *, const char *version, int epoch, int revision);
 #define Tcl_OOInitStubs(interp) TclOOInitializeStubs( \
