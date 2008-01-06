@@ -1,4 +1,9 @@
 *.dll
+*.so
+*.lib
+*.a
+*.obj
+*.o
 *.kit
 Makefile
 autom4te.cache
