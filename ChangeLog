@@ -1,3 +1,11 @@
+2008-01-09  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclOOCall.c (AddClassFiltersToCallContext): Add filters
+	defined by classes mixed into classes. [Bug 1865053]
+
+	* generic/tclOO.c (Tcl_ClassSetConstructor, Tcl_ClassSetDestructor):
+	Factored out the code to install a constructor or destructor.
+
 2008-01-06  Donal K. Fellows  <dkf@users.sf.net>
 
 	* configure.in:			   Bump version to pre-0.2 now that

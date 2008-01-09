@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.31 2008/01/06 15:10:19 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.32 2008/01/09 10:11:53 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3098,6 +3098,32 @@ Tcl_ObjectSetMethodNameMapper(
     Tcl_ObjectMapMethodNameProc mapMethodNameProc)
 {
     ((Object *) object)->mapMethodNameProc = mapMethodNameProc;
+}
+
+void
+Tcl_ClassSetConstructor(
+    Tcl_Class clazz,
+    Tcl_Method method)
+{
+    Class *clsPtr = (Class *) clazz;
+
+    if (method != (Tcl_Method) clsPtr->constructorPtr) {
+	TclOODeleteMethod(clsPtr->constructorPtr);
+	clsPtr->constructorPtr = (Method *) method;
+    }
+}
+
+void
+Tcl_ClassSetDestructor(
+    Tcl_Class clazz,
+    Tcl_Method method)
+{
+    Class *clsPtr = (Class *) clazz;
+
+    if (method != (Tcl_Method) clsPtr->destructorPtr) {
+	TclOODeleteMethod(clsPtr->destructorPtr);
+	clsPtr->destructorPtr = (Method *) method;
+    }
 }
 
 /*

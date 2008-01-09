@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.6 2007/11/09 13:57:51 dkf Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.7 2008/01/09 10:11:53 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -885,12 +885,21 @@ AddClassFiltersToCallContext(
 				 * ignored. */
 {
     int i;
-    Class *superPtr;
+    Class *superPtr, *mixinPtr;
     Tcl_Obj *filterObj;
 
   tailRecurse:
     if (clsPtr == NULL) {
 	return;
+    }
+
+    /*
+     * Add all the filters defined by classes mixed into the main class
+     * hierarchy.
+     */
+
+    FOREACH(mixinPtr, clsPtr->mixins) {
+	AddClassFiltersToCallContext(oPtr, mixinPtr, cbPtr, doneFilters);
     }
 
     /*

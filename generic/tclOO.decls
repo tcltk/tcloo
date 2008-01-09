@@ -1,5 +1,5 @@
 # -*- tcl -*-
-# $Id: tclOO.decls,v 1.10 2008/01/05 22:50:48 dkf Exp $
+# $Id: tclOO.decls,v 1.11 2008/01/09 10:11:53 dkf Exp $
 
 # public API
 library tclOO
@@ -101,6 +101,12 @@ declare 24 current {
 declare 25 current {
     void Tcl_ObjectSetMethodNameMapper(Tcl_Object object,
 	    Tcl_ObjectMapMethodNameProc mapMethodNameProc)
+}
+declare 26 current {
+    void Tcl_ClassSetConstructor(Tcl_Class clazz, Tcl_Method method)
+}
+declare 27 current {
+    void Tcl_ClassSetDestructor(Tcl_Class clazz, Tcl_Method method)
 }
 
 # private API, exposed to support advanced OO systems that plug in on top

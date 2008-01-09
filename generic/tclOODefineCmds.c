@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.3 2007/11/16 22:46:49 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.4 2008/01/09 10:11:53 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -153,6 +153,7 @@ TclOODefineConstructorObjCmd(
 {
     Object *oPtr;
     Class *clsPtr;
+    Tcl_Method method;
     int bodyLength;
 
     if (objc != 3) {
@@ -182,32 +183,27 @@ TclOODefineConstructorObjCmd(
 	 * Create the method structure.
 	 */
 
-	Method *mPtr;
-
-	mPtr = TclOONewProcClassMethod(interp, clsPtr, PUBLIC_METHOD, NULL,
-		objv[1], objv[2], NULL);
-	if (mPtr == NULL) {
+	method = (Tcl_Method) TclOONewProcClassMethod(interp, clsPtr,
+		PUBLIC_METHOD, NULL, objv[1], objv[2], NULL);
+	if (method == NULL) {
 	    return TCL_ERROR;
 	}
-
-	/*
-	 * Place the method structure in the class record. Note that we might
-	 * not immediately delete the constructor as this might be being done
-	 * during execution of the constructor itself.
-	 */
-
-	TclOODeleteMethod(clsPtr->constructorPtr);
-	clsPtr->constructorPtr = mPtr;
     } else {
 	/*
-	 * Delete the constructor method record and set the field in the class
-	 * record to NULL.
+	 * Delete the constructor method record and set the field in the
+	 * class record to NULL.
 	 */
 
-	TclOODeleteMethod(clsPtr->constructorPtr);
-	clsPtr->constructorPtr = NULL;
+	method = NULL;
     }
 
+    /*
+     * Place the method structure in the class record. Note that we might not
+     * immediately delete the constructor as this might be being done during
+     * execution of the constructor itself.
+     */
+
+    Tcl_ClassSetConstructor((Tcl_Class) clsPtr, method);
     return TCL_OK;
 }
 
@@ -220,6 +216,7 @@ TclOODefineDestructorObjCmd(
 {
     Object *oPtr;
     Class *clsPtr;
+    Tcl_Method method;
     int bodyLength;
 
     if (objc != 2) {
@@ -244,32 +241,28 @@ TclOODefineDestructorObjCmd(
 	 * Create the method structure.
 	 */
 
-	Method *mPtr;
-
-	mPtr = TclOONewProcClassMethod(interp, clsPtr, PUBLIC_METHOD, NULL,
-		NULL, objv[1], NULL);
-	if (mPtr == NULL) {
+	method = (Tcl_Method) TclOONewProcClassMethod(interp, clsPtr,
+		PUBLIC_METHOD, NULL, NULL, objv[1], NULL);
+	if (method == NULL) {
 	    return TCL_ERROR;
 	}
-
-	/*
-	 * Place the method structure in the class record. Note that we might
-	 * not immediately delete the destructor as this might be being done
-	 * during execution of the destructor itself.
-	 */
-
-	TclOODeleteMethod(clsPtr->destructorPtr);
-	clsPtr->destructorPtr = mPtr;
     } else {
 	/*
 	 * Delete the destructor method record and set the field in the class
 	 * record to NULL.
 	 */
 
-	TclOODeleteMethod(clsPtr->destructorPtr);
-	clsPtr->destructorPtr = NULL;
+	method = NULL;
     }
 
+    /*
+     * Place the method structure in the class record. Note that we might not
+     * immediately delete the destructor as this might be being done during
+     * execution of the destructor itself. Also note that setting a
+     * destructor during a destructor is fairly dumb anyway.
+     */
+
+    Tcl_ClassSetDestructor((Tcl_Class) clsPtr, method);
     return TCL_OK;
 }
 
