@@ -4,14 +4,14 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: Method.3,v 1.4 2008/01/06 15:10:19 dkf Exp $
+'\" RCS: @(#) $Id: Method.3,v 1.5 2008/01/09 10:11:53 dkf Exp $
 '\"
 .so man.macros
 .TH Tcl_Method 3 0.1 TclOO "TclOO Library Functions"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Tcl_MethodDeclarerClass, Tcl_MethodDeclarerObject, Tcl_MethodIsPublic, Tcl_MethodIsType, Tcl_MethodName, Tcl_NewClassMethod, Tcl_NewMethod, Tcl_ObjectContextIsFiltering, Tcl_ObjectContextMethod, Tcl_ObjectContextObject, Tcl_ObjectContextSkippedArgs \- manipulate methods and method-call contexts
+Tcl_ClassSetConstructor, Tcl_ClassSetDestructor, Tcl_MethodDeclarerClass, Tcl_MethodDeclarerObject, Tcl_MethodIsPublic, Tcl_MethodIsType, Tcl_MethodName, Tcl_NewClassMethod, Tcl_NewMethod, Tcl_ObjectContextIsFiltering, Tcl_ObjectContextMethod, Tcl_ObjectContextObject, Tcl_ObjectContextSkippedArgs \- manipulate methods and method-call contexts
 .SH SYNOPSIS
 .nf
 \fB#include <tclOO.h>\fR
@@ -23,6 +23,10 @@ Tcl_Method
 Tcl_Method
 \fBTcl_NewClassMethod\fR(\fIinterp, class, nameObj, isPublic, methodTypePtr,
                    clientData\fR)
+.sp
+\fBTcl_ClassSetConstructor\fR(\fIclass, method\fR)
+.sp
+\fBTcl_ClassSetDestructor\fR(\fIclass, method\fR)
 .sp
 Tcl_Class
 \fBTcl_MethodDeclarerClass\fR(\fImethod\fR)
@@ -88,7 +92,6 @@ An array of arguments to pass to the method implementation.
 The number of arguments passed to the method implementation that do not
 represent "real" arguments.
 .BE
-
 .SH DESCRIPTION
 .PP
 A method is an operation carried out on an object that is associated with the
@@ -118,11 +121,15 @@ the method (see the \fBMETHOD TYPES\fR section below) and the \fIclientData\fR
 argument gives some implementation-specific data that is passed on to the
 implementation of the method when it is called.
 .PP
-Note that when the \fInameObj\fR argument is NULL an unmanaged method is
-created (used internally for constructors and destructors). The memory
-management of methods is non-trivial, and so client code should not create
-unmanaged methods at the moment. Similarly, a NULL \fImethodTypePtr\fR is used
-to provide internal signalling, and should not be used in client code.
+When the \fInameObj\fR argument to \fBTcl_NewClassMethod\fR is NULL, an
+unnamed method is created, which is used for constructors and destructors.
+Constructors should be installed into their class using the
+\fBTcl_ClassSetConstructor\fR function, and destructors (which must not
+require any arguments) should be installed into their class using the
+\fBTcl_ClassSetDestructor\fR function. Unnamed methods should not be used for
+any other purpose, and named methods should not be used as either constructors
+or destructors. Also note that a NULL \fImethodTypePtr\fR is used to provide
+internal signalling, and should not be used in client code.
 .SS "METHOD CALL CONTEXTS"
 .PP
 When a method is called, a method-call context reference is passed in as one
