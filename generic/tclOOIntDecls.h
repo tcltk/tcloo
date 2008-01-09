@@ -1,5 +1,5 @@
 /*
- * $Id: tclOOIntDecls.h,v 1.8 2008/01/05 22:51:33 dkf Exp $
+ * $Id: tclOOIntDecls.h,v 1.9 2008/01/09 10:14:08 dkf Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  */
@@ -7,7 +7,7 @@
 /* !BEGIN!: Do not edit below this line. */
 
 #define TCLOOINT_STUBS_EPOCH 0
-#define TCLOOINT_STUBS_REVISION 38
+#define TCLOOINT_STUBS_REVISION 40
 
 #if !defined(USE_TCLOO_STUBS)
 
