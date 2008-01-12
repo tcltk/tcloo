@@ -1,3 +1,12 @@
+2008-01-12  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* tests/oo.test (oo-23.1): Added new test that shows how to do
+	Self-like object creation through prototypical objects. [Bug 1865054]
+
+	* generic/tclOODefineCmds.c (TclOODefineMixinObjCmd): Stop classes
+	from mixing in themselves as classes, which can lead to an infinite
+	loop.
+
 2008-01-09  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/tclOOCall.c (AddClassFiltersToCallContext): Add filters

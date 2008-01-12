@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.4 2008/01/09 10:11:53 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.5 2008/01/12 12:13:49 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -617,6 +617,11 @@ TclOODefineMixinObjCmd(
 		if (o2Ptr->classPtr == NULL) {
 		    Tcl_AppendResult(interp, "may only mix in classes; \"",
 			    TclGetString(objv[i]), "\" is not a class", NULL);
+		    goto freeAndErrorClass;
+		}
+		if (TclOOIsReachable(clsPtr, o2Ptr->classPtr)) {
+		    Tcl_AppendResult(interp,
+			    "may not mix a class into itself", NULL);
 		freeAndErrorClass:
 		    ckfree((char *) mixins);
 		    return TCL_ERROR;

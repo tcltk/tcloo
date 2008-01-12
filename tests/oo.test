@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.7 2008/01/09 10:11:53 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.8 2008/01/12 12:13:49 dkf Exp $
 
 lappend auto_path .
 package require TclOO
@@ -751,6 +751,13 @@ test oo-14.3 {OO and mixins and filters - advanced case} -setup {
     c destroy
     mix destroy
 } -result >>foobar<<
+test oo-14.4 {OO: mixin error case} -setup {
+    oo::class create c
+} -body {
+    oo::define c mixin c
+} -returnCodes error -cleanup {
+    c destroy
+} -result {may not mix a class into itself}
 
 test oo-15.1 {OO: object cloning} {
     oo::class create Aclass
@@ -1340,6 +1347,36 @@ test oo-22.1 {OO and info frame} -setup {
 } -cleanup {
     c destroy
 } -result {1 {{type proc line 2 cmd {info frame 0} method frames class ::c level 0} {type proc line 2 cmd {info frame 0} method frames object ::i level 0}} ::c}
+
+# [Bug ???]
+test oo-23.1 {Self-like derivation; complex case!} -setup {
+    oo::class create SELF {
+	superclass oo::class
+	self.mixin SELF
+	unexport create new
+	# Next is just a convenience
+	method method args {oo::define [self] method {*}$args}
+	method derive {name} {
+	    set o [my new [list superclass [self]]]
+	    oo::define $o self.mixin $o
+	    uplevel 1 [list rename $o $name]\;[list namespace which $name]
+	}
+    }
+    set result {}
+} -body {
+    [SELF derive foo1] method bar1 {} {return 1}
+    lappend result [foo1 bar1]
+    [foo1 derive foo2] method bar2 {} {return [my bar1],2}
+    lappend result [foo2 bar2]
+    [foo2 derive foo3] method bar3 {} {return [my bar2],3}
+    lappend result [foo3 bar3]
+    [foo3 derive foo4] method bar4 {} {return [my bar3],4}
+    lappend result [foo4 bar4]
+    foo2 method bar2 {} {return [my bar1],x}
+    lappend result [foo4 bar4]
+} -cleanup {
+    SELF destroy
+} -result {1 1,2 1,2,3 1,2,3,4 1,x,3,4}
 
 cleanupTests
 return
