@@ -1,5 +1,5 @@
 # -*- tcl -*-
-# $Id: tclOO.decls,v 1.11 2008/01/09 10:11:53 dkf Exp $
+# $Id: tclOO.decls,v 1.12 2008/01/16 10:46:33 dkf Exp $
 
 # public API
 library tclOO
@@ -170,4 +170,20 @@ declare 11 current {
     int TclOOInvokeObject(Tcl_Interp *interp, Tcl_Object object,
 	    Tcl_Class startCls, int publicPrivate, int objc,
 	    Tcl_Obj *const *objv)
+}
+declare 12 current {
+    void TclOOObjectSetFilters(Object *oPtr, int numFilters,
+	    Tcl_Obj *const *filters)
+}
+declare 13 current {
+    void TclOOClassSetFilters(Tcl_Interp *interp, Class *classPtr,
+	    int numFilters, Tcl_Obj *const *filters)
+}
+declare 14 current {
+    void TclOOObjectSetMixins(Object *oPtr, int numMixins,
+	    Class *const *mixins)
+}
+declare 15 current {
+    void TclOOClassSetMixins(Tcl_Interp *interp, Class *classPtr,
+	    int numMixins, Class *const *mixins)
 }
