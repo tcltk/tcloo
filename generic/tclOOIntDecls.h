@@ -1,5 +1,5 @@
 /*
- * $Id: tclOOIntDecls.h,v 1.9 2008/01/09 10:14:08 dkf Exp $
+ * $Id: tclOOIntDecls.h,v 1.10 2008/01/16 10:47:21 dkf Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  */
@@ -7,7 +7,7 @@
 /* !BEGIN!: Do not edit below this line. */
 
 #define TCLOOINT_STUBS_EPOCH 0
-#define TCLOOINT_STUBS_REVISION 40
+#define TCLOOINT_STUBS_REVISION 44
 
 #if !defined(USE_TCLOO_STUBS)
 
@@ -79,6 +79,20 @@ TCLOOAPI int		TclOOInvokeObject (Tcl_Interp * interp,
 				Tcl_Object object, Tcl_Class startCls, 
 				int publicPrivate, int objc, 
 				Tcl_Obj *const * objv);
+/* 12 */
+TCLOOAPI void		TclOOObjectSetFilters (Object * oPtr, int numFilters, 
+				Tcl_Obj *const * filters);
+/* 13 */
+TCLOOAPI void		TclOOClassSetFilters (Tcl_Interp * interp, 
+				Class * classPtr, int numFilters, 
+				Tcl_Obj *const * filters);
+/* 14 */
+TCLOOAPI void		TclOOObjectSetMixins (Object * oPtr, int numMixins, 
+				Class *const * mixins);
+/* 15 */
+TCLOOAPI void		TclOOClassSetMixins (Tcl_Interp * interp, 
+				Class * classPtr, int numMixins, 
+				Class *const * mixins);
 
 #endif /* !defined(USE_TCLOO_STUBS) */
 
@@ -100,6 +114,10 @@ typedef struct TclOOIntStubs {
     Tcl_Method (*tclOONewProcInstanceMethodEx) (Tcl_Interp * interp, Tcl_Object oPtr, TclOO_PreCallProc preCallPtr, TclOO_PostCallProc postCallPtr, ProcErrorProc errProc, ClientData clientData, Tcl_Obj * nameObj, Tcl_Obj * argsObj, Tcl_Obj * bodyObj, int flags, void ** internalTokenPtr); /* 9 */
     Tcl_Method (*tclOONewProcClassMethodEx) (Tcl_Interp * interp, Tcl_Class clsPtr, TclOO_PreCallProc preCallPtr, TclOO_PostCallProc postCallPtr, ProcErrorProc errProc, ClientData clientData, Tcl_Obj * nameObj, Tcl_Obj * argsObj, Tcl_Obj * bodyObj, int flags, void ** internalTokenPtr); /* 10 */
     int (*tclOOInvokeObject) (Tcl_Interp * interp, Tcl_Object object, Tcl_Class startCls, int publicPrivate, int objc, Tcl_Obj *const * objv); /* 11 */
+    void (*tclOOObjectSetFilters) (Object * oPtr, int numFilters, Tcl_Obj *const * filters); /* 12 */
+    void (*tclOOClassSetFilters) (Tcl_Interp * interp, Class * classPtr, int numFilters, Tcl_Obj *const * filters); /* 13 */
+    void (*tclOOObjectSetMixins) (Object * oPtr, int numMixins, Class *const * mixins); /* 14 */
+    void (*tclOOClassSetMixins) (Tcl_Interp * interp, Class * classPtr, int numMixins, Class *const * mixins); /* 15 */
 } TclOOIntStubs;
 
 #ifdef __cplusplus
@@ -163,6 +181,22 @@ extern const TclOOIntStubs *tclOOIntStubsPtr;
 #ifndef TclOOInvokeObject
 #define TclOOInvokeObject \
 	(tclOOIntStubsPtr->tclOOInvokeObject) /* 11 */
+#endif
+#ifndef TclOOObjectSetFilters
+#define TclOOObjectSetFilters \
+	(tclOOIntStubsPtr->tclOOObjectSetFilters) /* 12 */
+#endif
+#ifndef TclOOClassSetFilters
+#define TclOOClassSetFilters \
+	(tclOOIntStubsPtr->tclOOClassSetFilters) /* 13 */
+#endif
+#ifndef TclOOObjectSetMixins
+#define TclOOObjectSetMixins \
+	(tclOOIntStubsPtr->tclOOObjectSetMixins) /* 14 */
+#endif
+#ifndef TclOOClassSetMixins
+#define TclOOClassSetMixins \
+	(tclOOIntStubsPtr->tclOOClassSetMixins) /* 15 */
 #endif
 
 #endif /* defined(USE_TCLOO_STUBS) */
