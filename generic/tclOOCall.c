@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.7 2008/01/09 10:11:53 dkf Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.8 2008/01/16 10:46:33 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -40,21 +40,23 @@ struct ChainBuilder {
  * Function declarations for things defined in this file.
  */
 
-static void		AddClassFiltersToCallContext(Object *oPtr,
-			    Class *clsPtr, struct ChainBuilder *cbPtr,
-			    Tcl_HashTable *doneFilters);
-static void		AddClassMethodNames(Class *clsPtr, int flags,
-			    Tcl_HashTable *namesPtr);
+static void		AddClassFiltersToCallContext(Object *const oPtr,
+			    Class *clsPtr, struct ChainBuilder *const cbPtr,
+			    Tcl_HashTable *const doneFilters);
+static void		AddClassMethodNames(Class *clsPtr, const int flags,
+			    Tcl_HashTable *const namesPtr);
 static inline void	AddMethodToCallChain(Method *mPtr,
 			    struct ChainBuilder *cbPtr,
 			    Tcl_HashTable *doneFilters, Class *filterDecl);
 static inline void	AddSimpleChainToCallContext(Object *oPtr,
-			    Tcl_Obj *methodNameObj, struct ChainBuilder *cbPtr,
+			    Tcl_Obj *methodNameObj,
+			    struct ChainBuilder *const cbPtr,
 			    Tcl_HashTable *doneFilters, int isPublic,
 			    Class *filterDecl);
 static void		AddSimpleClassChainToCallContext(Class *classPtr,
-			    Tcl_Obj *methodNameObj, struct ChainBuilder *cbPtr,
-			    Tcl_HashTable *doneFilters, int isPublic,
+			    Tcl_Obj *const methodNameObj,
+			    struct ChainBuilder *const cbPtr,
+			    Tcl_HashTable *const doneFilters, int isPublic,
 			    Class *filterDecl);
 static int		CmpStr(const void *ptr1, const void *ptr2);
 static void		InitClassHierarchy(Foundation *fPtr, Class *classPtr);
@@ -435,7 +437,7 @@ TclOOGetSortedMethodList(
 	 * dealing with public method names.
 	 */
 
-	qsort(strings, (unsigned) i, sizeof(char *), CmpStr);
+	qsort((void *) strings, (unsigned) i, sizeof(char *), CmpStr);
 	*stringsPtr = strings;
     }
 

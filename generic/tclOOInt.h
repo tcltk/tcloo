@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.16 2008/01/03 15:06:57 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.17 2008/01/16 10:46:33 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -362,7 +362,7 @@ MODULE_SCOPE int	TclOODefineMethodObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
 MODULE_SCOPE int	TclOODefineMixinObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, const int objc,
 			    Tcl_Obj *const *objv);
 MODULE_SCOPE int	TclOODefineSuperclassObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,

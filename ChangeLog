@@ -1,3 +1,19 @@
+2008-01-16  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclOOCall.c, tclOOInt.h: Add and fix types to make things
+	quieter with VC2k5SP1. [Bug 1870456, part 2] (kbk)
+
+	* generic/tclOODefineCmds.c (TclOOObjectSetFilters)
+	(TclOOClassSetFilters, TclOOObjectSetMixins, TclOOClassSetMixins):
+	Factor out the code to manage lists of filters and mixins so that they
+	can be manipulated from the C level more easily. Now part of the
+	"internal" API.
+
+	* generic/tclOODefineCmds.c (BumpGlobalEpoch): Factor out the code to
+	handle incrementing of the global epoch counter when a class is
+	reconfigured. Allows us to put conditions on doing this that are easy
+	to enforce and which should result in a performance boost in practice.
+
 2008-01-12  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* tests/oo.test (oo-23.1): Added new test that shows how to do

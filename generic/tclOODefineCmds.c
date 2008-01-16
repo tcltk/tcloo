@@ -9,11 +9,42 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.5 2008/01/12 12:13:49 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.6 2008/01/16 10:46:33 dkf Exp $
  */
 
 #include "tclInt.h"
 #include "tclOOInt.h"
+
+static inline void
+BumpGlobalEpoch(
+    Tcl_Interp *interp,
+    Class *classPtr)
+{
+    if (classPtr != NULL
+	    && classPtr->subclasses.num == 0
+	    && classPtr->instances.num == 0
+	    && classPtr->mixinSubs.num == 0) {
+	/*
+	 * If a class has no subclasses or instances, and is not mixed into
+	 * anything, a change to its structure does not require us to
+	 * invalidate any call chains. Note that we still bump our object's
+	 * epoch if it has any mixins; the relation between a class and its
+	 * representative object is special. But it won't hurt.
+	 */
+
+	if (classPtr->thisPtr->mixins.num > 0) {
+	    classPtr->thisPtr->epoch++;
+	}
+	return;
+    }
+
+    /*
+     * Either there's no class (?!) or we're reconfiguring something that is
+     * in use. Force regeneration of call chains.
+     */
+
+    TclOOGetFoundation(interp)->epoch++;
+}
 
 int
 TclOODefineObjCmd(
@@ -313,9 +344,111 @@ TclOODefineExportObjCmd(
     if (isSelfExport) {
 	oPtr->epoch++;
     } else {
-	TclOOGetFoundation(interp)->epoch++;
+	BumpGlobalEpoch(interp, clsPtr);
     }
     return TCL_OK;
+}
+
+void
+TclOOObjectSetFilters(
+    Object *oPtr,
+    int numFilters,
+    Tcl_Obj *const *filters)
+{
+    int i;
+
+    if (oPtr->filters.num) {
+	Tcl_Obj *filterObj;
+
+	FOREACH(filterObj, oPtr->filters) {
+	    Tcl_DecrRefCount(filterObj);
+	}
+    }
+
+    if (numFilters == 0) {
+	/*
+	 * No list of filters was supplied, so we're deleting filters.
+	 */
+
+	ckfree((char *) oPtr->filters.list);
+	oPtr->filters.list = NULL;
+	oPtr->filters.num = 0;
+    } else {
+	/*
+	 * We've got a list of filters, so we're creating filters.
+	 */
+
+	Tcl_Obj **filtersList;
+	int size = sizeof(Tcl_Obj *) * numFilters;	/* should be size_t */
+
+	if (oPtr->filters.num == 0) {
+	    filtersList = (Tcl_Obj **) ckalloc(size);
+	} else {
+	    filtersList = (Tcl_Obj **)
+		    ckrealloc((char *) oPtr->filters.list, size);
+	}
+	for (i=0 ; i<numFilters ; i++) {
+	    filtersList[i] = filters[i];
+	    Tcl_IncrRefCount(filters[i]);
+	}
+	oPtr->filters.list = filtersList;
+	oPtr->filters.num = numFilters;
+    }
+    oPtr->epoch++;		/* Only this object can be affected. */
+}
+
+void
+TclOOClassSetFilters(
+    Tcl_Interp *interp,
+    Class *classPtr,
+    int numFilters,
+    Tcl_Obj *const *filters)
+{
+    int i;
+
+    if (classPtr->filters.num) {
+	Tcl_Obj *filterObj;
+
+	FOREACH(filterObj, classPtr->filters) {
+	    Tcl_DecrRefCount(filterObj);
+	}
+    }
+
+    if (numFilters == 0) {
+	/*
+	 * No list of filters was supplied, so we're deleting filters.
+	 */
+
+	ckfree((char *) classPtr->filters.list);
+	classPtr->filters.list = NULL;
+	classPtr->filters.num = 0;
+    } else {
+	/*
+	 * We've got a list of filters, so we're creating filters.
+	 */
+
+	Tcl_Obj **filtersList;
+	int size = sizeof(Tcl_Obj *) * numFilters;	/* should be size_t */
+
+	if (classPtr->filters.num == 0) {
+	    filtersList = (Tcl_Obj **) ckalloc(size);
+	} else {
+	    filtersList = (Tcl_Obj **)
+		    ckrealloc((char *) classPtr->filters.list, size);
+	}
+	for (i=0 ; i<numFilters ; i++) {
+	    filtersList[i] = filters[i];
+	    Tcl_IncrRefCount(filters[i]);
+	}
+	classPtr->filters.list = filtersList;
+	classPtr->filters.num = numFilters;
+    }
+
+    /*
+     * There may be many objects affected, so bump the global epoch.
+     */
+
+    BumpGlobalEpoch(interp, classPtr);
 }
 
 int
@@ -326,96 +459,17 @@ TclOODefineFilterObjCmd(
     Tcl_Obj *const *objv)
 {
     int isSelfFilter = (clientData != NULL);
-    Object *oPtr;
-    int i;
+    Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
 
-    oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
     isSelfFilter |= (oPtr->classPtr == NULL);
 
     if (!isSelfFilter) {
-	if (oPtr->classPtr->filters.num) {
-	    Tcl_Obj *filterObj;
-
-	    FOREACH(filterObj, oPtr->classPtr->filters) {
-		Tcl_DecrRefCount(filterObj);
-	    }
-	}
-
-	if (objc == 1) {
-	    /*
-	     * No list of filters was supplied, so we're deleting filters.
-	     */
-
-	    ckfree((char *) oPtr->classPtr->filters.list);
-	    oPtr->classPtr->filters.list = NULL;
-	    oPtr->classPtr->filters.num = 0;
-	} else {
-	    /*
-	     * We've got a list of filters, so we're creating filters.
-	     */
-
-	    Tcl_Obj **filters;
-
-	    if (oPtr->classPtr->filters.num == 0) {
-		filters = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj *) * (objc-1));
-	    } else {
-		filters = (Tcl_Obj **) ckrealloc(
-			(char *) oPtr->classPtr->filters.list,
-			sizeof(Tcl_Obj *) * (objc-1));
-	    }
-	    for (i=1 ; i<objc ; i++) {
-		filters[i-1] = objv[i];
-		Tcl_IncrRefCount(objv[i]);
-	    }
-	    oPtr->classPtr->filters.list = filters;
-	    oPtr->classPtr->filters.num = objc-1;
-	}
-
-	/*
-	 * There may be many objects affected, so bump the global epoch.
-	 */
-
-	TclOOGetFoundation(interp)->epoch++;
+	TclOOClassSetFilters(interp, oPtr->classPtr, objc-1, objv+1);
     } else {
-	if (oPtr->filters.num) {
-	    Tcl_Obj *filterObj;
-
-	    FOREACH(filterObj, oPtr->filters) {
-		Tcl_DecrRefCount(filterObj);
-	    }
-	}
-	if (objc == 1) {
-	    /*
-	     * No list of filters was supplied, so we're deleting filters.
-	     */
-
-	    ckfree((char *) oPtr->filters.list);
-	    oPtr->filters.list = NULL;
-	    oPtr->filters.num = 0;
-	} else {
-	    /*
-	     * We've got a list of filters, so we're creating filters.
-	     */
-
-	    Tcl_Obj **filters;
-
-	    if (oPtr->filters.num == 0) {
-		filters = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj *) * (objc-1));
-	    } else {
-		filters = (Tcl_Obj **) ckrealloc((char *) oPtr->filters.list,
-			sizeof(Tcl_Obj *) * (objc-1));
-	    }
-	    for (i=1 ; i<objc ; i++) {
-		filters[i-1] = objv[i];
-		Tcl_IncrRefCount(objv[i]);
-	    }
-	    oPtr->filters.list = filters;
-	    oPtr->filters.num = objc-1;
-	}
-	oPtr->epoch++;		/* Only this object can be affected. */
+	TclOOObjectSetFilters(oPtr, objc-1, objv+1);
     }
     return TCL_OK;
 }
@@ -531,6 +585,87 @@ TclOODefineMethodObjCmd(
     return TCL_OK;
 }
 
+void
+TclOOObjectSetMixins(
+    Object *oPtr,
+    int numMixins,
+    Class *const *mixins)
+{
+    Class *mixinPtr;
+    int i;
+
+    if (numMixins == 0) {
+	if (oPtr->mixins.num != 0) {
+	    FOREACH(mixinPtr, oPtr->mixins) {
+		TclOORemoveFromInstances(oPtr, mixinPtr);
+	    }
+	    ckfree((char *) oPtr->mixins.list);
+	    oPtr->mixins.num = 0;
+	}
+    } else {
+	if (oPtr->mixins.num != 0) {
+	    FOREACH(mixinPtr, oPtr->mixins) {
+		if (mixinPtr != oPtr->selfCls) {
+		    TclOORemoveFromInstances(oPtr, mixinPtr);
+		}
+	    }
+	    oPtr->mixins.list = (Class **)
+		    ckrealloc((char *) oPtr->mixins.list,
+		    sizeof(Class *) * numMixins);
+	} else {
+	    oPtr->mixins.list = (Class **)
+		    ckalloc(sizeof(Class *) * numMixins);
+	}
+	oPtr->mixins.num = numMixins;
+	memcpy(oPtr->mixins.list, mixins, sizeof(Class *) * numMixins);
+	FOREACH(mixinPtr, oPtr->mixins) {
+	    if (mixinPtr != oPtr->selfCls) {
+		TclOOAddToInstances(oPtr, mixinPtr);
+	    }
+	}
+    }
+    oPtr->epoch++;
+}
+
+void
+TclOOClassSetMixins(
+    Tcl_Interp *interp,
+    Class *classPtr,
+    int numMixins,
+    Class *const *mixins)
+{
+    Class *mixinPtr;
+    int i;
+
+    if (numMixins == 0) {
+	if (classPtr->mixins.num != 0) {
+	    FOREACH(mixinPtr, classPtr->mixins) {
+		TclOORemoveFromMixinSubs(classPtr, mixinPtr);
+	    }
+	    ckfree((char *) classPtr->mixins.list);
+	    classPtr->mixins.num = 0;
+	}
+    } else {
+	if (classPtr->mixins.num != 0) {
+	    FOREACH(mixinPtr, classPtr->mixins) {
+		TclOORemoveFromMixinSubs(classPtr, mixinPtr);
+	    }
+	    classPtr->mixins.list = (Class **)
+		    ckrealloc((char *) classPtr->mixins.list,
+		    sizeof(Class *) * numMixins);
+	} else {
+	    classPtr->mixins.list = (Class **)
+		    ckalloc(sizeof(Class *) * numMixins);
+	}
+	classPtr->mixins.num = numMixins;
+	memcpy(classPtr->mixins.list, mixins, sizeof(Class *) * numMixins);
+	FOREACH(mixinPtr, classPtr->mixins) {
+	    TclOOAddToMixinSubs(classPtr, mixinPtr);
+	}
+    }
+    BumpGlobalEpoch(interp, classPtr);
+}
+
 int
 TclOODefineMixinObjCmd(
     ClientData clientData,
@@ -540,109 +675,46 @@ TclOODefineMixinObjCmd(
 {
     int isSelfMixin = (clientData != NULL);
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
-    Class *mixinPtr;
+    Class **mixins;
     int i;
 
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
     isSelfMixin |= (oPtr->classPtr == NULL);
+    mixins = TclStackAlloc(interp, sizeof(Class *) * (objc-1));
+
+    for (i=1 ; i<objc ; i++) {
+	Object *o2Ptr;
+
+	o2Ptr = (Object *) Tcl_GetObjectFromObj(interp, objv[i]);
+	if (o2Ptr == NULL) {
+	    goto freeAndError;
+	}
+	if (o2Ptr->classPtr == NULL) {
+	    Tcl_AppendResult(interp, "may only mix in classes; \"",
+		    TclGetString(objv[i]), "\" is not a class", NULL);
+	    goto freeAndError;
+	}
+	if (!isSelfMixin && TclOOIsReachable(oPtr->classPtr,o2Ptr->classPtr)){
+	    Tcl_AppendResult(interp, "may not mix a class into itself", NULL);
+	    goto freeAndError;
+	}
+	mixins[i-1] = o2Ptr->classPtr;
+    }
 
     if (isSelfMixin) {
-	if (objc == 1) {
-	    if (oPtr->mixins.num != 0) {
-		FOREACH(mixinPtr, oPtr->mixins) {
-		    TclOORemoveFromInstances(oPtr, mixinPtr);
-		}
-		ckfree((char *) oPtr->mixins.list);
-		oPtr->mixins.num = 0;
-	    }
-	} else {
-	    Class **mixins = (Class **) ckalloc(sizeof(Class *) * (objc-1));
-
-	    for (i=1 ; i<objc ; i++) {
-		Object *o2Ptr;
-
-		o2Ptr = (Object *) Tcl_GetObjectFromObj(interp, objv[i]);
-		if (o2Ptr == NULL) {
-		    goto freeAndErrorSelf;
-		}
-		if (o2Ptr->classPtr == NULL) {
-		    Tcl_AppendResult(interp, "may only mix in classes; \"",
-			    TclGetString(objv[i]), "\" is not a class", NULL);
-		freeAndErrorSelf:
-		    ckfree((char *) mixins);
-		    return TCL_ERROR;
-		}
-		mixins[i-1] = o2Ptr->classPtr;
-	    }
-	    if (oPtr->mixins.num != 0) {
-		FOREACH(mixinPtr, oPtr->mixins) {
-		    if (mixinPtr != oPtr->selfCls) {
-			TclOORemoveFromInstances(oPtr, mixinPtr);
-		    }
-		}
-		ckfree((char *) oPtr->mixins.list);
-	    }
-	    oPtr->mixins.num = objc-1;
-	    oPtr->mixins.list = mixins;
-	    FOREACH(mixinPtr, oPtr->mixins) {
-		if (mixinPtr != oPtr->selfCls) {
-		    TclOOAddToInstances(oPtr, mixinPtr);
-		}
-	    }
-	}
-	oPtr->epoch++;
+	TclOOObjectSetMixins(oPtr, objc-1, mixins);
     } else {
-	register Class *clsPtr = oPtr->classPtr;
-
-	if (objc == 1) {
-	    if (clsPtr->mixins.num != 0) {
-		FOREACH(mixinPtr, clsPtr->mixins) {
-		    TclOORemoveFromMixinSubs(clsPtr, mixinPtr);
-		}
-		ckfree((char *) clsPtr->mixins.list);
-		clsPtr->mixins.num = 0;
-	    }
-	} else {
-	    Class **mixins = (Class **) ckalloc(sizeof(Class *) * (objc-1));
-
-	    for (i=1 ; i<objc ; i++) {
-		Object *o2Ptr;
-
-		o2Ptr = (Object *) Tcl_GetObjectFromObj(interp, objv[i]);
-		if (o2Ptr == NULL) {
-		    goto freeAndErrorClass;
-		}
-		if (o2Ptr->classPtr == NULL) {
-		    Tcl_AppendResult(interp, "may only mix in classes; \"",
-			    TclGetString(objv[i]), "\" is not a class", NULL);
-		    goto freeAndErrorClass;
-		}
-		if (TclOOIsReachable(clsPtr, o2Ptr->classPtr)) {
-		    Tcl_AppendResult(interp,
-			    "may not mix a class into itself", NULL);
-		freeAndErrorClass:
-		    ckfree((char *) mixins);
-		    return TCL_ERROR;
-		}
-		mixins[i-1] = o2Ptr->classPtr;
-	    }
-	    if (clsPtr->mixins.num != 0) {
-		FOREACH(mixinPtr, clsPtr->mixins) {
-		    TclOORemoveFromMixinSubs(clsPtr, mixinPtr);
-		}
-		ckfree((char *) clsPtr->mixins.list);
-	    }
-	    clsPtr->mixins.num = objc-1;
-	    clsPtr->mixins.list = mixins;
-	    FOREACH(mixinPtr, clsPtr->mixins) {
-		TclOOAddToMixinSubs(clsPtr, mixinPtr);
-	    }
-	}
-	TclOOGetFoundation(interp)->epoch++;
+	TclOOClassSetMixins(interp, oPtr->classPtr, objc-1, mixins);
     }
+
+    TclStackFree(interp, mixins);
     return TCL_OK;
+
+  freeAndError:
+    TclStackFree(interp, mixins);
+    return TCL_ERROR;
 }
 
 int
@@ -715,7 +787,7 @@ TclOODefineSelfClassObjCmd(
 	oPtr->selfCls = o2Ptr->classPtr;
 	TclOOAddToInstances(oPtr, oPtr->selfCls);
 	if (oPtr->classPtr != NULL) {
-	    fPtr->epoch++;
+	    BumpGlobalEpoch(interp, oPtr->classPtr);
 	} else {
 	    oPtr->epoch++;
 	}
@@ -813,7 +885,7 @@ TclOODefineSuperclassObjCmd(
     FOREACH(superPtr, oPtr->classPtr->superclasses) {
 	TclOOAddToSubclasses(oPtr->classPtr, superPtr);
     }
-    fPtr->epoch++;
+    BumpGlobalEpoch(interp, oPtr->classPtr);
 
     return TCL_OK;
 }
@@ -865,7 +937,7 @@ TclOODefineUnexportObjCmd(
     if (isSelfUnexport) {
 	oPtr->epoch++;
     } else {
-	TclOOGetFoundation(interp)->epoch++;
+	BumpGlobalEpoch(interp, clsPtr);
     }
     return TCL_OK;
 }
