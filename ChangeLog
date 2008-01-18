@@ -1,3 +1,9 @@
+2008-01-18  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* configure.in, Makefile.in: Add code to make the resource compiler
+	adapt to being used with the VC toolchain. Also adds some support for
+	manifest generation (needed for Vista?) [Bug 1870456, part 3] (kbk)
+
 2008-01-16  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/tclOOCall.c, tclOOInt.h: Add and fix types to make things

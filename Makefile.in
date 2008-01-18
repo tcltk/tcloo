@@ -26,6 +26,8 @@ INSTALL_SCRIPT=@INSTALL_SCRIPT@
 PACKAGE_NAME=@PACKAGE_NAME@
 PACKAGE_VERSION=@PACKAGE_VERSION@
 CC=@CC@
+RC=@RC@
+MT=@MT@
 CFLAGS_DEFAULT=@CFLAGS_DEFAULT@
 CFLAGS_WARNING=@CFLAGS_WARNING@
 CLEANFILES=@CLEANFILES@
@@ -56,11 +58,13 @@ AR=@AR@
 CFLAGS=@CFLAGS@
 CYGPATH=@CYGPATH@
 SDX=@SDX@
-RC=@RC@
 TCLSH_ENV=TCL_LIBRARY="`$(CYGPATH) $(TCL_SRC_DIR)/library`" \
 	  @LD_LIBRARY_PATH_VAR@="$(EXTRA_PATH):$(@LD_LIBRARY_PATH_VAR@)" \
 	  PATH="$(EXTRA_PATH):$(PATH)" \
 	  TCLLIBPATH="$(TCLLIBPATH)"
+RCDEFSTART=@RCDEF_START@
+RCDEFQ=@RCDEF_Q@
+RES=@RES_SUFFIX@
 
 #========================================================================
 # None of these assignments are substituted by configure
@@ -85,10 +89,9 @@ VPATH=$(SRC_DIR)/generic:$(SRC_DIR)/unix:$(SRC_DIR)/win:$(SRC_DIR)/macosx:$(SRC_
 TESTFLAGS=
 KIT_PKG_ROOT=$(PKG_KIT_ROOT).vfs/lib/$(PACKAGE_NAME)
 # The quoting is horrific, I know!
-RCFLAGS=--define PACKAGE_NAME='\"$(PACKAGE_NAME)\"' \
-	--define PKG_LIB_FILE='\"$(PKG_LIB_FILE)\"' \
-	--define PACKAGE_VERSION='\"$(PACKAGE_VERSION)\"'
-RES=res.o
+RCFLAGS=$(RCDEFSTART) PACKAGE_NAME='$(RCDEFQ)$(PACKAGE_NAME)$(RCDEFQ)' \
+	$(RCDEFSTART) PKG_LIB_FILE='$(RCDEFQ)$(PKG_LIB_FILE)$(RCDEFQ)' \
+	$(RCDEFSTART) PACKAGE_VERSION='$(RCDEFQ)$(PACKAGE_VERSION)$(RCDEFQ)'
 ITERATIONS=1000
 
 #========================================================================
@@ -221,6 +224,7 @@ gdbtest: package libraries
 $(PKG_LIB_FILE): $(PKG_OBJECTS)
 	-rm -f $(PKG_LIB_FILE)
 	${MAKE_LIB}
+	$(MT) -manifest $(PKG_LIB_FILE).manifest "-outputresource:$(PKG_LIB_FILE);2"
 	$(RANLIB) $(PKG_LIB_FILE)
 $(PKG_STUB_LIB_FILE): $(PKG_STUB_OBJECTS)
 	-rm -f $(PKG_STUB_LIB_FILE)
@@ -261,8 +265,8 @@ $(PKG_KIT): $(PKG_LIB_FILE)
 	-@echo Creating $(KIT_PKG_ROOT)/pkgIndex.tcl
 	@( \
 	echo 'if {[catch {package require Tcl $(TCL_VERSION_REQ)}]} return'; \
-	echo 'package ifneeded $(PACKAGE_NAME) $(PACKAGE_VERSION) \
-	    [list load [file join $$dir $(PLATFORM) $(PKG_LIB_FILE)] $(PACKAGE_NAME)]' \
+	echo 'package ifneeded $(PACKAGE_NAME) $(PACKAGE_VERSION)' \
+	    '[list load [file join $$dir $(PLATFORM) $(PKG_LIB_FILE)] $(PACKAGE_NAME)]' \
 	) > $(KIT_PKG_ROOT)/pkgIndex.tcl
 	$(SDX) wrap $(PKG_KIT)
 	-@rm -rf $(PKG_KIT_ROOT).vfs $(PKG_KIT_ROOT).bat
