@@ -1,49 +1,66 @@
-# $Id: configure.in,v 1.21 2008/01/18 10:30:27 dkf Exp $
+# $Id: configure.in,v 1.22 2008/01/18 13:20:49 dkf Exp $
 
-AC_REVISION($Revision: 1.21 $)
+AC_REVISION($Revision: 1.22 $)
 dnl Also *must* update generic/tclOO.h when changing the version number.
 AC_INIT([TclOO],[0.2a0])
 AC_CONFIG_AUX_DIR(tclconfig)
 
-TEA_INIT([3.6])
-TEA_PATH_TCLCONFIG
-TEA_LOAD_TCLCONFIG
-TEA_PREFIX
-TEA_SETUP_COMPILER
-AS_IF([test "$GCC" = yes], [AC_SUBST(MT, [:])], [AC_SUBST(MT, [mt])])
-AC_C_INLINE
-TEA_ADD_SOURCES(
-	tclOO.c tclOOCall.c tclOODefineCmds.c tclOOInfo.c tclOOMethod.c
-	tclOOStubInit.c)
-AS_IF([test ${TEA_PLATFORM} = "windows"], [
-    AC_CHECK_PROGS(RC, windres rc, none)
-    case $RC in
-	windres)
-	    AC_SUBST(RCDEF_START, [--define])
-	    AC_SUBST(RCDEF_Q, ['\"'])
-	    AC_SUBST(RES_SUFFIX, [res.o])
-	    PKG_OBJECTS="${PKG_OBJECTS} ${PACKAGE_NAME}.res.o" ;;
-	rc)
-	    AC_SUBST(RCDEF_START, [-d])
-	    AC_SUBST(RCDEF_Q, ['"'])
-	    AC_SUBST(RES_SUFFIX, [res])
-	    PKG_OBJECTS="${PKG_OBJECTS} ${PACKAGE_NAME}.res" ;;
-	none)
-	    AC_MSG_WARN([could not find resource compiler])
-	    RC=: ;;
-    esac])
-TEA_ADD_STUB_SOURCES(tclOOStubLib.c)
-TEA_ADD_HEADERS([generic/tclOO.h generic/tclOODecls.h])
-# These ought to have some TEA support too, but don't (yet)
-# TEA_ADD_PRIVATE_HEADERS([generic/tclOOInt.h generic/tclOOIntDecls.h])
-    vars="generic/tclOOInt.h generic/tclOOIntDecls.h"
+AC_DEFUN([TEA_SUBST_RESOURCE], [
+    dirs="$1"
+    vars="$2"
+dnl rcdef_inc=-I		# For testing only
+dnl rcdef_start=-D		# For testing only
+    AS_IF([test ${TEA_PLATFORM} = "windows"], [
+	AC_CHECK_PROGS(RC, windres rc, none)
+	case $RC in
+	    windres)
+		rcdef_inc="--include "
+		rcdef_start="--define "
+		rcdef_q='\"'
+		AC_SUBST(RES_SUFFIX, [res.o])
+		PKG_OBJECTS="${PKG_OBJECTS} ${PACKAGE_NAME}.res.o" ;;
+	    rc)
+		rcdef_inc="/i "
+		rcdef_start="/d "
+		rcdef_q='"'
+		AC_SUBST(RES_SUFFIX, [res])
+		PKG_OBJECTS="${PKG_OBJECTS} ${PACKAGE_NAME}.res" ;;
+	    none)
+		AC_MSG_WARN([could not find resource compiler])
+		RC=: ;;
+	esac])
+    for i in $dirs; do
+	RES_DEFS="${RES_DEFS} ${rcdef_inc}\"$i\""
+    done
+    for i in $vars; do
+	RES_DEFS="$RES_DEFS ${rcdef_start}$i='${rcdef_q}\$($i)${rcdef_q}'"
+    done
+    AC_SUBST(RES_DEFS)])
+AC_DEFUN([TEA_ADD_PRIVATE_HEADERS], [
+    vars="$@"
     for i in $vars; do
 	# check for existence, be strict because it should be present!
 	AS_IF([test ! -f "${srcdir}/$i"], [
 	    AC_MSG_ERROR([could not find header file '${srcdir}/$i'])])
 	PKG_PRIVATE_HEADERS="$PKG_PRIVATE_HEADERS $i"
     done
-    AC_SUBST(PKG_PRIVATE_HEADERS)
+    AC_SUBST(PKG_PRIVATE_HEADERS)])
+
+TEA_INIT([3.6])
+TEA_PATH_TCLCONFIG
+TEA_LOAD_TCLCONFIG
+TEA_PREFIX
+TEA_SETUP_COMPILER
+AS_IF([test "$GCC" = yes], [AC_SUBST(MT, [@:])], [AC_SUBST(MT, [mt])])
+AC_C_INLINE
+TEA_ADD_SOURCES(
+	tclOO.c tclOOCall.c tclOODefineCmds.c tclOOInfo.c tclOOMethod.c
+	tclOOStubInit.c)
+TEA_SUBST_RESOURCE("`${CYGPATH} ${srcdir}/generic`",
+	PACKAGE_NAME PKG_LIB_FILE PACKAGE_VERSION)
+TEA_ADD_STUB_SOURCES(tclOOStubLib.c)
+TEA_ADD_HEADERS(generic/tclOO.h generic/tclOODecls.h)
+TEA_ADD_PRIVATE_HEADERS(generic/tclOOInt.h generic/tclOOIntDecls.h)
 TEA_ADD_INCLUDES([-I. -I\"`${CYGPATH} ${srcdir}/generic`\"])
 TEA_PRIVATE_TCL_HEADERS
 TEA_ENABLE_THREADS
@@ -70,25 +87,22 @@ AS_IF([test "${SDX}" = "none"],[
 	# is activetcl
 	SDX="tclsh '${SDX_KIT}'"])])
 AS_IF([test "${SDX}" = "none"],[
-    AC_MSG_WARN([cannot find sdx; building starkits will fail; building as a normal library still supported])])
+    AC_MSG_WARN([cannot find sdx; building starkits will fail])
+    AC_MSG_NOTICE([building as a normal library still supported])])
 
 # TODO: Adapt this for OSX Frameworks...
 # This next bit is a bit ugly, but it makes things for tclooConfig.sh...
-eval "TCLOO_PRIVATE_INCLUDE_DIR=\"`${CYGPATH} ${srcdir}/generic`\""
-case ${TCLOO_PRIVATE_INCLUDE_DIR} in
-    /*) TCLOO_PRIVATE_INCLUDE_SPEC="-I${TCLOO_PRIVATE_INCLUDE_DIR}" ;;
-    *)  TCLOO_PRIVATE_INCLUDE_SPEC="-I`pwd`/${TCLOO_PRIVATE_INCLUDE_DIR}" ;;
-esac
 eval "TCLOO_INCLUDE_SPEC=\"-I`${CYGPATH} ${includedir}`\""
-if test ${TCL_LIB_VERSIONS_OK} = nodots; then
+AC_SUBST(TCLOO_INCLUDE_SPEC)
+eval "TCLOO_PRIVATE_INCLUDE_SPEC=\"-I`${CYGPATH} ${includedir}`\""
+AC_SUBST(TCLOO_PRIVATE_INCLUDE_SPEC)
+AS_IF([test ${TCL_LIB_VERSIONS_OK} = nodots], [
     eval "TCLOO_LIB_SPEC=\"-L`${CYGPATH} ${libdir}/${PACKAGE_NAME}${PACKAGE_VERSION}` -l${PACKAGE_NAME}${TCL_TRIM_DOTS}\""
     eval "TCLOO_STUB_LIB_SPEC=\"-L`${CYGPATH} ${libdir}/${PACKAGE_NAME}${PACKAGE_VERSION}` -l${PACKAGE_NAME}stub${TCL_TRIM_DOTS}\""
-else
+], [
     eval "TCLOO_LIB_SPEC=\"-L`${CYGPATH} ${libdir}/${PACKAGE_NAME}${PACKAGE_VERSION}` -l${PACKAGE_NAME}${PACKAGE_VERSION}\""
     eval "TCLOO_STUB_LIB_SPEC=\"-L`${CYGPATH} ${libdir}/${PACKAGE_NAME}${PACKAGE_VERSION}` -l${PACKAGE_NAME}stub${PACKAGE_VERSION}\""
-fi
-AC_SUBST(TCLOO_INCLUDE_SPEC)
-AC_SUBST(TCLOO_PRIVATE_INCLUDE_SPEC)
+])
 AC_SUBST(TCLOO_LIB_SPEC)
 AC_SUBST(TCLOO_STUB_LIB_SPEC)
 
