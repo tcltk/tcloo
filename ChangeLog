@@ -1,3 +1,9 @@
+2008-01-21  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* configure.in, aclocal.m4, Makefile.in: Clean up the configure code
+	so that it's possible to read the configure script again. Factor out
+	ensuing macro definitions into aclocal.m4 for clarity.
+
 2008-01-18  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* configure.in, Makefile.in: Add code to make the resource compiler
