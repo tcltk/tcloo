@@ -32,6 +32,7 @@ CLEANFILES=@CLEANFILES@
 EXEEXT=@EXEEXT@
 LDFLAGS_DEFAULT=@LDFLAGS_DEFAULT@
 MAKE_LIB=@MAKE_LIB@
+ADD_MANIFEST=@ADD_MANIFEST@
 MAKE_SHARED_LIB=@MAKE_SHARED_LIB@
 MAKE_STATIC_LIB=@MAKE_STATIC_LIB@
 MAKE_STUB_LIB=@MAKE_STUB_LIB@
@@ -46,6 +47,7 @@ TCL_SRC_DIR=@TCL_SRC_DIR@
 TCL_BIN_DIR=@TCL_BIN_DIR@
 # Not actually used, but can help when tracing errors
 #TCL_LIBS=@TCL_LIBS@
+#MT=@MT@
 TCLSH_PROG=@TCLSH_PROG@
 INCLUDES=@PKG_INCLUDES@ @TCL_INCLUDES@
 PKG_CFLAGS=@PKG_CFLAGS@
@@ -63,7 +65,6 @@ TCLSH_ENV=TCL_LIBRARY="`$(CYGPATH) $(TCL_SRC_DIR)/library`" \
 RC=@RC@
 RCFLAGS=@RES_DEFS@
 RES=@RES_SUFFIX@
-MT=@MT@
 
 #========================================================================
 # None of these assignments are substituted by configure
@@ -219,7 +220,7 @@ gdbtest: package libraries
 $(PKG_LIB_FILE): $(PKG_OBJECTS)
 	-rm -f $(PKG_LIB_FILE)
 	${MAKE_LIB}
-	$(MT) -manifest $(PKG_LIB_FILE).manifest "-outputresource:$(PKG_LIB_FILE);2"
+	${ADD_MANIFEST}
 	$(RANLIB) $(PKG_LIB_FILE)
 $(PKG_STUB_LIB_FILE): $(PKG_STUB_OBJECTS)
 	-rm -f $(PKG_STUB_LIB_FILE)
