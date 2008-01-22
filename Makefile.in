@@ -186,32 +186,28 @@ shell: package libraries
 	@$(TCLSH) $(SCRIPT)
 
 #========================================================================
-# These rules say how to run tclsh in a hostile Windows environment. They
-# won't work on Unix, but it's probably easier to run gdb directly on that
-# platform...
+# These rules say how to run tclsh in a hostile Windows environment, while
+# still working on Unix.
 #========================================================================
 
-gdb: package libraries
-	@echo "puts \"target exec [file attributes [file normalize [lindex \$$argv 0]] -shortname]\"" >gdbhelper.tcl
+gdb.run:
+	@echo "catch {puts \"target exec [file attributes [file normalize [lindex \$$argv 0]] -shortname]\";exit};puts \"target exec [file normalize [lindex \$$argv 0]]\"" >gdbhelper.tcl
 	@$(TCLSH) gdbhelper.tcl "$(TCLSH_PROGRAM)" > gdb.run
+	@rm gdbhelper.tcl
 	@echo "set env TCL_LIBRARY=$(TCL_SRC_DIR)/library" >> gdb.run
-	@echo "set env @LD_LIBRARY_PATH_VAR@=$(EXTRA_PATH):$(@LD_LIBRARY_PATH_VAR@)" >> gdb.run
+	@echo "set env LD_LIBRARY_PATH=$(EXTRA_PATH):$(LD_LIBRARY_PATH)" >> gdb.run
 	@echo "set env TCLLIBPATH=$(top_builddir)" >> gdb.run
-	@echo "set new-console off" >> gdb.run
+	@sh -c 'test x$${OSTYPE} = xmsys && echo "set new-console off" >> gdb.run'
+
+gdb: package libraries gdb.run
 	@echo gdb $(TCLSH_PROGRAM) $(ARGS)
 	@gdb --command=gdb.run $(ARGS)
-	@rm gdb.run gdbhelper.tcl
-gdbtest: package libraries
-	@echo "puts \"target exec [file attributes [file normalize [lindex \$$argv 0]] -shortname]\"" >gdbhelper.tcl
-	@$(TCLSH) gdbhelper.tcl "$(TCLSH_PROGRAM)" > gdb.run
-	@echo "set env TCL_LIBRARY=$(TCL_SRC_DIR)/library" >> gdb.run
-	@echo "set env @LD_LIBRARY_PATH_VAR@=$(EXTRA_PATH):$(@LD_LIBRARY_PATH_VAR@)" >> gdb.run
-	@echo "set env TCLLIBPATH=$(top_builddir)" >> gdb.run
+	@rm gdb.run
+gdbtest: package libraries gdb.run
 	@echo "set args `$(CYGPATH) $(SRC_DIR)/tests/all.tcl` $(TESTLOAD) $(TESTFLAGS)" >>gdb.run
-	@echo "set new-console off" >> gdb.run
 	@echo gdb $(TCLSH_PROGRAM) $(MANGLED)
 	@gdb --command=gdb.run
-	@rm gdb.run gdbhelper.tcl
+	@rm gdb.run
 
 #========================================================================
 # The rules for actually doing the build of the package.
