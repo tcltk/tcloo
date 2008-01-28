@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# $Id: genStubs.tcl,v 1.1 2007/05/18 13:35:56 dkf Exp $
+# $Id: genStubs.tcl,v 1.2 2008/01/28 15:32:01 dkf Exp $
 #
 # SOURCE: tcl/tools/genStubs.tcl, revision 1.17
 #
@@ -849,13 +849,15 @@ proc genStubs::init {} {
 # Results:
 #	Returns any values that were not assigned to variables.
 
-proc lassign {valueList args} {
-  if {[llength $args] == 0} {
-      error "wrong # args: lassign list varname ?varname..?"
-  }
+if {![llength [info commands lassign]]} {
+    proc lassign {valueList args} {
+	if {[llength $args] == 0} {
+	    error "wrong # args: lassign list varname ?varname..?"
+	}
 
-  uplevel [list foreach $args $valueList {break}]
-  return [lrange $valueList [llength $args] end]
+	uplevel [list foreach $args $valueList {break}]
+	return [lrange $valueList [llength $args] end]
+    }
 }
 
 genStubs::init
