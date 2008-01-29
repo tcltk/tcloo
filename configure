@@ -10281,7 +10281,7 @@ test -n "$MT" || MT="none"
 
 	if test "$MT" != none; then
 
-	    ADD_MANIFEST="${MT} -manifest \$@.manifest -outputresource:\$@;2"
+	    ADD_MANIFEST="${MT} -manifest \$@.manifest -outputresource:\$@\;2"
 
 	    CLEANFILES="$CLEANFILES ${PKG_LIB_FILE}.manifest"
 fi
