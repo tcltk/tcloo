@@ -1,6 +1,6 @@
-# $Id: configure.in,v 1.24 2008/01/21 09:34:35 dkf Exp $
+# $Id: configure.in,v 1.25 2008/01/29 14:20:10 dkf Exp $
 
-AC_REVISION($Revision: 1.24 $)
+AC_REVISION($Revision: 1.25 $)
 dnl Also *must* update generic/tclOO.h when changing the version number.
 dnl Also should update win/TclOO.rc when changing the version number.
 AC_INIT([TclOO],[0.2a0])
@@ -15,8 +15,6 @@ AC_C_INLINE
 TEA_ADD_SOURCES(
 	tclOO.c tclOOCall.c tclOODefineCmds.c tclOOInfo.c tclOOMethod.c
 	tclOOStubInit.c)
-TEAX_SUBST_RESOURCE("${srcdir}/generic",
-	PACKAGE_NAME PKG_LIB_FILE PACKAGE_VERSION)
 TEA_ADD_STUB_SOURCES(tclOOStubLib.c)
 TEA_ADD_HEADERS(generic/tclOO.h generic/tclOODecls.h)
 TEAX_ADD_PRIVATE_HEADERS(generic/tclOOInt.h generic/tclOOIntDecls.h)
@@ -25,6 +23,8 @@ TEA_PRIVATE_TCL_HEADERS
 TEA_ENABLE_THREADS
 TEA_ENABLE_SHARED
 TEA_CONFIG_CFLAGS
+TEAX_SUBST_RESOURCE("${srcdir}/generic",
+	PACKAGE_NAME PKG_LIB_FILE PACKAGE_VERSION)
 TEA_ENABLE_SYMBOLS
 
 TEA_MAKE_LIB

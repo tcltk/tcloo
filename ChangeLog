@@ -1,3 +1,10 @@
+2008-01-29  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* aclocal.m4 (TEAX_VC_MANIFEST): Added some code to switch between the
+	gcc and vc ways of writing some flags.
+	* configure.in: Move TEAX_SUBST_RESOURCE after TEA_CONFIG_CFLAGS so
+	that the detection of the resource compiler is correct. [Bug 1881216]
+
 2008-01-21  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* configure.in, aclocal.m4, Makefile.in: Clean up the configure code
