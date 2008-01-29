@@ -48,7 +48,7 @@ AC_DEFUN([TEAX_VC_MANIFEST], [
 	# This refers to "Manifest Tool" not "Magnetic Tape utility"
 	AC_CHECK_PROGS(MT, mt, none)
 	AS_IF([test "$MT" != none], [
-	    ADD_MANIFEST="${MT} -manifest [\$]@.manifest -outputresource:[\$]@;2"
+	    ADD_MANIFEST="${MT} -manifest [\$]@.manifest -outputresource:[\$]@\;2"
 	    AC_SUBST(ADD_MANIFEST)
 	    CLEANFILES="$CLEANFILES ${PKG_LIB_FILE}.manifest"])])])
 AC_DEFUN([TEAX_SDX], [
