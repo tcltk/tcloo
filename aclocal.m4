@@ -15,8 +15,8 @@ dnl rcdef_start=-D		# For testing only
 		AC_SUBST(RES_SUFFIX, [res.o])
 		PKG_OBJECTS="${PKG_OBJECTS} ${PACKAGE_NAME}.res.o" ;;
 	    rc)
-		rcdef_inc="/i "
-		rcdef_start="/d "
+		rcdef_inc="-i "
+		rcdef_start="-d "
 		rcdef_q='"'
 		AC_SUBST(RES_SUFFIX, [res])
 		PKG_OBJECTS="${PKG_OBJECTS} ${PACKAGE_NAME}.res" ;;
@@ -50,7 +50,7 @@ AC_DEFUN([TEAX_VC_MANIFEST], [
 	# This refers to "Manifest Tool" not "Magnetic Tape utility"
 	AC_CHECK_PROGS(MT, mt, none)
 	AS_IF([test "$MT" != none], [
-	    CC_OUT="/Fo[\$]@"
+	    CC_OUT="-Fo[\$]@"
 	    ADD_MANIFEST="${MT} -manifest [\$]@.manifest -outputresource:[\$]@\;2"
 	    AC_SUBST(ADD_MANIFEST)
 	    CLEANFILES="$CLEANFILES ${PKG_LIB_FILE}.manifest"])])])
