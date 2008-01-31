@@ -1,6 +1,6 @@
-# $Id: configure.in,v 1.25 2008/01/29 14:20:10 dkf Exp $
+# $Id: configure.in,v 1.26 2008/01/31 11:27:52 dkf Exp $
 
-AC_REVISION($Revision: 1.25 $)
+AC_REVISION($Revision: 1.26 $)
 dnl Also *must* update generic/tclOO.h when changing the version number.
 dnl Also should update win/TclOO.rc when changing the version number.
 AC_INIT([TclOO],[0.2a0])
@@ -18,7 +18,7 @@ TEA_ADD_SOURCES(
 TEA_ADD_STUB_SOURCES(tclOOStubLib.c)
 TEA_ADD_HEADERS(generic/tclOO.h generic/tclOODecls.h)
 TEAX_ADD_PRIVATE_HEADERS(generic/tclOOInt.h generic/tclOOIntDecls.h)
-TEA_ADD_INCLUDES([-I. -I\"`${CYGPATH} ${srcdir}/generic`\"])
+TEA_ADD_INCLUDES([-I. -I\"CygPath(${srcdir}/generic)\"])
 TEA_PRIVATE_TCL_HEADERS
 TEA_ENABLE_THREADS
 TEA_ENABLE_SHARED
@@ -30,7 +30,7 @@ TEA_ENABLE_SYMBOLS
 TEA_MAKE_LIB
 TEAX_VC_MANIFEST
 
-CLEANFILES="$CLEANFILES pkgIndex.tcl"
+TEAX_LAPPEND(CLEANFILES, pkgIndex.tcl)
 AC_SUBST(CLEANFILES)
 AC_DEFINE(USE_TCL_STUBS,[1],[Should always be 1])
 AC_DEFINE(BUILD_tcloo,[1],[Set to 1 when building package])
