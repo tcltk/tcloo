@@ -21,13 +21,14 @@ AC_DEFUN([TEAX_SUBST_RESOURCE], [
 		rcdef_start="--define "
 		rcdef_q='\"'
 		AC_SUBST(RES_SUFFIX, [res.o])
-		PKG_OBJECTS="$PKG_OBJECTS ${PACKAGE_NAME}.res.o],
+		TEAX_LAPPEND(PKG_OBJECTS, ${PACKAGE_NAME}.res.o)],
 	    rc, [
 		rcdef_inc="-i "
 		rcdef_start="-d "
 		rcdef_q='"'
 		AC_SUBST(RES_SUFFIX, [res])
-		PKG_OBJECTS="$PKG_OBJECTS ${PACKAGE_NAME}.res"],
+		TEAX_LAPPEND(RES_DEFS, -nologo)
+		TEAX_LAPPEND(PKG_OBJECTS, ${PACKAGE_NAME}.res)],
 	    *, [
 		AC_MSG_WARN([could not find resource compiler])
 		RC=: ])])
@@ -44,7 +45,7 @@ AC_DEFUN([TEAX_ADD_PRIVATE_HEADERS], [
 	# check for existence, be strict because it should be present!
 	AS_IF([test ! -f "${srcdir}/$i"], [
 	    AC_MSG_ERROR([could not find header file '${srcdir}/$i'])])
-	PKG_PRIVATE_HEADERS="$PKG_PRIVATE_HEADERS $i"])
+	TEAX_LAPPEND(PKG_PRIVATE_HEADERS, $i)])
     AC_SUBST(PKG_PRIVATE_HEADERS)])
 dnl Extra magic to make things work with Vista and VC
 AC_DEFUN([TEAX_VC_MANIFEST], [
