@@ -6247,7 +6247,7 @@ fi
 	PKG_PRIVATE_HEADERS="${PKG_PRIVATE_HEADERS} $i"; done
 
 
-    vars="-I. -I\"`${CYGPATH} ${srcdir}/generic`\""
+    vars="-I. -I\"CygPath(${srcdir}/generic)\""
     for i in $vars; do
 	PKG_INCLUDES="$PKG_INCLUDES $i"
     done
@@ -10282,7 +10282,7 @@ fi
 fi
 
 
-CLEANFILES="$CLEANFILES pkgIndex.tcl"
+CLEANFILES="${CLEANFILES} pkgIndex.tcl"
 
 
 cat >>confdefs.h <<\_ACEOF
