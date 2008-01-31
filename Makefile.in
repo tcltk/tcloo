@@ -227,7 +227,7 @@ $(PKG_STUB_LIB_FILE): $(PKG_STUB_OBJECTS)
 .c.@OBJEXT@:
 	$(COMPILE) -c `$(CYGPATH) $<` @CC_OUT@
 .rc.$(RES):
-	$(RC) -o $@ $(RCFLAGS) "$<"
+	$(RC) $@ $(RCFLAGS) "$<"
 pkgIndex.tcl: Makefile
 	-@echo Creating pkgIndex.tcl
 	@( \

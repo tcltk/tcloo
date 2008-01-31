@@ -13,35 +13,33 @@ AC_DEFUN([CygPath],[`${CYGPATH} $1`])
 
 dnl Interesting macros
 AC_DEFUN([TEAX_SUBST_RESOURCE], [
-    TEAX_IFEQ($TEA_PLATFORM, "windows", [
-	AC_CHECK_PROGS(RC, windres rc, none)
-	TEAX_SWITCH($RC,
-	    windres, [
+    TEAX_IFEQ($TEA_PLATFORM, windows, [
+	AC_CHECK_PROGS(RC_, 'windres -o' 'rc -nologo -fo', none)
+	TEAX_SWITCH($RC_,
+	    windres*, [
 		rcdef_inc="--include "
 		rcdef_start="--define "
 		rcdef_q='\"'
 		AC_SUBST(RES_SUFFIX, [res.o])
 		TEAX_LAPPEND(PKG_OBJECTS, ${PACKAGE_NAME}.res.o)],
-	    rc, [
+	    rc*, [
 		rcdef_inc="-i "
 		rcdef_start="-d "
 		rcdef_q='"'
 		AC_SUBST(RES_SUFFIX, [res])
-		TEAX_LAPPEND(RES_DEFS, -nologo)
 		TEAX_LAPPEND(PKG_OBJECTS, ${PACKAGE_NAME}.res)],
 	    *, [
 		AC_MSG_WARN([could not find resource compiler])
-		RC=: ])])
-    dirs="$1"
-    TEAX_FOREACH(i, $dirs, [
+		RC_=: ])])
+    # This next line is because of the brokenness of TEA...
+    AC_SUBST(RC, $RC_)
+    TEAX_FOREACH(i, $1, [
 	TEAX_LAPPEND(RES_DEFS, ${rcdef_inc}\"CygPath($i)\")])
-    vars="$2"
-    TEAX_FOREACH(i, $vars, [
+    TEAX_FOREACH(i, $2, [
 	TEAX_LAPPEND(RES_DEFS, ${rcdef_start}$i='${rcdef_q}\$($i)${rcdef_q}')])
     AC_SUBST(RES_DEFS)])
 AC_DEFUN([TEAX_ADD_PRIVATE_HEADERS], [
-    vars="$@"
-    TEAX_FOREACH(i, $vars, [
+    TEAX_FOREACH(i, $@, [
 	# check for existence, be strict because it should be present!
 	AS_IF([test ! -f "${srcdir}/$i"], [
 	    AC_MSG_ERROR([could not find header file '${srcdir}/$i'])])
