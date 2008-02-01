@@ -1,3 +1,7 @@
+2008-02-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* aclocal.m4: Adjusted to get quoting right.
+
 2008-01-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* aclocal.m4: Ugh, msys make does / munging! [Bug 1881216] again.
