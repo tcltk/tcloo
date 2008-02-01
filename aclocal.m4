@@ -13,6 +13,7 @@ AC_DEFUN([CygPath],[`${CYGPATH} $1`])
 
 dnl Interesting macros
 AC_DEFUN([TEAX_SUBST_RESOURCE], [
+    AC_REQUIRE([TEA_CONFIG_CFLAGS])dnl
     TEAX_IFEQ($TEA_PLATFORM, windows, [
 	AC_CHECK_PROGS(RC_, 'windres -o' 'rc -nologo -fo', none)
 	TEAX_SWITCH($RC_,
@@ -53,7 +54,7 @@ AC_DEFUN([TEAX_VC_MANIFEST], [
 	    -a "$GCC" != yes \
 	    -a "${SHARED_BUILD}" = 1], [
 	# This refers to "Manifest Tool" not "Magnetic Tape utility"
-	AC_CHECK_PROGS(MT, mt, none)
+	AC_CHECK_PROGS(MT, "mt -nologo", none)
 	TEAX_IFNEQ($MT, none, [
 	    CC_OUT="-Fo[\$]@"
 	    ADD_MANIFEST="${MT} -manifest [\$]@.manifest -outputresource:[\$]@\;2"
