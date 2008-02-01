@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.8 2008/01/16 10:46:33 dkf Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.9 2008/02/01 17:16:03 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -45,21 +45,23 @@ static void		AddClassFiltersToCallContext(Object *const oPtr,
 			    Tcl_HashTable *const doneFilters);
 static void		AddClassMethodNames(Class *clsPtr, const int flags,
 			    Tcl_HashTable *const namesPtr);
-static inline void	AddMethodToCallChain(Method *mPtr,
-			    struct ChainBuilder *cbPtr,
-			    Tcl_HashTable *doneFilters, Class *filterDecl);
-static inline void	AddSimpleChainToCallContext(Object *oPtr,
-			    Tcl_Obj *methodNameObj,
+static inline void	AddMethodToCallChain(Method *const mPtr,
 			    struct ChainBuilder *const cbPtr,
-			    Tcl_HashTable *doneFilters, int isPublic,
-			    Class *filterDecl);
+			    Tcl_HashTable *const doneFilters,
+			    Class *const filterDecl);
+static inline void	AddSimpleChainToCallContext(Object *const oPtr,
+			    Tcl_Obj *const methodNameObj,
+			    struct ChainBuilder *const cbPtr,
+			    Tcl_HashTable *const doneFilters, int flags,
+			    Class *const filterDecl);
 static void		AddSimpleClassChainToCallContext(Class *classPtr,
 			    Tcl_Obj *const methodNameObj,
 			    struct ChainBuilder *const cbPtr,
-			    Tcl_HashTable *const doneFilters, int isPublic,
-			    Class *filterDecl);
+			    Tcl_HashTable *const doneFilters, int flags,
+			    Class *const filterDecl);
 static int		CmpStr(const void *ptr1, const void *ptr2);
-static void		InitClassHierarchy(Foundation *fPtr, Class *classPtr);
+static void		InitClassHierarchy(Foundation *const fPtr,
+			    Class *const classPtr);
 static void		DupMethodNameRep(Tcl_Obj *srcPtr, Tcl_Obj *dstPtr);
 static void		FreeMethodNameRep(Tcl_Obj *objPtr);
 
@@ -248,8 +250,8 @@ TclOOInvokeContext(
 
 static void
 InitClassHierarchy(
-    Foundation *fPtr,
-    Class *classPtr)
+    Foundation *const fPtr,
+    Class *const classPtr)
 {
     if (classPtr == fPtr->objectCls) {
 	return;
@@ -552,14 +554,17 @@ AddClassMethodNames(
 
 static inline void
 AddSimpleChainToCallContext(
-    Object *oPtr,		/* Object to add call chain entries for. */
-    Tcl_Obj *methodNameObj,	/* Name of method to add the call chain
+    Object *const oPtr,		/* Object to add call chain entries for. */
+    Tcl_Obj *const methodNameObj,
+				/* Name of method to add the call chain
 				 * entries for. */
-    struct ChainBuilder *cbPtr,	/* Where to add the call chain entries. */
-    Tcl_HashTable *doneFilters,	/* Where to record what call chain entries
+    struct ChainBuilder *const cbPtr,
+				/* Where to add the call chain entries. */
+    Tcl_HashTable *const doneFilters,
+				/* Where to record what call chain entries
 				 * have been processed. */
     int flags,			/* What sort of call chain are we building. */
-    Class *filterDecl)		/* The class that declared the filter. If
+    Class *const filterDecl)	/* The class that declared the filter. If
 				 * NULL, either the filter was declared by the
 				 * object or this isn't a filter. */
 {
@@ -626,15 +631,17 @@ AddSimpleChainToCallContext(
 
 static inline void
 AddMethodToCallChain(
-    Method *mPtr,		/* Actual method implementation to add to call
+    Method *const mPtr,		/* Actual method implementation to add to call
 				 * chain (or NULL, a no-op). */
-    struct ChainBuilder *cbPtr,	/* The call chain to add the method
+    struct ChainBuilder *const cbPtr,
+				/* The call chain to add the method
 				 * implementation to. */
-    Tcl_HashTable *doneFilters,	/* Where to record what filters have been
+    Tcl_HashTable *const doneFilters,
+				/* Where to record what filters have been
 				 * processed. If NULL, not processing filters.
 				 * Note that this function does not update
 				 * this hashtable. */
-    Class *filterDecl)		/* The class that declared the filter. If
+    Class *const filterDecl)	/* The class that declared the filter. If
 				 * NULL, either the filter was declared by the
 				 * object or this isn't a filter. */
 {
@@ -959,7 +966,7 @@ AddSimpleClassChainToCallContext(
 				/* Where to record what call chain entries
 				 * have been processed. */
     int flags,			/* What sort of call chain are we building. */
-    Class *filterDecl)		/* The class that declared the filter. If
+    Class *const filterDecl)	/* The class that declared the filter. If
 				 * NULL, either the filter was declared by the
 				 * object or this isn't a filter. */
 {

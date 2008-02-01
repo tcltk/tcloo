@@ -1,3 +1,9 @@
+2008-02-01  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOCall.c: Adjust function declarations (to enable better
+	optimization) and ensure that the declarations and function defs match
+	correctly (VC is picky about this).
+
 2008-02-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* aclocal.m4: Adjusted to get quoting right.
