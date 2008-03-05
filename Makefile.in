@@ -199,7 +199,7 @@ gdb.run:
 	@echo "set env TCL_LIBRARY=$(TCL_SRC_DIR)/library" >> gdb.run
 	@echo "set env LD_LIBRARY_PATH=$(EXTRA_PATH):$(LD_LIBRARY_PATH)" >> gdb.run
 	@echo "set env TCLLIBPATH=$(top_builddir)" >> gdb.run
-	@sh -c 'test x$${OSTYPE} = xmsys && echo "set new-console off" >> gdb.run'
+	@sh -c 'test x$${OSTYPE} = xmsys && echo "set new-console off" >> gdb.run' || true
 
 gdb: package libraries gdb.run
 	@echo gdb $(TCLSH_PROGRAM) $(ARGS)
