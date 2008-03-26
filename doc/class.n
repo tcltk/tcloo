@@ -4,14 +4,14 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: class.n,v 1.4 2007/06/11 12:25:40 dkf Exp $
+'\" RCS: @(#) $Id: class.n,v 1.5 2008/03/26 09:48:46 dkf Exp $
 '\"
 .so man.macros
 .TH class n 0.1 TclOO "TclOO Commands"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-class \- class of all classes
+oo::class \- class of all classes
 .SH SYNOPSIS
 .nf
 package require TclOO
@@ -116,11 +116,11 @@ fruit destroy
 $b eat               \fI\(-> error "unknown command"\fR
 .CE
 .SH "SEE ALSO"
-define(n), object(n)
+oo::define(n), oo::object(n)
 .SH KEYWORDS
-.I TODO
+class, metaclass, object
 
-\" Local variables:
-\" mode: nroff
-\" fill-column: 78
-\" End:
+.\" Local variables:
+.\" mode: nroff
+.\" fill-column: 78
+.\" End:

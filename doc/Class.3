@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: Class.3,v 1.7 2008/01/06 15:10:16 dkf Exp $
+'\" RCS: @(#) $Id: Class.3,v 1.8 2008/03/26 09:48:46 dkf Exp $
 '\"
 .so man.macros
 .TH Tcl_Class 3 0.1 TclOO "TclOO Library Functions"
@@ -108,7 +108,7 @@ namespace may be retrieved using the \fBTcl_GetObjectNamespace\fR function.
 .PP
 Instances of classes are created using \fBTcl_NewObjectInstance\fR, which
 takes creates an object from any class (and which is internally called by both
-the \fBcreate\fR and \fbnew\fR methods of the \fBoo::class\fR class). It takes
+the \fBcreate\fR and \fBnew\fR methods of the \fBoo::class\fR class). It takes
 parameters that optionally give the name of the object and namespace to
 create, and which describe the arguments to pass to to the class's constructor
 (if any). The result of the function will be either a reference to the newly
@@ -219,11 +219,11 @@ never NULL); this variable may be updated by the callback. The
 the method being invoked, as provided by the user; this object may be updated
 by the callback.
 .SH "SEE ALSO"
-class(n), copy(n), define(n), Method(3), object(n)
+Method(3), oo::class(n), oo::copy(n), oo::define(n), oo::object(n)
 .SH KEYWORDS
-.I TODO
+class, constructor, object
 
-\" Local variables:
-\" mode: nroff
-\" fill-column: 78
-\" End:
+.\" Local variables:
+.\" mode: nroff
+.\" fill-column: 78
+.\" End:
