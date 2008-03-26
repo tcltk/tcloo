@@ -4,14 +4,14 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: copy.n,v 1.3 2007/06/02 12:09:31 dkf Exp $
+'\" RCS: @(#) $Id: copy.n,v 1.4 2008/03/26 09:48:46 dkf Exp $
 '\"
 .so man.macros
 .TH copy n 0.1 TclOO "TclOO Commands"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-copy \- create copies of objects and classes
+oo::copy \- create copies of objects and classes
 .SH SYNOPSIS
 .nf
 package require TclOO
@@ -44,11 +44,11 @@ src msg              \fI\(-> prints "bar"\fR
 dst msg              \fI\(-> prints "foo"\fR
 .CE
 .SH "SEE ALSO"
-class(n), define(n), object(n)
+oo::class(n), oo::define(n), oo::object(n)
 .SH KEYWORDS
-.I TODO
+clone, copy, duplication, object
 
-\" Local variables:
-\" mode: nroff
-\" fill-column: 78
-\" End:
+.\" Local variables:
+.\" mode: nroff
+.\" fill-column: 78
+.\" End:
