@@ -8,9 +8,12 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.32 2008/01/09 10:11:53 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.33 2008/04/02 14:41:13 dkf Exp $
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 #include "tclInt.h"
 #include "tclOOInt.h"
 

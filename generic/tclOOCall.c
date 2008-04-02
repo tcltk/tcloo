@@ -9,9 +9,12 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.9 2008/02/01 17:16:03 dkf Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.10 2008/04/02 14:41:13 dkf Exp $
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 #include "tclInt.h"
 #include "tclOOInt.h"
 

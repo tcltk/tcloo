@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.9 2008/01/15 15:55:59 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.10 2008/04/02 14:41:17 dkf Exp $
 
 lappend auto_path .
 package require TclOO
@@ -748,7 +748,6 @@ test oo-14.3 {OO and mixins and filters - advanced case} -setup {
     oo::define i method bar {} {return foobar}
     i bar
 } -cleanup {
-    c destroy
     mix destroy
 } -result >>foobar<<
 test oo-14.4 {OO: mixin error case} -setup {
@@ -758,6 +757,24 @@ test oo-14.4 {OO: mixin error case} -setup {
 } -returnCodes error -cleanup {
     c destroy
 } -result {may not mix a class into itself}
+test oo-14.5 {OO and mixins and filters - advanced case} -setup {
+    oo::class create mix
+    oo::class create c {
+	mixin mix
+    }
+    c create i
+} -constraints {knownBug} -body {
+    oo::define mix {
+	method foo {} {return >>[next]<<}
+	filter foo
+    }
+    oo::define i method bar {} {return foobar}
+    i bar
+} -cleanup {
+    c destroy
+    # Disconnecting somehow goes wrong...
+    mix destroy
+} -result >>foobar<<
 
 test oo-15.1 {OO: object cloning} {
     oo::class create Aclass

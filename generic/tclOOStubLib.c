@@ -1,8 +1,11 @@
 /*
- * $Id: tclOOStubLib.c,v 1.3 2008/01/06 02:15:26 dkf Exp $
+ * $Id: tclOOStubLib.c,v 1.4 2008/04/02 14:41:16 dkf Exp $
  * ORIGINAL SOURCE: tk/generic/tkStubLib.c, version 1.9 2004/03/17
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 #include "tcl.h"
 
 #define USE_TCLOO_STUBS 1
