@@ -8,9 +8,12 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.12 2008/01/06 15:10:20 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.13 2008/04/02 14:41:14 dkf Exp $
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 #include "tclInt.h"
 #include "tclOOInt.h"
 

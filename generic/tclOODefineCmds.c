@@ -9,9 +9,12 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.6 2008/01/16 10:46:33 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.7 2008/04/02 14:41:13 dkf Exp $
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 #include "tclInt.h"
 #include "tclOOInt.h"
 

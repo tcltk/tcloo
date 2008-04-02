@@ -1,3 +1,11 @@
+2008-04-02  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* tests/oo.test: Fixed crashing test by doing a version that works and
+	marking the failing version as a known bug.
+
+	* configure.in, config.h.in, generic/*.c: Changed to use autoheader
+	rather than a slew of configure parameters.
+
 2008-03-26  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/*: Fixes for documentation bugs found when using Tcl's HTML

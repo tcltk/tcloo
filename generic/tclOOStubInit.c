@@ -1,10 +1,13 @@
 /*
- * $Id: tclOOStubInit.c,v 1.10 2008/01/16 10:47:21 dkf Exp $
+ * $Id: tclOOStubInit.c,v 1.11 2008/04/02 14:41:16 dkf Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  * It is compiled and linked in with the tclOO package proper.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 #include "tclOO.h"
 #include "tclOOInt.h"
 
