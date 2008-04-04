@@ -1,5 +1,5 @@
 /*
- * $Id: tclOODecls.h,v 1.15 2008/01/16 10:47:21 dkf Exp $
+ * $Id: tclOODecls.h,v 1.16 2008/04/04 15:22:28 dkf Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  */
@@ -55,14 +55,14 @@ TCLOOAPI int		Tcl_MethodIsType (Tcl_Method method,
 /* 10 */
 TCLOOAPI Tcl_Obj *	Tcl_MethodName (Tcl_Method method);
 /* 11 */
-TCLOOAPI Tcl_Method	Tcl_NewMethod (Tcl_Interp * interp, 
+TCLOOAPI Tcl_Method	Tcl_NewInstanceMethod (Tcl_Interp * interp, 
 				Tcl_Object object, Tcl_Obj * nameObj, 
 				int isPublic, const Tcl_MethodType * typePtr, 
 				ClientData clientData);
 /* 12 */
-TCLOOAPI Tcl_Method	Tcl_NewClassMethod (Tcl_Interp * interp, 
-				Tcl_Class cls, Tcl_Obj * nameObj, 
-				int isPublic, const Tcl_MethodType * typePtr, 
+TCLOOAPI Tcl_Method	Tcl_NewMethod (Tcl_Interp * interp, Tcl_Class cls, 
+				Tcl_Obj * nameObj, int isPublic, 
+				const Tcl_MethodType * typePtr, 
 				ClientData clientData);
 /* 13 */
 TCLOOAPI Tcl_Object	Tcl_NewObjectInstance (Tcl_Interp * interp, 
@@ -131,8 +131,8 @@ typedef struct TclOOStubs {
     int (*tcl_MethodIsPublic) (Tcl_Method method); /* 8 */
     int (*tcl_MethodIsType) (Tcl_Method method, const Tcl_MethodType * typePtr, ClientData * clientDataPtr); /* 9 */
     Tcl_Obj * (*tcl_MethodName) (Tcl_Method method); /* 10 */
-    Tcl_Method (*tcl_NewMethod) (Tcl_Interp * interp, Tcl_Object object, Tcl_Obj * nameObj, int isPublic, const Tcl_MethodType * typePtr, ClientData clientData); /* 11 */
-    Tcl_Method (*tcl_NewClassMethod) (Tcl_Interp * interp, Tcl_Class cls, Tcl_Obj * nameObj, int isPublic, const Tcl_MethodType * typePtr, ClientData clientData); /* 12 */
+    Tcl_Method (*tcl_NewInstanceMethod) (Tcl_Interp * interp, Tcl_Object object, Tcl_Obj * nameObj, int isPublic, const Tcl_MethodType * typePtr, ClientData clientData); /* 11 */
+    Tcl_Method (*tcl_NewMethod) (Tcl_Interp * interp, Tcl_Class cls, Tcl_Obj * nameObj, int isPublic, const Tcl_MethodType * typePtr, ClientData clientData); /* 12 */
     Tcl_Object (*tcl_NewObjectInstance) (Tcl_Interp * interp, Tcl_Class cls, const char * nameStr, const char * nsNameStr, int objc, Tcl_Obj *const * objv, int skip); /* 13 */
     int (*tcl_ObjectDeleted) (Tcl_Object object); /* 14 */
     int (*tcl_ObjectContextIsFiltering) (Tcl_ObjectContext context); /* 15 */
@@ -208,13 +208,13 @@ extern const TclOOStubs *tclOOStubsPtr;
 #define Tcl_MethodName \
 	(tclOOStubsPtr->tcl_MethodName) /* 10 */
 #endif
+#ifndef Tcl_NewInstanceMethod
+#define Tcl_NewInstanceMethod \
+	(tclOOStubsPtr->tcl_NewInstanceMethod) /* 11 */
+#endif
 #ifndef Tcl_NewMethod
 #define Tcl_NewMethod \
-	(tclOOStubsPtr->tcl_NewMethod) /* 11 */
-#endif
-#ifndef Tcl_NewClassMethod
-#define Tcl_NewClassMethod \
-	(tclOOStubsPtr->tcl_NewClassMethod) /* 12 */
+	(tclOOStubsPtr->tcl_NewMethod) /* 12 */
 #endif
 #ifndef Tcl_NewObjectInstance
 #define Tcl_NewObjectInstance \

@@ -1,5 +1,5 @@
 # -*- tcl -*-
-# $Id: tclOO.decls,v 1.12 2008/01/16 10:46:33 dkf Exp $
+# $Id: tclOO.decls,v 1.13 2008/04/04 15:21:41 dkf Exp $
 
 # public API
 library tclOO
@@ -44,12 +44,12 @@ declare 10 current {
     Tcl_Obj *Tcl_MethodName(Tcl_Method method)
 }
 declare 11 current {
-    Tcl_Method Tcl_NewMethod(Tcl_Interp *interp, Tcl_Object object,
+    Tcl_Method Tcl_NewInstanceMethod(Tcl_Interp *interp, Tcl_Object object,
 	    Tcl_Obj *nameObj, int isPublic, const Tcl_MethodType *typePtr,
 	    ClientData clientData)
 }
 declare 12 current {
-    Tcl_Method Tcl_NewClassMethod(Tcl_Interp *interp, Tcl_Class cls,
+    Tcl_Method Tcl_NewMethod(Tcl_Interp *interp, Tcl_Class cls,
 	    Tcl_Obj *nameObj, int isPublic, const Tcl_MethodType *typePtr,
 	    ClientData clientData)
 }
@@ -115,24 +115,24 @@ declare 0 current {
     Tcl_Object TclOOGetDefineCmdContext(Tcl_Interp *interp)
 }
 declare 1 current {
-    Tcl_Method TclOOMakeProcObjectMethod(Tcl_Interp *interp, Object *oPtr,
+    Tcl_Method TclOOMakeProcInstanceMethod(Tcl_Interp *interp, Object *oPtr,
 	    int flags, Tcl_Obj *nameObj, Tcl_Obj *argsObj, Tcl_Obj *bodyObj,
 	    const Tcl_MethodType *typePtr, ClientData clientData,
 	    Proc **procPtrPtr)
 }
 declare 2 current {
-    Tcl_Method TclOOMakeProcClassMethod(Tcl_Interp *interp, Class *clsPtr,
+    Tcl_Method TclOOMakeProcMethod(Tcl_Interp *interp, Class *clsPtr,
 	    int flags, Tcl_Obj *nameObj, const char *namePtr,
 	    Tcl_Obj *argsObj, Tcl_Obj *bodyObj, const Tcl_MethodType *typePtr,
 	    ClientData clientData, Proc **procPtrPtr)
 }
 declare 3 current {
-    Method *TclOONewProcMethod(Tcl_Interp *interp, Object *oPtr, int flags,
-	    Tcl_Obj *nameObj, Tcl_Obj *argsObj, Tcl_Obj *bodyObj,
+    Method *TclOONewProcInstanceMethod(Tcl_Interp *interp, Object *oPtr,
+	    int flags, Tcl_Obj *nameObj, Tcl_Obj *argsObj, Tcl_Obj *bodyObj,
 	    ProcedureMethod **pmPtrPtr)
 }
 declare 4 current {
-    Method *TclOONewProcClassMethod(Tcl_Interp *interp, Class *clsPtr,
+    Method *TclOONewProcMethod(Tcl_Interp *interp, Class *clsPtr,
 	    int flags, Tcl_Obj *nameObj, Tcl_Obj *argsObj, Tcl_Obj *bodyObj,
 	    ProcedureMethod **pmPtrPtr)
 }
@@ -145,11 +145,11 @@ declare 6 current {
     int TclOOIsReachable(Class *targetPtr, Class *startPtr)
 }
 declare 7 current {
-    Method *TclOONewForwardClassMethod(Tcl_Interp *interp, Class *clsPtr,
+    Method *TclOONewForwardMethod(Tcl_Interp *interp, Class *clsPtr,
 	    int isPublic, Tcl_Obj *nameObj, Tcl_Obj *prefixObj)
 }
 declare 8 current {
-    Method *TclOONewForwardMethod(Tcl_Interp *interp, Object *oPtr,
+    Method *TclOONewForwardInstanceMethod(Tcl_Interp *interp, Object *oPtr,
 	    int isPublic, Tcl_Obj *nameObj, Tcl_Obj *prefixObj)
 }
 declare 9 current {
@@ -160,7 +160,7 @@ declare 9 current {
 	    Tcl_Obj *bodyObj, int flags, void **internalTokenPtr)
 }
 declare 10 current {
-    Tcl_Method TclOONewProcClassMethodEx(Tcl_Interp *interp, Tcl_Class clsPtr,
+    Tcl_Method TclOONewProcMethodEx(Tcl_Interp *interp, Tcl_Class clsPtr,
 	    TclOO_PreCallProc preCallPtr, TclOO_PostCallProc postCallPtr,
 	    ProcErrorProc errProc, ClientData clientData, Tcl_Obj *nameObj,
 	    Tcl_Obj *argsObj, Tcl_Obj *bodyObj, int flags,

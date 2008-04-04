@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.7 2008/04/02 14:41:13 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.8 2008/04/04 15:22:28 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -217,7 +217,7 @@ TclOODefineConstructorObjCmd(
 	 * Create the method structure.
 	 */
 
-	method = (Tcl_Method) TclOONewProcClassMethod(interp, clsPtr,
+	method = (Tcl_Method) TclOONewProcMethod(interp, clsPtr,
 		PUBLIC_METHOD, NULL, objv[1], objv[2], NULL);
 	if (method == NULL) {
 	    return TCL_ERROR;
@@ -275,7 +275,7 @@ TclOODefineDestructorObjCmd(
 	 * Create the method structure.
 	 */
 
-	method = (Tcl_Method) TclOONewProcClassMethod(interp, clsPtr,
+	method = (Tcl_Method) TclOONewProcMethod(interp, clsPtr,
 		PUBLIC_METHOD, NULL, NULL, objv[1], NULL);
 	if (method == NULL) {
 	    return TCL_ERROR;
@@ -509,10 +509,10 @@ TclOODefineForwardObjCmd(
 
     prefixObj = Tcl_NewListObj(objc-2, objv+2);
     if (isSelfForward) {
-	mPtr = TclOONewForwardMethod(interp, oPtr, isPublic, objv[1],
+	mPtr = TclOONewForwardInstanceMethod(interp, oPtr, isPublic, objv[1],
 		prefixObj);
     } else {
-	mPtr = TclOONewForwardClassMethod(interp, oPtr->classPtr, isPublic,
+	mPtr = TclOONewForwardMethod(interp, oPtr->classPtr, isPublic,
 		objv[1], prefixObj);
     }
     if (mPtr == NULL) {
@@ -555,10 +555,10 @@ TclOODefineMethodObjCmd(
 		? PUBLIC_METHOD : 0;
 
 	if (isSelfMethod) {
-	    mPtr = TclOONewProcMethod(interp, oPtr, isPublic, objv[1],
+	    mPtr = TclOONewProcInstanceMethod(interp, oPtr, isPublic, objv[1],
 		    objv[2], objv[3], NULL);
 	} else {
-	    mPtr = TclOONewProcClassMethod(interp, oPtr->classPtr, isPublic,
+	    mPtr = TclOONewProcMethod(interp, oPtr->classPtr, isPublic,
 		    objv[1], objv[2], objv[3], NULL);
 	}
 	if (mPtr == NULL) {

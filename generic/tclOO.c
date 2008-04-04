@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.33 2008/04/02 14:41:13 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.34 2008/04/04 15:22:28 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -309,10 +309,10 @@ InitFoundation(
      */
 
     for (i=0 ; objMethods[i].name ; i++) {
-	TclOONewBasicClassMethod(interp, fPtr->objectCls, &objMethods[i]);
+	TclOONewBasicMethod(interp, fPtr->objectCls, &objMethods[i]);
     }
     for (i=0 ; clsMethods[i].name ; i++) {
-	TclOONewBasicClassMethod(interp, fPtr->classCls, &clsMethods[i]);
+	TclOONewBasicMethod(interp, fPtr->classCls, &clsMethods[i]);
     }
 
     /*
@@ -322,7 +322,7 @@ InitFoundation(
      */
 
     namePtr = Tcl_NewStringObj("new", -1);
-    Tcl_NewMethod(interp, (Tcl_Object) fPtr->classCls->thisPtr,
+    Tcl_NewInstanceMethod(interp, (Tcl_Object) fPtr->classCls->thisPtr,
 	    namePtr /* keeps ref */, 0 /* ==private */, NULL, NULL);
 
     argsPtr = Tcl_NewStringObj("{definitionScript {}}", -1);
@@ -333,7 +333,7 @@ InitFoundation(
 	    "dict set opt -errorline 0xdeadbeef\n"
 	    "}\n"
 	    "return -options $opt $msg", -1);
-    fPtr->classCls->constructorPtr = TclOONewProcClassMethod(interp,
+    fPtr->classCls->constructorPtr = TclOONewProcMethod(interp,
 	    fPtr->classCls, 0, NULL, argsPtr, bodyPtr, NULL);
 }
 
@@ -1496,7 +1496,7 @@ CloneObjectMethod(
     Tcl_Obj *namePtr)
 {
     if (mPtr->typePtr == NULL) {
-	(void) Tcl_NewMethod(interp, (Tcl_Object) oPtr, namePtr,
+	(void) Tcl_NewInstanceMethod(interp, (Tcl_Object) oPtr, namePtr,
 		mPtr->flags & PUBLIC_METHOD, NULL, NULL);
     } else if (mPtr->typePtr->cloneProc) {
 	ClientData newClientData;
@@ -1505,10 +1505,10 @@ CloneObjectMethod(
 		&newClientData) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	(void) Tcl_NewMethod(interp, (Tcl_Object) oPtr, namePtr,
+	(void) Tcl_NewInstanceMethod(interp, (Tcl_Object) oPtr, namePtr,
 		mPtr->flags & PUBLIC_METHOD, mPtr->typePtr, newClientData);
     } else {
-	(void) Tcl_NewMethod(interp, (Tcl_Object) oPtr, namePtr,
+	(void) Tcl_NewInstanceMethod(interp, (Tcl_Object) oPtr, namePtr,
 		mPtr->flags & PUBLIC_METHOD, mPtr->typePtr, mPtr->clientData);
     }
     return TCL_OK;
@@ -1525,7 +1525,7 @@ CloneClassMethod(
     Method *m2Ptr;
 
     if (mPtr->typePtr == NULL) {
-	m2Ptr = (Method *) Tcl_NewClassMethod(interp, (Tcl_Class) clsPtr,
+	m2Ptr = (Method *) Tcl_NewMethod(interp, (Tcl_Class) clsPtr,
 		namePtr, mPtr->flags & PUBLIC_METHOD, NULL, NULL);
     } else if (mPtr->typePtr->cloneProc) {
 	ClientData newClientData;
@@ -1534,11 +1534,11 @@ CloneClassMethod(
 		&newClientData) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	m2Ptr = (Method *) Tcl_NewClassMethod(interp, (Tcl_Class) clsPtr,
+	m2Ptr = (Method *) Tcl_NewMethod(interp, (Tcl_Class) clsPtr,
 		namePtr, mPtr->flags & PUBLIC_METHOD, mPtr->typePtr,
 		newClientData);
     } else {
-	m2Ptr = (Method *) Tcl_NewClassMethod(interp, (Tcl_Class) clsPtr,
+	m2Ptr = (Method *) Tcl_NewMethod(interp, (Tcl_Class) clsPtr,
 		namePtr, mPtr->flags & PUBLIC_METHOD, mPtr->typePtr,
 		mPtr->clientData);
     }
