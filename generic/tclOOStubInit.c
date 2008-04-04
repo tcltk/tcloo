@@ -1,5 +1,5 @@
 /*
- * $Id: tclOOStubInit.c,v 1.11 2008/04/02 14:41:16 dkf Exp $
+ * $Id: tclOOStubInit.c,v 1.12 2008/04/04 15:22:28 dkf Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  * It is compiled and linked in with the tclOO package proper.
@@ -29,8 +29,8 @@ TclOOStubs tclOOStubs = {
     Tcl_MethodIsPublic, /* 8 */
     Tcl_MethodIsType, /* 9 */
     Tcl_MethodName, /* 10 */
-    Tcl_NewMethod, /* 11 */
-    Tcl_NewClassMethod, /* 12 */
+    Tcl_NewInstanceMethod, /* 11 */
+    Tcl_NewMethod, /* 12 */
     Tcl_NewObjectInstance, /* 13 */
     Tcl_ObjectDeleted, /* 14 */
     Tcl_ObjectContextIsFiltering, /* 15 */
@@ -54,16 +54,16 @@ TclOOIntStubs tclOOIntStubs = {
     TCLOOINT_STUBS_REVISION,
     0,
     TclOOGetDefineCmdContext, /* 0 */
-    TclOOMakeProcObjectMethod, /* 1 */
-    TclOOMakeProcClassMethod, /* 2 */
-    TclOONewProcMethod, /* 3 */
-    TclOONewProcClassMethod, /* 4 */
+    TclOOMakeProcInstanceMethod, /* 1 */
+    TclOOMakeProcMethod, /* 2 */
+    TclOONewProcInstanceMethod, /* 3 */
+    TclOONewProcMethod, /* 4 */
     TclOOObjectCmdCore, /* 5 */
     TclOOIsReachable, /* 6 */
-    TclOONewForwardClassMethod, /* 7 */
-    TclOONewForwardMethod, /* 8 */
+    TclOONewForwardMethod, /* 7 */
+    TclOONewForwardInstanceMethod, /* 8 */
     TclOONewProcInstanceMethodEx, /* 9 */
-    TclOONewProcClassMethodEx, /* 10 */
+    TclOONewProcMethodEx, /* 10 */
     TclOOInvokeObject, /* 11 */
     TclOOObjectSetFilters, /* 12 */
     TclOOClassSetFilters, /* 13 */

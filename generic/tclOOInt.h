@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.17 2008/01/16 10:46:33 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.18 2008/04/04 15:22:28 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -396,8 +396,8 @@ MODULE_SCOPE void	TclOOInitInfo(Tcl_Interp *interp);
 MODULE_SCOPE int	TclOOInvokeContext(Tcl_Interp *interp,
 			    CallContext *contextPtr, int objc,
 			    Tcl_Obj *const *objv);
-MODULE_SCOPE void	TclOONewBasicClassMethod(Tcl_Interp *interp,
-			    Class *clsPtr, const DeclaredClassMethod *dcm);
+MODULE_SCOPE void	TclOONewBasicMethod(Tcl_Interp *interp, Class *clsPtr,
+			    const DeclaredClassMethod *dcm);
 MODULE_SCOPE Tcl_Obj *	TclOOObjectName(Tcl_Interp *interp, Object *oPtr);
 MODULE_SCOPE void	TclOORemoveFromInstances(Object *oPtr, Class *clsPtr);
 MODULE_SCOPE void	TclOORemoveFromMixinSubs(Class *subPtr,

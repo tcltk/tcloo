@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: Class.3,v 1.8 2008/03/26 09:48:46 dkf Exp $
+'\" RCS: @(#) $Id: Class.3,v 1.9 2008/04/04 15:21:43 dkf Exp $
 '\"
 .so man.macros
 .TH Tcl_Class 3 0.1 TclOO "TclOO Library Functions"
@@ -53,9 +53,9 @@ ClientData
 Tcl_ObjectMapMethodNameProc
 \fBTcl_ObjectGetMethodNameMapper\fR(\fIobject\fR)
 .sp
-\fBTcl_ObjectSetMethodNameMapper\fR(\fIobject\fR, \fImapMethodNameProc\fR)
+\fBTcl_ObjectSetMethodNameMapper\fR(\fIobject\fR, \fImethodNameMapper\fR)
 .SH ARGUMENTS
-.AS "Tcl_ObjectMapMethodNameProc" "mapMethodNameProc" in/out
+.AS ClientData metadata in/out
 .AP Tcl_Interp *interp in/out
 Interpreter providing the context for looking up or creating an object, and
 into whose result error messages will be written on failure.
@@ -84,7 +84,7 @@ retrieved with \fBTcl_ClassGetMetadata\fR.
 .AP ClientData metadata in
 An item of metadata to attach to the class, or NULL to remove the metadata
 associated with a particular \fImetaTypePtr\fR.
-.AP "Tcl_ObjectMapMethodNameProc" "mapMethodNameProc"
+.AP "Tcl_ObjectMapMethodNameProc" "methodNameMapper" in
 A pointer to a function to call to adjust the mapping of objects and method
 names to implementations, or NULL when no such mapping is required.
 .BE
@@ -137,12 +137,12 @@ remove a piece of metadata that was not attached.
 The contents of the Tcl_ObjectMetadataType structure are as follows:
 .PP
 .CS
-typedef const struct {
-    int \fIversion\fR;
-    const char *\fIname\fR;
-    Tcl_ObjectMetadataDeleteProc \fIdeleteProc\fR;
-    Tcl_CloneProc \fIcloneProc\fR;
-} \fBTcl_ObjectMetadataType\fR;
+ typedef const struct {
+     int \fIversion\fR;
+     const char *\fIname\fR;
+     Tcl_ObjectMetadataDeleteProc \fIdeleteProc\fR;
+     Tcl_CloneProc \fIcloneProc\fR;
+ } \fBTcl_ObjectMetadataType\fR;
 .CE
 .PP
 The \fIversion\fR field allows for future expansion of the structure, and
@@ -165,8 +165,8 @@ Functions matching this signature are used to delete metadata associated with
 a class or object.
 .PP
 .CS
-typedef void (*\fBTcl_ObjectMetadataDeleteProc\fR) (
-        ClientData \fImetadata\fR);
+ typedef void (*\fBTcl_ObjectMetadataDeleteProc\fR) (
+         ClientData \fImetadata\fR);
 .CE
 .PP
 The \fImetadata\fR argument gives the address of the metadata to be
@@ -177,10 +177,10 @@ Functions matching this signature are used to create copies of metadata
 associated with a class or object.
 .PP
 .CS
-typedef int (*\fBTcl_CloneProc\fR) (
-        Tcl_Interp *\fIinterp\fR,
-        ClientData \fIsrcMetadata\fR,
-        ClientData *\fIdstMetadataPtr\fR);
+ typedef int (*\fBTcl_CloneProc\fR) (
+         Tcl_Interp *\fIinterp\fR,
+         ClientData \fIsrcMetadata\fR,
+         ClientData *\fIdstMetadataPtr\fR);
 .CE
 .PP
 The \fIinterp\fR argument gives a place to write an error message when the
@@ -204,9 +204,11 @@ method implementations is to be used.
 The \fITcl_ObjectMapMethodNameProc\fR callback is defined as follows:
 .PP
 .CS
-typedef int (*\fBTcl_ObjectMapMethodNameProc\fR)(Tcl_Interp *\fIinterp\fR,
-        Tcl_Object \fIobject\fR, Tcl_Class *\fIstartClsPtr\fR,
-        Tcl_Obj *\fImethodNameObj\fR);
+ typedef int (*\fBTcl_ObjectMapMethodNameProc\fR)(
+         Tcl_Interp *\fIinterp\fR,
+         Tcl_Object \fIobject\fR,
+         Tcl_Class *\fIstartClsPtr\fR,
+         Tcl_Obj *\fImethodNameObj\fR);
 .CE
 .PP
 The \fIinterp\fR parameter (and the integer result) follow normal Tcl result

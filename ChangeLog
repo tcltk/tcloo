@@ -1,3 +1,11 @@
+2008-04-04  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclOO.decls, generic/*.c, doc/Method.3: Renamed the methods
+	so that confusion is reduced by eliminating the term "class method"
+	and changing "object method" to "instance method".
+
+	***POTENTIAL INCOMPATABILITY*** for anyone using the C API.
+
 2008-04-02  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* tests/oo.test: Fixed crashing test by doing a version that works and

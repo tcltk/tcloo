@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.13 2008/04/02 14:41:14 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.14 2008/04/04 15:22:28 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -75,7 +75,7 @@ static int		InvokeForwardMethod(ClientData clientData,
 static void		DeleteForwardMethod(ClientData clientData);
 static int		CloneForwardMethod(Tcl_Interp *interp,
 			    ClientData clientData, ClientData *newClientData);
-static int		BasicClassMethodInvoke(ClientData clientData,
+static int		BasicMethodInvoke(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
 
@@ -93,21 +93,21 @@ static const Tcl_MethodType fwdMethodType = {
 };
 static const Tcl_MethodType coreMethodType = {
     TCL_OO_METHOD_VERSION_CURRENT, "core method",
-    BasicClassMethodInvoke, NULL, NULL
+    BasicMethodInvoke, NULL, NULL
 };
 
 /*
  * ----------------------------------------------------------------------
  *
- * Tcl_NewMethod --
+ * Tcl_NewInstanceMethod --
  *
- *	Attach a method to an object.
+ *	Attach a method to an object instance.
  *
  * ----------------------------------------------------------------------
  */
 
 Tcl_Method
-Tcl_NewMethod(
+Tcl_NewInstanceMethod(
     Tcl_Interp *interp,		/* Unused? */
     Tcl_Object object,		/* The object that has the method attached to
 				 * it. */
@@ -161,7 +161,7 @@ Tcl_NewMethod(
 /*
  * ----------------------------------------------------------------------
  *
- * Tcl_NewClassMethod --
+ * Tcl_NewMethod --
  *
  *	Attach a method to a class.
  *
@@ -169,7 +169,7 @@ Tcl_NewMethod(
  */
 
 Tcl_Method
-Tcl_NewClassMethod(
+Tcl_NewMethod(
     Tcl_Interp *interp,		/* The interpreter containing the class. */
     Tcl_Class cls,		/* The class to attach the method to. */
     Tcl_Obj *nameObj,		/* The name of the object. May be NULL (e.g.,
@@ -269,7 +269,7 @@ TclOODeleteMethod(
 /*
  * ----------------------------------------------------------------------
  *
- * DeclareClassMethod --
+ * TclOONewBasicMethod --
  *
  *	Helper that makes it cleaner to create very simple methods during
  *	basic system initialization. Not suitable for general use.
@@ -278,7 +278,7 @@ TclOODeleteMethod(
  */
 
 void
-TclOONewBasicClassMethod(
+TclOONewBasicMethod(
     Tcl_Interp *interp,
     Class *clsPtr,		/* Class to attach the method to. */
     const DeclaredClassMethod *dcm)
@@ -288,7 +288,7 @@ TclOONewBasicClassMethod(
     Tcl_Obj *namePtr = Tcl_NewStringObj(dcm->name, -1);
 
     Tcl_IncrRefCount(namePtr);
-    Tcl_NewClassMethod(interp, (Tcl_Class) clsPtr, namePtr,
+    Tcl_NewMethod(interp, (Tcl_Class) clsPtr, namePtr,
 	    (dcm->isPublic ? PUBLIC_METHOD : 0), &coreMethodType,
 	    (ClientData) dcm);
     Tcl_DecrRefCount(namePtr);
@@ -297,7 +297,7 @@ TclOONewBasicClassMethod(
 /*
  * ----------------------------------------------------------------------
  *
- * BasicClassMethodInvoke --
+ * BasicMethodInvoke --
  *
  *	How to invoke a simple method.
  *
@@ -305,7 +305,7 @@ TclOONewBasicClassMethod(
  */
 
 static int
-BasicClassMethodInvoke(
+BasicMethodInvoke(
     ClientData clientData,	/* Pointer to function that implements the
 				 * method. */
     Tcl_Interp *interp,
@@ -321,7 +321,7 @@ BasicClassMethodInvoke(
 /*
  * ----------------------------------------------------------------------
  *
- * TclOONewProcMethod --
+ * TclOONewProcInstanceMethod --
  *
  *	Create a new procedure-like method for an object.
  *
@@ -329,7 +329,7 @@ BasicClassMethodInvoke(
  */
 
 Method *
-TclOONewProcMethod(
+TclOONewProcInstanceMethod(
     Tcl_Interp *interp,		/* The interpreter containing the object. */
     Object *oPtr,		/* The object to modify. */
     int flags,			/* Whether this is a public method. */
@@ -355,8 +355,8 @@ TclOONewProcMethod(
     memset(pmPtr, 0, sizeof(ProcedureMethod));
     pmPtr->version = TCLOO_PROCEDURE_METHOD_VERSION;
     pmPtr->flags = flags & USE_DECLARER_NS;
-    method = TclOOMakeProcObjectMethod(interp, oPtr, flags, nameObj, argsObj,
-	    bodyObj, &procMethodType, pmPtr, &pmPtr->procPtr);
+    method = TclOOMakeProcInstanceMethod(interp, oPtr, flags, nameObj,
+	    argsObj, bodyObj, &procMethodType, pmPtr, &pmPtr->procPtr);
     if (method == NULL) {
 	ckfree((char *) pmPtr);
     } else if (pmPtrPtr != NULL) {
@@ -368,7 +368,7 @@ TclOONewProcMethod(
 /*
  * ----------------------------------------------------------------------
  *
- * TclOONewProcClassMethod --
+ * TclOONewProcMethod --
  *
  *	Create a new procedure-like method for a class.
  *
@@ -376,7 +376,7 @@ TclOONewProcMethod(
  */
 
 Method *
-TclOONewProcClassMethod(
+TclOONewProcMethod(
     Tcl_Interp *interp,		/* The interpreter containing the class. */
     Class *clsPtr,		/* The class to modify. */
     int flags,			/* Whether this is a public method. */
@@ -409,13 +409,16 @@ TclOONewProcClassMethod(
     } else {
 	procName = (nameObj==NULL ? "<constructor>" : TclGetString(nameObj));
     }
+
     pmPtr = (ProcedureMethod *) ckalloc(sizeof(ProcedureMethod));
     memset(pmPtr, 0, sizeof(ProcedureMethod));
     pmPtr->version = TCLOO_PROCEDURE_METHOD_VERSION;
     pmPtr->flags = flags & USE_DECLARER_NS;
-    method = TclOOMakeProcClassMethod(interp, clsPtr, flags, nameObj,
+
+    method = TclOOMakeProcMethod(interp, clsPtr, flags, nameObj,
 	    procName, argsObj, bodyObj, &procMethodType, pmPtr,
 	    &pmPtr->procPtr);
+
     if (argsLen == -1) {
 	Tcl_DecrRefCount(argsObj);
     }
@@ -424,13 +427,14 @@ TclOONewProcClassMethod(
     } else if (pmPtrPtr != NULL) {
 	*pmPtrPtr = pmPtr;
     }
+
     return (Method *) method;
 }
 
 /*
  * ----------------------------------------------------------------------
  *
- * TclOOMakeProcObjectMethod --
+ * TclOOMakeProcInstanceMethod --
  *
  *	The guts of the code to make a procedure-like method for an object.
  *	Split apart so that it is easier for other extensions to reuse (in
@@ -441,7 +445,7 @@ TclOONewProcClassMethod(
  */
 
 Tcl_Method
-TclOOMakeProcObjectMethod(
+TclOOMakeProcInstanceMethod(
     Tcl_Interp *interp,		/* The interpreter containing the object. */
     Object *oPtr,		/* The object to modify. */
     int flags,			/* Whether this is a public method. */
@@ -532,14 +536,14 @@ TclOOMakeProcObjectMethod(
 	}
     }
 
-    return Tcl_NewMethod(interp, (Tcl_Object) oPtr, nameObj, flags, typePtr,
-	    clientData);
+    return Tcl_NewInstanceMethod(interp, (Tcl_Object) oPtr, nameObj, flags,
+	    typePtr, clientData);
 }
 
 /*
  * ----------------------------------------------------------------------
  *
- * TclOOMakeProcClassMethod --
+ * TclOOMakeProcMethod --
  *
  *	The guts of the code to make a procedure-like method for a class.
  *	Split apart so that it is easier for other extensions to reuse (in
@@ -550,7 +554,7 @@ TclOOMakeProcObjectMethod(
  */
 
 Tcl_Method
-TclOOMakeProcClassMethod(
+TclOOMakeProcMethod(
     Tcl_Interp *interp,		/* The interpreter containing the class. */
     Class *clsPtr,		/* The class to modify. */
     int flags,			/* Whether this is a public method. */
@@ -645,8 +649,8 @@ TclOOMakeProcClassMethod(
 	}
     }
 
-    return Tcl_NewClassMethod(interp, (Tcl_Class) clsPtr, nameObj, flags,
-	    typePtr, clientData);
+    return Tcl_NewMethod(interp, (Tcl_Class) clsPtr, nameObj, flags, typePtr,
+	    clientData);
 }
 
 /*
@@ -1057,7 +1061,7 @@ CloneProcedureMethod(
  */
 
 Method *
-TclOONewForwardMethod(
+TclOONewForwardInstanceMethod(
     Tcl_Interp *interp,		/* Interpreter for error reporting. */
     Object *oPtr,		/* The object to attach the method to. */
     int flags,			/* Whether the method is public or not. */
@@ -1080,14 +1084,14 @@ TclOONewForwardMethod(
     fmPtr = (ForwardMethod *) ckalloc(sizeof(ForwardMethod));
     fmPtr->prefixObj = prefixObj;
     Tcl_IncrRefCount(prefixObj);
-    return (Method *) Tcl_NewMethod(interp, (Tcl_Object) oPtr, nameObj,
-	    flags, &fwdMethodType, fmPtr);
+    return (Method *) Tcl_NewInstanceMethod(interp, (Tcl_Object) oPtr,
+	    nameObj, flags, &fwdMethodType, fmPtr);
 }
 
 /*
  * ----------------------------------------------------------------------
  *
- * TclOONewForwardClassMethod --
+ * TclOONewForwardMethod --
  *
  *	Create a new forwarded method for a class.
  *
@@ -1095,7 +1099,7 @@ TclOONewForwardMethod(
  */
 
 Method *
-TclOONewForwardClassMethod(
+TclOONewForwardMethod(
     Tcl_Interp *interp,		/* Interpreter for error reporting. */
     Class *clsPtr,		/* The class to attach the method to. */
     int flags,			/* Whether the method is public or not. */
@@ -1118,7 +1122,7 @@ TclOONewForwardClassMethod(
     fmPtr = (ForwardMethod *) ckalloc(sizeof(ForwardMethod));
     fmPtr->prefixObj = prefixObj;
     Tcl_IncrRefCount(prefixObj);
-    return (Method *) Tcl_NewClassMethod(interp, (Tcl_Class) clsPtr, nameObj,
+    return (Method *) Tcl_NewMethod(interp, (Tcl_Class) clsPtr, nameObj,
 	    flags, &fwdMethodType, fmPtr);
 }
 
@@ -1167,7 +1171,7 @@ InvokeForwardMethod(
 	    numPrefixes, prefixObjs, &len);
 
     result = Tcl_EvalObjv(interp, len, argObjs, TCL_EVAL_INVOKE);
-    ckfree((char *) argObjs);
+    TclStackFree(interp, argObjs);
     return result;
 }
 
@@ -1280,7 +1284,7 @@ InitEnsembleRewrite(
     Tcl_Obj **argObjs;
     unsigned len = rewriteLength + objc - toRewrite;
 
-    argObjs = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj *) * len);
+    argObjs = TclStackAlloc(interp, sizeof(Tcl_Obj *) * len);
     memcpy(argObjs, rewriteObjs, rewriteLength * sizeof(Tcl_Obj *));
     memcpy(argObjs + rewriteLength, objv + toRewrite,
 	    sizeof(Tcl_Obj *) * (objc - toRewrite));
@@ -1391,7 +1395,7 @@ TclOONewProcInstanceMethodEx(
 				 * structure. */
 {
     ProcedureMethod *pmPtr;
-    Tcl_Method method = (Tcl_Method) TclOONewProcMethod(interp,
+    Tcl_Method method = (Tcl_Method) TclOONewProcInstanceMethod(interp,
 	    (Object *) oPtr, flags, nameObj, argsObj, bodyObj, &pmPtr);
 
     if (method == NULL) {
@@ -1409,7 +1413,7 @@ TclOONewProcInstanceMethodEx(
 }
 
 Tcl_Method
-TclOONewProcClassMethodEx(
+TclOONewProcMethodEx(
     Tcl_Interp *interp,		/* The interpreter containing the class. */
     Tcl_Class clsPtr,		/* The class to modify. */
     TclOO_PreCallProc preCallPtr,
@@ -1431,7 +1435,7 @@ TclOONewProcClassMethodEx(
 				 * structure. */
 {
     ProcedureMethod *pmPtr;
-    Tcl_Method method = (Tcl_Method) TclOONewProcClassMethod(interp,
+    Tcl_Method method = (Tcl_Method) TclOONewProcMethod(interp,
 	    (Class *) clsPtr, flags, nameObj, argsObj, bodyObj, &pmPtr);
 
     if (method == NULL) {
