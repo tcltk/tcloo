@@ -2,7 +2,7 @@
 
 	* generic/tclOO.decls, generic/*.c, doc/Method.3: Renamed the methods
 	so that confusion is reduced by eliminating the term "class method"
-	and changing "object method" to "instance method".
+	and changing "object method" to "instance method". [Bug 1863645]
 
 	***POTENTIAL INCOMPATABILITY*** for anyone using the C API.
 
