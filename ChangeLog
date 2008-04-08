@@ -1,3 +1,10 @@
+2008-04-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	=== RELEASE OF TCLOO VERSION 0.2 ===
+
+	* configure.in, generic/tclOO.h, win/TclOO.rc: Update version number
+	to release.
+
 2008-04-04  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclOO.decls, generic/*.c, doc/Method.3: Renamed the methods
