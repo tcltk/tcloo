@@ -1,3 +1,9 @@
+2008-04-30  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOMethod.c (PushMethodCallFrame): Only recompile a method
+	body when necessary, rather than over eagerly. This version is
+	possibly a bit the other way; can tune later. [Bug 1945769]
+
 2008-04-14  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/class.n: Fix typo, reported by Corrado Ficicchia.
