@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: Method.3,v 1.7 2008/04/04 15:21:43 dkf Exp $
+'\" RCS: @(#) $Id: Method.3,v 1.8 2008/05/04 12:24:03 dkf Exp $
 '\"
 .so man.macros
 .TH Tcl_Method 3 0.1 TclOO "TclOO Library Functions"
@@ -66,7 +66,8 @@ The object to create the method in.
 .AP Tcl_Class class in
 The class to create the method in.
 .AP Tcl_Obj *nameObj in
-The name of the method to create. Should not be NULL.
+The name of the method to create. Should not be NULL unless creating
+constructors or destructors.
 .AP int isPublic in
 A boolean flag saying whether the method is to be exported.
 .AP Tcl_MethodType *methodTypePtr in
