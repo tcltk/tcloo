@@ -1,5 +1,16 @@
 2008-05-08  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclOODefineCmds.c (TclOOObjDefObjCmd): Significant revision
+	* generic/tclOO.c (InitFoundation, Tcloo_Init):	 that splits the
+	* doc/define.n:					 oo::define machinery
+	into two pieces, creating oo::objdefine for configuring objects and
+	leaving oo::define for just classes. Gets rid of the nasty "self."
+	prefixes. Many thanks to Don Porter for the suggestion. [FRQ 1959486]
+
+	*** POTENTIAL INCOMPATABILITY ***
+	If you were configuring objects (instead of just classes) this change
+	will definitely affect you.
+
 	* generic/tclOO.c (ObjectLinkVar): Simplify this method back so that
 	it reflects what is documented. The extended version was never nice to
 	use, and was somewhat surprising in edge cases. [Bug 1959457]

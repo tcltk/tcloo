@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.8 2008/04/04 15:22:28 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.9 2008/05/08 23:04:30 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -62,12 +62,17 @@ TclOODefineObjCmd(
     Object *oPtr;
 
     if (objc < 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "objectName arg ?arg ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "className arg ?arg ...?");
 	return TCL_ERROR;
     }
 
     oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
     if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+    if (oPtr->classPtr == NULL) {
+	Tcl_AppendResult(interp, TclGetString(objv[1]),
+		" does not refer to a class", NULL);
 	return TCL_ERROR;
     }
 
@@ -88,6 +93,7 @@ TclOODefineObjCmd(
     framePtr->objv = objv;	/* Reference counts do not need to be
 				 * incremented here. */
 
+    Tcl_Preserve(oPtr);
     if (objc == 3) {
 	result = TclEvalObjEx(interp, objv[2], 0,
 		((Interp *)interp)->cmdFramePtr, 2);
@@ -154,6 +160,123 @@ TclOODefineObjCmd(
 	result = Tcl_EvalObjv(interp, objc-2, objs, TCL_EVAL_INVOKE);
 	Tcl_DecrRefCount(objPtr);
     }
+    Tcl_Release(oPtr);
+
+    /*
+     * Restore the previous "current" namespace.
+     */
+
+    TclPopStackFrame(interp);
+    return result;
+}
+
+int
+TclOOObjDefObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    CallFrame *framePtr, **framePtrPtr;
+    Foundation *fPtr = TclOOGetFoundation(interp);
+    int result;
+    Object *oPtr;
+
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "objectName arg ?arg ...?");
+	return TCL_ERROR;
+    }
+
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Make the oo::objdefine namespace the current namespace and evaluate the
+     * command(s).
+     */
+
+    /* This is needed to satisfy GCC 3.3's strict aliasing rules */
+    framePtrPtr = &framePtr;
+    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
+	    (Tcl_Namespace *) fPtr->objdefNs, FRAME_IS_OO_DEFINE);
+    if (result != TCL_OK) {
+	return TCL_ERROR;
+    }
+    framePtr->clientData = oPtr;
+    framePtr->objc = objc;
+    framePtr->objv = objv;	/* Reference counts do not need to be
+				 * incremented here. */
+
+    Tcl_Preserve(oPtr);
+    if (objc == 3) {
+	result = TclEvalObjEx(interp, objv[2], 0,
+		((Interp *)interp)->cmdFramePtr, 2);
+
+	if (result == TCL_ERROR) {
+	    int length;
+	    const char *objName = Tcl_GetStringFromObj(objv[1], &length);
+	    int limit = 60;
+	    int overflow = (length > limit);
+
+	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		    "\n    (in definition script for object \"%.*s%s\" line %d)",
+		    (overflow ? limit : length), objName,
+		    (overflow ? "..." : ""), interp->errorLine));
+	}
+    } else {
+	Tcl_Obj *objPtr, *obj2Ptr, **objs;
+	Interp *iPtr = (Interp *) interp;
+	Tcl_Command cmd;
+	int dummy;
+
+	/*
+	 * More than one argument: fire them through the ensemble processing
+	 * engine so that everything appears to be good and proper in error
+	 * messages. Note that we cannot just concatenate and send through
+	 * Tcl_EvalObjEx, as that doesn't do ensemble processing, and we
+	 * cannot go through Tcl_EvalObjv without the extra work to pre-find
+	 * the command, as that finds command names in the wrong namespace at
+	 * the moment. Ugly!
+	 */
+
+	if (iPtr->ensembleRewrite.sourceObjs == NULL) {
+	    iPtr->ensembleRewrite.sourceObjs = objv;
+	    iPtr->ensembleRewrite.numRemovedObjs = 3;
+	    iPtr->ensembleRewrite.numInsertedObjs = 1;
+	} else {
+	    int ni = iPtr->ensembleRewrite.numInsertedObjs;
+	    if (ni < 3) {
+		iPtr->ensembleRewrite.numRemovedObjs += 3 - ni;
+	    } else {
+		iPtr->ensembleRewrite.numInsertedObjs -= 2;
+	    }
+	}
+
+	/*
+	 * Build the list of arguments using a Tcl_Obj as a workspace. See
+	 * comments above for why these contortions are necessary.
+	 */
+
+	objPtr = Tcl_NewObj();
+	obj2Ptr = Tcl_NewObj();
+	cmd = Tcl_FindCommand(interp, TclGetString(objv[2]), fPtr->objdefNs,
+		TCL_NAMESPACE_ONLY);
+	if (cmd == NULL) {
+	    /* punt this case! */
+	    Tcl_AppendObjToObj(obj2Ptr, objv[2]);
+	} else {
+	    Tcl_GetCommandFullName(interp, cmd, obj2Ptr);
+	}
+	Tcl_ListObjAppendElement(NULL, objPtr, obj2Ptr);
+	Tcl_ListObjReplace(NULL, objPtr, 1, 0, objc-3, objv+3);
+	Tcl_ListObjGetElements(NULL, objPtr, &dummy, &objs);
+
+	result = Tcl_EvalObjv(interp, objc-2, objs, TCL_EVAL_INVOKE);
+	Tcl_DecrRefCount(objPtr);
+    }
+    Tcl_Release(oPtr);
 
     /*
      * Restore the previous "current" namespace.
@@ -202,11 +325,6 @@ TclOODefineConstructorObjCmd(
 
     oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     if (oPtr == NULL) {
-	return TCL_ERROR;
-    }
-    if (oPtr->classPtr == NULL) {
-	Tcl_AppendResult(interp, "only classes may have constructors defined",
-		NULL);
 	return TCL_ERROR;
     }
     clsPtr = oPtr->classPtr;
@@ -260,11 +378,6 @@ TclOODefineDestructorObjCmd(
 
     oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     if (oPtr == NULL) {
-	return TCL_ERROR;
-    }
-    if (oPtr->classPtr == NULL) {
-	Tcl_AppendResult(interp, "only classes may have destructors defined",
-		NULL);
 	return TCL_ERROR;
     }
     clsPtr = oPtr->classPtr;
@@ -324,7 +437,10 @@ TclOODefineExportObjCmd(
 	return TCL_ERROR;
     }
     clsPtr = oPtr->classPtr;
-    isSelfExport |= (clsPtr == NULL);
+    if (!isSelfExport && !clsPtr) {
+	Tcl_AppendResult(interp, "attempt to misuse API", NULL);
+	return TCL_ERROR;
+    }
 
     for (i=1 ; i<objc ; i++) {
 	if (isSelfExport) {
@@ -467,7 +583,10 @@ TclOODefineFilterObjCmd(
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
-    isSelfFilter |= (oPtr->classPtr == NULL);
+    if (!isSelfFilter && !oPtr->classPtr) {
+	Tcl_AppendResult(interp, "attempt to misuse API", NULL);
+	return TCL_ERROR;
+    }
 
     if (!isSelfFilter) {
 	TclOOClassSetFilters(interp, oPtr->classPtr, objc-1, objv+1);
@@ -499,7 +618,10 @@ TclOODefineForwardObjCmd(
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
-    isSelfForward |= (oPtr->classPtr == NULL);
+    if (!isSelfForward && !oPtr->classPtr) {
+	Tcl_AppendResult(interp, "attempt to misuse API", NULL);
+	return TCL_ERROR;
+    }
     isPublic = Tcl_StringMatch(TclGetString(objv[1]), "[a-z]*")
 	    ? PUBLIC_METHOD : 0;
 
@@ -542,7 +664,10 @@ TclOODefineMethodObjCmd(
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
-    isSelfMethod |= (oPtr->classPtr == NULL);
+    if (!isSelfMethod && !oPtr->classPtr) {
+	Tcl_AppendResult(interp, "attempt to misuse API", NULL);
+	return TCL_ERROR;
+    }
 
     (void) Tcl_GetStringFromObj(objv[3], &bodyLength);
     if (bodyLength > 0) {
@@ -684,7 +809,10 @@ TclOODefineMixinObjCmd(
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
-    isSelfMixin |= (oPtr->classPtr == NULL);
+    if (!isSelfMixin && !oPtr->classPtr) {
+	Tcl_AppendResult(interp, "attempt to misuse API", NULL);
+	return TCL_ERROR;
+    }
     mixins = TclStackAlloc(interp, sizeof(Class *) * (objc-1));
 
     for (i=1 ; i<objc ; i++) {
@@ -917,7 +1045,10 @@ TclOODefineUnexportObjCmd(
 	return TCL_ERROR;
     }
     clsPtr = oPtr->classPtr;
-    isSelfUnexport |= (oPtr->classPtr == NULL);
+    if (!isSelfUnexport && !clsPtr) {
+	Tcl_AppendResult(interp, "attempt to misuse API", NULL);
+	return TCL_ERROR;
+    }
 
     for (i=1 ; i<objc ; i++) {
 	if (isSelfUnexport) {

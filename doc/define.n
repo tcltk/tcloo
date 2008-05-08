@@ -4,27 +4,31 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: define.n,v 1.9 2008/03/26 09:48:46 dkf Exp $
+'\" RCS: @(#) $Id: define.n,v 1.10 2008/05/08 23:04:29 dkf Exp $
 '\"
 .so man.macros
-.TH define n 0.1 TclOO "TclOO Commands"
+.TH define n 0.3 TclOO "TclOO Commands"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-oo::define \- define and configure classes and objects
+oo::define, oo::objdefine \- define and configure classes and objects
 .SH SYNOPSIS
 .nf
 package require TclOO
 
-\fBoo::define\fI classOrObject defScript\fR
-\fBoo::define\fI classOrObject subcommand arg\fR ?\fIarg ...\fR?
+\fBoo::define\fI class defScript\fR
+\fBoo::define\fI class subcommand arg\fR ?\fIarg ...\fR?
+\fBoo::objdefine\fI object defScript\fR
+\fBoo::objdefine\fI object subcommand arg\fR ?\fIarg ...\fR?
 .fi
 .BE
 
 .SH DESCRIPTION
-The \fBoo::define\fR command is used to control the configuration of classes
-and objects, with the configuration being applied to the entity named in the
-\fIclassOrObject\fR argument. Configuring a class also updates the
+The \fBoo::define\fR command is used to control the configuration of classes,
+and the \fBoo::objdefine\fR command is used to control the configuration of
+objects (including classes as instance objects), with the configuration being
+applied to the entity named in the \fIclass\fR or the \fIobject\fR argument.
+Configuring a class also updates the
 configuration of all subclasses of the class and all objects that are
 instances of that class or which mix it in (as modified by any per-instance
 configuration). The way in which the configuration is done is controlled by
@@ -32,9 +36,10 @@ either the \fIdefScript\fR argument or by the \fIsubcommand\fR and following
 \fIarg\fR arguments; when the second is present, it is exactly as if all the
 arguments from \fIsubcommand\fR onwards are made into a list and that list is
 used as the \fIdefScript\fR argument.
+.SS "CONFIGURING CLASSES"
 .PP
-The following commands are supported in the \fIdefScript\fR, each of which may
-also be used in the \fIsubcommand\fR form:
+The following commands are supported in the \fIdefScript\fR for
+\fBoo::define\fR, each of which may also be used in the \fIsubcommand\fR form:
 .TP
 \fBconstructor\fI argList bodyScript\fR
 .
@@ -66,60 +71,46 @@ to the currently-defined \fBbgerror\fR handler.
 \fBexport\fI name \fR?\fIname ...\fR?
 .
 This arranges for each of the named methods, \fIname\fR, to be exported
-(i.e. usable outside the object or class through the object's command) by the
-object or class being defined. Note that the methods themselves may be
-actually defined by a superclass; subclass exports override superclass
-visibility.
+(i.e. usable outside an instance through the instance object's command) by the
+class being defined. Note that the methods themselves may be actually defined
+by a superclass; subclass exports override superclass visibility, and may in
+turn be overridden by instances.
 .TP
 \fBfilter\fR ?\fImethodName ...\fR?
 .
-When defining a class, this sets or updates the list of method names that are
-used to guard whether a method call to instances of the class may be called
-and what the method's results are, and when defining another kind of object,
-this sets or updates the list of method names that are used to guard whether a
-method call to the object may be called and what the method's results are.
-Each \fImethodName\fR names a single filtering method (which may be exposed or
-not exposed); it is not an error for a non-existent method to be named since
-they may be defined by subclasses. If no \fImethodName\fR arguments are
-present, the list of filter names is set to empty.
+This sets or updates the list of method names that are used to guard whether a
+method call to instances of the class may be called and what the method's
+results are. Each \fImethodName\fR names a single filtering method (which may
+be exposed or not exposed); it is not an error for a non-existent method to be
+named since they may be defined by subclasses. If no \fImethodName\fR
+arguments are present, the list of filter names is set to empty.
 .TP
 \fBforward\fI name cmdName \fR?\fIarg ...\fR?
 .
-When defining a class, this creates or updates a class method, and when
-defining another kind of object, this creates or updates an object method. The
-name of the method is \fIname\fR. The method is defined be forwarded to the
-command called \fIcmdName\fR, with additional arguments, \fIarg\fR etc., added
-before those arguments specified by the caller of the method. Forwarded
-methods should be deleted using the \fBmethod\fR subcommand. The method will
-be exported if \fIname\fR starts with a lower-case letter, and non-exported
-otherwise.
+This creates or updates a forwarded method called \fIname\fR. The method
+is defined be forwarded to the command called \fIcmdName\fR, with additional
+arguments, \fIarg\fR etc., added before those arguments specified by the
+caller of the method. Forwarded methods should be deleted using the
+\fBmethod\fR subcommand. The method will be exported if \fIname\fR starts with
+a lower-case letter, and non-exported otherwise.
 .TP
 \fBmethod\fI name argList bodyScript\fR
 .
-When defining a class, this creates or updates a class method, and when
-defining another kind of object, this creates or updates an object method. The
-name of the method is \fIname\fR, the formal arguments to the method (defined
-using the same format as for the Tcl \fBproc\fR command) will be
-\fIargList\fR, and the body of the method will be \fIbodyScript\fR. When the
-body of the method is evaluated, the current namespace of the method will be a
-namespace that is unique to the current object. If \fIbodyScript\fR is the
-empty string, the method will be deleted. The method will be exported if
-\fIname\fR starts with a lower-case letter, and non-exported otherwise.
+This creates, updates or deletes a method. The name of the method is
+\fIname\fR, the formal arguments to the method (defined using the same format
+as for the Tcl \fBproc\fR command) will be \fIargList\fR, and the body of the
+method will be \fIbodyScript\fR. When the body of the method is evaluated, the
+current namespace of the method will be a namespace that is unique to the
+current object. If \fIbodyScript\fR is the empty string, the method will be
+deleted. The method will be exported if \fIname\fR starts with a lower-case
+letter, and non-exported otherwise.
 .TP
 \fBmixin\fR ?\fIclassName ...\fR?
 .
-When defining a class, this sets or updates the list of additional classes
-that are to be mixed into all the instances of the class, and when defining
-another kind of object, this sets or updates a per-object list of additional
-classes that are to be mixed into the object. Each argument, \fIclassName\fR,
+This sets or updates the list of additional classes that are to be mixed into
+all the instances of the class being defined. Each \fIclassName\fR argument
 names a single class that is to be mixed in; if no classes are present, the
 list of mixed-in classes is set to be empty.
-.TP
-\fBself.class\fI className\fR
-.
-This allows the class of an object to be changed after creation. Note that the
-class's constructors are not called when this is done, and so the object may
-well be in an inconsistent state unless additional configuration work is done.
 .TP
 \fBsuperclass\fI className \fR?\fIclassName ...\fR?
 .
@@ -131,34 +122,85 @@ being non-classes or vice-versa.
 \fBunexport\fI name \fR?\fIname ...\fR?
 .
 This arranges for each of the named methods, \fIname\fR, to be not exported
-(i.e. not usable outside the object or class through the object's command, but
-instead just through the \fBmy\fR command visible in each object's context) by
-the object or class being defined. Note that the methods themselves may be
+(i.e. not usable outside the instance through the instance object's command,
+but instead just through the \fBmy\fR command visible in each object's
+context) by the class being defined. Note that the methods themselves may be
 actually defined by a superclass; subclass unexports override superclass
-visibility.
-.SS "TREATING CLASSES AS OBJECTS"
-Since classes are themselves objects, manipulating them as such is done
-through this command. In order to force the \fBdefine\fR subcommands to work
-with the object when presented with a class, they should have their names
-prefixed with \fBself.\fR, thus \fBself.method\fR vs. \fBmethod\fR.
+visibility, and may be overridden by instance unexports.
+.SS "CONFIGURING OBJECTS"
 .PP
-The following commands may be prefixed this way:
-.DS
-.ta 4c 8c
-\fBexport\fR	\fBfilter\fR	\fBforward\fR
-\fBmethod\fR	\fBmixin\fR	\fBunexport\fR
-.DE
+The following commands are supported in the \fIdefScript\fR for
+\fBoo::objdefine\fR, each of which may also be used in the \fIsubcommand\fR
+form:
+.TP
+\fBclass\fI className\fR
+.
+This allows the class of an object to be changed after creation. Note that the
+class's constructors are not called when this is done, and so the object may
+well be in an inconsistent state unless additional configuration work is done.
+.TP
+\fBexport\fI name \fR?\fIname ...\fR?
+.
+This arranges for each of the named methods, \fIname\fR, to be exported
+(i.e. usable outside the object through the object's command) by the object
+being defined. Note that the methods themselves may be actually defined by a
+class or superclass; object exports override class visibility.
+.TP
+\fBfilter\fR ?\fImethodName ...\fR?
+.
+This sets or updates the list of method names that are used to guard whether a
+method call to the object may be called and what the method's results are.
+Each \fImethodName\fR names a single filtering method (which may be exposed or
+not exposed); it is not an error for a non-existent method to be named. If no
+\fImethodName\fR arguments are present, the list of filter names is set to
+empty. Note that the actual list of filters also depends on the filters set
+upon any classes that the object is an instance of.
+.TP
+\fBforward\fI name cmdName \fR?\fIarg ...\fR?
+.
+This creates or updates a forwarded object method called \fIname\fR. The
+method is defined be forwarded to the command called \fIcmdName\fR, with
+additional arguments, \fIarg\fR etc., added before those arguments specified
+by the caller of the method. Forwarded methods should be deleted using the
+\fBmethod\fR subcommand. The method will be exported if \fIname\fR starts with
+a lower-case letter, and non-exported otherwise.
+.TP
+\fBmethod\fI name argList bodyScript\fR
+.
+This creates, updates or deletes an object method. The name of the method is
+\fIname\fR, the formal arguments to the method (defined using the same format
+as for the Tcl \fBproc\fR command) will be \fIargList\fR, and the body of the
+method will be \fIbodyScript\fR. When the body of the method is evaluated, the
+current namespace of the method will be a namespace that is unique to the
+object. If \fIbodyScript\fR is the empty string, the method will be deleted.
+The method will be exported if \fIname\fR starts with a lower-case letter, and
+non-exported otherwise.
+.TP
+\fBmixin\fR ?\fIclassName ...\fR?
+.
+This sets or updates a per-object list of additional classes that are to be
+mixed into the object. Each argument, \fIclassName\fR, names a single class
+that is to be mixed in; if no classes are present, the list of mixed-in
+classes is set to be empty.
+.TP
+\fBunexport\fI name \fR?\fIname ...\fR?
+.
+This arranges for each of the named methods, \fIname\fR, to be not exported
+(i.e. not usable outside the object through the object's command, but instead
+just through the \fBmy\fR command visible in the object's context) by the
+object being defined. Note that the methods themselves may be actually defined
+by a class; instance unexports override class visibility.
 .SH EXAMPLES
 This example demonstrates how to use both forms of the \fBoo::define\fR
 command, as well as illustrating three of the subcommands of it.
-
+.PP
 .CS
 oo::class create c
 c create o
 \fBoo::define\fR c \fBmethod\fR foo {} {
     puts "world"
 }
-\fBoo::define\fR o {
+\fBoo::objdefine\fR o {
     \fBmethod\fR bar {} {
         my Foo "hello "
         my foo
