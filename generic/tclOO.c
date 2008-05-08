@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.35 2008/05/08 20:57:01 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.36 2008/05/08 23:04:29 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -29,19 +29,21 @@ static const struct {
     {"constructor", TclOODefineConstructorObjCmd, 0},
     {"destructor", TclOODefineDestructorObjCmd, 0},
     {"export", TclOODefineExportObjCmd, 0},
-    {"self.export", TclOODefineExportObjCmd, 1},
     {"filter", TclOODefineFilterObjCmd, 0},
-    {"self.filter", TclOODefineFilterObjCmd, 1},
     {"forward", TclOODefineForwardObjCmd, 0},
-    {"self.forward", TclOODefineForwardObjCmd, 1},
     {"method", TclOODefineMethodObjCmd, 0},
-    {"self.method", TclOODefineMethodObjCmd, 1},
     {"mixin", TclOODefineMixinObjCmd, 0},
-    {"self.mixin", TclOODefineMixinObjCmd, 1},
     {"superclass", TclOODefineSuperclassObjCmd, 0},
     {"unexport", TclOODefineUnexportObjCmd, 0},
-    {"self.unexport", TclOODefineUnexportObjCmd, 1},
-    {"self.class", TclOODefineSelfClassObjCmd, 1},
+    {NULL, NULL, 0}
+}, objdefCmds[] = {
+    {"class", TclOODefineSelfClassObjCmd, 1},
+    {"export", TclOODefineExportObjCmd, 1},
+    {"filter", TclOODefineFilterObjCmd, 1},
+    {"forward", TclOODefineForwardObjCmd, 1},
+    {"method", TclOODefineMethodObjCmd, 1},
+    {"mixin", TclOODefineMixinObjCmd, 1},
+    {"unexport", TclOODefineUnexportObjCmd, 1},
     {NULL, NULL, 0}
 };
 
@@ -193,6 +195,8 @@ Tcloo_Init(
 	    NULL);
     Tcl_CreateObjCommand(interp, "::oo::define", TclOODefineObjCmd, NULL,
 	    NULL);
+    Tcl_CreateObjCommand(interp, "::oo::objdefine", TclOOObjDefObjCmd, NULL,
+	    NULL);
     Tcl_CreateObjCommand(interp, "::oo::copy", CopyObjectCmd, NULL, NULL);
     TclOOInitInfo(interp);
 
@@ -257,6 +261,8 @@ InitFoundation(
     fPtr->ooNs = Tcl_CreateNamespace(interp, "::oo", fPtr, NULL);
     Tcl_Export(interp, fPtr->ooNs, "[a-z]*", 1);
     fPtr->defineNs = Tcl_CreateNamespace(interp, "::oo::define", NULL, NULL);
+    fPtr->objdefNs = Tcl_CreateNamespace(interp, "::oo::objdefine", NULL,
+	    NULL);
     fPtr->helpersNs = Tcl_CreateNamespace(interp, "::oo::Helpers", NULL,
 	    NULL);
     fPtr->epoch = 0;
@@ -269,7 +275,7 @@ InitFoundation(
     Tcl_IncrRefCount(fPtr->destructorName);
 
     /*
-     * Create the subcommands in the oo::define space.
+     * Create the subcommands in the oo::define and oo::objdefine spaces.
      */
 
     Tcl_DStringInit(&buffer);
@@ -278,6 +284,13 @@ InitFoundation(
 	Tcl_DStringAppend(&buffer, defineCmds[i].name, -1);
 	Tcl_CreateObjCommand(interp, Tcl_DStringValue(&buffer),
 		defineCmds[i].objProc, (void *) defineCmds[i].flag, NULL);
+	Tcl_DStringFree(&buffer);
+    }
+    for (i=0 ; objdefCmds[i].name ; i++) {
+	Tcl_DStringAppend(&buffer, "::oo::objdefine::", 17);
+	Tcl_DStringAppend(&buffer, objdefCmds[i].name, -1);
+	Tcl_CreateObjCommand(interp, Tcl_DStringValue(&buffer),
+		objdefCmds[i].objProc, (void *) objdefCmds[i].flag, NULL);
 	Tcl_DStringFree(&buffer);
     }
 

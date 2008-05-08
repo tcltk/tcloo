@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.18 2008/04/04 15:22:28 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.19 2008/05/08 23:04:30 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -245,6 +245,10 @@ typedef struct Foundation {
 				 * manipulating objects and classes. The
 				 * "oo::define" command acts as a special kind
 				 * of ensemble for this namespace. */
+    Tcl_Namespace *objdefNs;	/* Namespace containing special commands for
+				 * manipulating objects and classes. The
+				 * "oo::objdefine" command acts as a special
+				 * kind of ensemble for this namespace. */
     Tcl_Namespace *helpersNs;	/* Namespace containing the commands that are
 				 * only valid when executing inside a
 				 * procedural method. */
@@ -316,7 +320,8 @@ typedef struct CallContext {
 				 * reference. */
 #define FRAME_IS_OO_DEFINE 0x8	/* The frame is part of the inside workings of
 				 * the [oo::define] command; the clientData
-				 * field contains an Object reference. */
+				 * field contains an Object reference that has
+				 * been confirmed to refer to a class. */
 #define FRAME_IS_CONSTRUCTOR 0x10
 				/* The frame is a constructor, and not just a
 				 * normal method. */
@@ -341,6 +346,9 @@ typedef struct {
 
 MODULE_SCOPE int	TclOOInit(Tcl_Interp *interp);
 MODULE_SCOPE int	TclOODefineObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOOObjDefObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
 MODULE_SCOPE int	TclOODefineConstructorObjCmd(ClientData clientData,
