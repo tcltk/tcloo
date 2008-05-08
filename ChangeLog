@@ -1,5 +1,8 @@
 2008-05-08  Donal K. Fellows  <dkf@users.sf.net>
 
+	* configure.in:			   Bump version to pre-0.3 now that
+	* generic/tclOO.h (TCLOO_VERSION): there's been an API change.
+
 	* generic/tclOODefineCmds.c (TclOOObjDefObjCmd): Significant revision
 	* generic/tclOO.c (InitFoundation, Tcloo_Init):	 that splits the
 	* doc/define.n:					 oo::define machinery
