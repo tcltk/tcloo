@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.34 2008/04/04 15:22:28 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.35 2008/05/08 20:57:01 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -2351,34 +2351,14 @@ ObjectLinkVar(
 
     for (i=Tcl_ObjectContextSkippedArgs(context) ; i<objc ; i++) {
 	Var *varPtr, *aryPtr;
-	Tcl_Obj **argObjs;
-	const char *varName;
-	int len;
+	const char *varName = TclGetString(objv[i]);
 
 	/*
-	 * Parse to see if we have a single value in the argument (just the
-	 * name of a variable to use in both the namespace and local scope) or
-	 * a two-argument list (namespace variable name and local variable
-	 * name). Other cases are an error.
+	 * The variable name must not contain a '::' since that's illegal in
+	 * local names.
 	 */
 
-	if (Tcl_ListObjGetElements(interp, objv[i], &len, &argObjs)!=TCL_OK) {
-	    return TCL_ERROR;
-	}
-	if (len != 1 && len != 2) {
-	    Tcl_AppendResult(interp, "argument must be list "
-		    "of one or two variable names", NULL);
-	    return TCL_ERROR;
-	}
-
-	varName = TclGetString(argObjs[len-1]);
 	if (strstr(varName, "::") != NULL) {
-	    /*
-	     * The local var name must not contain a '::' but the ns name is
-	     * OK. Naturally, if they're the same, then the restriction is
-	     * applied equally to both.
-	     */
-
 	    Tcl_AppendResult(interp, "variable name \"", varName,
 		    "\" illegal: must not contain namespace separator", NULL);
 	    return TCL_ERROR;
@@ -2399,7 +2379,7 @@ ObjectLinkVar(
 	savedNsPtr = iPtr->varFramePtr->nsPtr;
 	iPtr->varFramePtr->nsPtr = (Namespace *)
 		Tcl_GetObjectNamespace(object);
-	varPtr = TclObjLookupVar(interp, argObjs[0], NULL, TCL_NAMESPACE_ONLY,
+	varPtr = TclObjLookupVar(interp, objv[i], NULL, TCL_NAMESPACE_ONLY,
 		"define", 1, 0, &aryPtr);
 	iPtr->varFramePtr->nsPtr = savedNsPtr;
 
@@ -2409,7 +2389,7 @@ ObjectLinkVar(
 	     * NULL, it is an element, so throw up an error and return.
 	     */
 
-	    TclVarErrMsg(interp, TclGetString(argObjs[0]), NULL, "define",
+	    TclVarErrMsg(interp, varName, NULL, "define",
 		    "name refers to an element in an array");
 	    return TCL_ERROR;
 	}
