@@ -1,3 +1,9 @@
+2008-05-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (ObjectLinkVar): Simplify this method back so that
+	it reflects what is documented. The extended version was never nice to
+	use, and was somewhat surprising in edge cases. [Bug 1959457]
+
 2008-04-30  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOMethod.c (PushMethodCallFrame): Only recompile a method

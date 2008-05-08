@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.10 2008/04/02 14:41:17 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.11 2008/05/08 20:57:01 dkf Exp $
 
 lappend auto_path .
 package require TclOO
@@ -1135,8 +1135,8 @@ test oo-20.7 {OO: variable method} -setup {
 } -body {
     oo::define cls {
 	method a {} {
-	    my variable {b c} d
-	    lappend c $d
+	    my variable d b
+	    lappend b $d
 	}
 	method e {} {
 	    my variable b d
@@ -1156,49 +1156,33 @@ test oo-20.7 {OO: variable method} -setup {
 } -cleanup {
     cls destroy
 } -result {{p q q} q}
-test oo-20.8 {OO: variable method} -setup {
-    oo::class create cls
-} -body {
-    oo::define cls {
-	constructor {} {
-	    namespace eval foo {
-		variable bar 1
-	    }
-	}
-	method ns {} {self namespace}
-	method a {} {
-	    my variable {foo::bar c} d
-	    lappend c $d
-	}
-	method e {} {
-	    my variable {foo::bar b} d
-	    return [list $b $d]
-	}
-	method f {x} {
-	    my variable d
-	    set d $x
-	}
-    }
-    cls create obj
-    obj f p
-    obj a
-    obj a
-    list [obj e] [set [obj ns]::foo::bar]
-} -cleanup {
-    cls destroy
-} -result {{{1 p p} p} {1 p p}}
+# oo-20.8 tested explicitly for functionality removed due to [Bug 1959457]
 test oo-20.9 {OO: variable method} -setup {
     oo::object create obj
 } -body {
     oo::define obj {
 	method a {} {
-	    my variable {a ::b}
+	    my variable ::b
 	}
     }
     obj a
+} -returnCodes 1 -cleanup {
+    obj destroy
+} -result {variable name "::b" illegal: must not contain namespace separator}
+test oo-20.10 {OO: variable and varname methods refer to same things} -setup {
+    oo::object create obj
+} -body {
+    oo::define obj {
+	method a {} {
+	    my variable b
+	    set b [self]
+	    return [my varname b]
+	}
+    }
+    list [set [obj a]] [namespace tail [obj a]]
 } -cleanup {
     obj destroy
-} -returnCodes 1 -result {variable name "::b" illegal: must not contain namespace separator}
+} -result {::obj b}
 
 test oo-21.1 {OO: inheritance ordering} -setup {
     oo::class create A
