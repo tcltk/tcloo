@@ -193,13 +193,11 @@ shell: package libraries
 #========================================================================
 
 gdb.run:
-	@echo "catch {puts \"target exec [file attributes [file normalize [lindex \$$argv 0]] -shortname]\";exit};puts \"target exec [file normalize [lindex \$$argv 0]]\"" >gdbhelper.tcl
-	@$(TCLSH) gdbhelper.tcl "$(TCLSH_PROGRAM)" > gdb.run
-	@rm gdbhelper.tcl
-	@echo "set env TCL_LIBRARY=$(TCL_SRC_DIR)/library" >> gdb.run
-	@echo "set env LD_LIBRARY_PATH=$(EXTRA_PATH):$(LD_LIBRARY_PATH)" >> gdb.run
-	@echo "set env TCLLIBPATH=$(top_builddir)" >> gdb.run
-	@sh -c 'test x$${OSTYPE} = xmsys && echo "set new-console off" >> gdb.run' || true
+	@echo "catch {puts \"target exec [file attributes [file normalize [info nameofexecutable]] -shortname]\";exit};puts \"target exec [file normalize [info nameofexecutable]]\"" | $(TCLSH) > $@
+	@echo "set env TCL_LIBRARY=$(TCL_SRC_DIR)/library" >> $@
+	@echo "set env LD_LIBRARY_PATH=$(EXTRA_PATH):$(LD_LIBRARY_PATH)" >> $@
+	@echo "set env TCLLIBPATH=$(top_builddir)" >> $@
+	@sh -c 'test x$${OSTYPE} = xmsys && echo "set new-console off" >> $@' || true
 
 gdb: package libraries gdb.run
 	@echo gdb $(TCLSH_PROGRAM) $(ARGS)
