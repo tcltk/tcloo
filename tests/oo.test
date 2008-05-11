@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.14 2008/05/11 16:23:21 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.15 2008/05/11 21:12:47 dkf Exp $
 
 lappend auto_path .
 package require TclOO ;# $env(PACKAGE_VERSION)
@@ -23,7 +23,7 @@ if {[testConstraint memory]} {
 	set lines [split [memory info] \n]
 	return [lindex $lines 3 3]
     }
-    proc leaktest {script {iterations 5}} {
+    proc leaktest {script {iterations 3}} {
 	set end [getbytes]
 	for {set i 0} {$i < $iterations} {incr i} {
 	    uplevel 1 $script
