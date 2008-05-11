@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.13 2008/05/11 10:02:28 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.14 2008/05/11 16:23:21 dkf Exp $
 
 lappend auto_path .
 package require TclOO ;# $env(PACKAGE_VERSION)
@@ -813,6 +813,9 @@ test oo-14.3 {OO and mixins and filters - advanced case} -setup {
     i bar
 } -cleanup {
     mix destroy
+    if {[info object isa object i]} {
+	error "mixin deletion failed to destroy dependent instance"
+    }
 } -result >>foobar<<
 test oo-14.4 {OO: mixin error case} -setup {
     oo::class create c
@@ -827,18 +830,82 @@ test oo-14.5 {OO and mixins and filters - advanced case} -setup {
 	mixin mix
     }
     c create i
-} -constraints {knownBug} -body {
+} -body {
     oo::define mix {
 	method foo {} {return >>[next]<<}
 	filter foo
     }
-    oo::define i method bar {} {return foobar}
+    oo::objdefine i method bar {} {return foobar}
     i bar
 } -cleanup {
     c destroy
-    # Disconnecting somehow goes wrong...
     mix destroy
 } -result >>foobar<<
+test oo-14.6 {OO and mixins of mixins - Bug 1960703} -setup {
+    oo::class create master
+} -cleanup {
+    master destroy
+} -body {
+    oo::class create A {
+	superclass master
+	method egg {} {
+	    return chicken
+	}
+    }
+    oo::class create B {
+	superclass master
+	mixin A
+	method bar {} {
+	    # mixin from A
+	    my egg
+	}
+    }
+    oo::class create C {
+	superclass master
+	mixin B
+	method foo {} {
+	    # mixin from B
+	    my bar
+	}
+    }
+    [C new] foo
+} -result chicken
+test oo-14.7 {OO and filters from mixins of mixins} -setup {
+    oo::class create master
+} -cleanup {
+    master destroy
+} -body {
+    oo::class create A {
+	superclass master
+	method egg {} {
+	    return chicken
+	}
+	filter f
+	method f args {
+	    set m [lindex [self target] 1]
+	    return "($m) [next {*}$args] ($m)"
+	}
+    }
+    oo::class create B {
+	superclass master
+	mixin A
+	filter f
+	method bar {} {
+	    # mixin from A
+	    my egg
+	}
+    }
+    oo::class create C {
+	superclass master
+	mixin B
+	filter f
+	method foo {} {
+	    # mixin from B
+	    my bar
+	}
+    }
+    [C new] foo
+} -result {(foo) (bar) (egg) chicken (egg) (bar) (foo)}
 
 test oo-15.1 {OO: object cloning} {
     oo::class create Aclass

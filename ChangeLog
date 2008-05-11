@@ -1,4 +1,9 @@
-2008-05-11  Donal K. Fellows  <dkf@cspool38.cs.man.ac.uk>
+2008-05-11  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOCall.c (AddSimpleClassChainToCallContext): Move mixin
+	processing to here so that processing mixins of mixins works. [Bug
+	1960703] Also enable mixin processing of constructors and destructors;
+	these are sensible given that class-level mixins are supported.
 
 	* generic/tclOODefineCmds.c (TclOODefineDeleteMethodObjCmd): Move the
 	delete-a-method functionality into a new command, making the behaviour
@@ -6,6 +11,9 @@
 	(TclOODefineRenameMethodObjCmd, RenameDeleteMethod): Add a new command
 	to allow methods to be renamed. Factor out the large amount of common
 	code with the code to delete methods.
+
+	*** POTENTIAL INCOMPATABILITY ***
+	If you were relying on using 'oo::define method' to remove methods.
 
 	* generic/tclOOMethod.c (InvokeProcedureMethod): Ensure that method
 	implementations do not vanish from underneath our feet. Prevents some
