@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.15 2008/04/30 15:09:59 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.16 2008/05/11 10:02:28 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -59,6 +59,7 @@ static int		PushMethodCallFrame(Tcl_Interp *interp,
 			    CallContext *contextPtr, ProcedureMethod *pmPtr,
 			    int objc, Tcl_Obj *const *objv,
 			    PMFrameData *fdPtr);
+static void		DeleteProcedureMethodRecord(char *recordPtr);
 static void		DeleteProcedureMethod(ClientData clientData);
 static int		CloneProcedureMethod(Tcl_Interp *interp,
 			    ClientData clientData, ClientData *newClientData);
@@ -132,7 +133,11 @@ Tcl_NewInstanceMethod(
 	mPtr->namePtr = NULL;
 	goto populate;
     }
-    hPtr = Tcl_CreateHashEntry(&oPtr->methods, (char *) nameObj, &isNew);
+    if (!oPtr->methodsPtr) {
+	oPtr->methodsPtr = (Tcl_HashTable *) ckalloc(sizeof(Tcl_HashTable));
+	Tcl_InitObjHashTable(oPtr->methodsPtr);
+    }
+    hPtr = Tcl_CreateHashEntry(oPtr->methodsPtr, (char *) nameObj, &isNew);
     if (isNew) {
 	mPtr = (Method *) ckalloc(sizeof(Method));
 	mPtr->namePtr = nameObj;
@@ -683,6 +688,7 @@ InvokeProcedureMethod(
      */
 
     fdPtr = (PMFrameData *) TclStackAlloc(interp, sizeof(PMFrameData));
+    Tcl_Preserve(pmPtr);
 
     /*
      * Create a call frame for this method.
@@ -740,6 +746,7 @@ InvokeProcedureMethod(
      */
 
   done:
+    Tcl_Release(pmPtr);
     TclStackFree(interp, fdPtr);
     return result;
 }
@@ -796,7 +803,8 @@ PushMethodCallFrame(
      */
 
     if (pmPtr->flags & USE_DECLARER_NS) {
-	register Method *mPtr = contextPtr->callChain[contextPtr->index].mPtr;
+	register Method *mPtr =
+		contextPtr->call.chain[contextPtr->index].mPtr;
 
 	if (mPtr->declaringClassPtr != NULL) {
 	    nsPtr = mPtr->declaringClassPtr->thisPtr->namespacePtr;
@@ -926,7 +934,7 @@ MethodErrorHandler(
 {
     int nameLen, objectNameLen;
     CallContext *contextPtr = ((Interp *) interp)->varFramePtr->clientData;
-    Method *mPtr = contextPtr->callChain[contextPtr->index].mPtr;
+    Method *mPtr = contextPtr->call.chain[contextPtr->index].mPtr;
     const char *objectName, *kindName, *methodName =
 	    Tcl_GetStringFromObj(mPtr->namePtr, &nameLen);
     Object *declarerPtr;
@@ -956,7 +964,7 @@ ConstructorErrorHandler(
     Tcl_Obj *methodNameObj)
 {
     CallContext *contextPtr = ((Interp *) interp)->varFramePtr->clientData;
-    Method *mPtr = contextPtr->callChain[contextPtr->index].mPtr;
+    Method *mPtr = contextPtr->call.chain[contextPtr->index].mPtr;
     Object *declarerPtr;
     const char *objectName, *kindName;
     int objectNameLen;
@@ -994,7 +1002,7 @@ DestructorErrorHandler(
     Tcl_Obj *methodNameObj)
 {
     CallContext *contextPtr = ((Interp *) interp)->varFramePtr->clientData;
-    Method *mPtr = contextPtr->callChain[contextPtr->index].mPtr;
+    Method *mPtr = contextPtr->call.chain[contextPtr->index].mPtr;
     Object *declarerPtr;
     const char *objectName, *kindName;
     int objectNameLen;
@@ -1028,16 +1036,23 @@ DestructorErrorHandler(
  */
 
 static void
-DeleteProcedureMethod(
-    ClientData clientData)
+DeleteProcedureMethodRecord(
+    char *recordPtr)
 {
-    register ProcedureMethod *pmPtr = clientData;
+    register ProcedureMethod *pmPtr = (ProcedureMethod *) recordPtr;
 
     TclProcDeleteProc(pmPtr->procPtr);
     if (pmPtr->deleteClientdataProc) {
 	pmPtr->deleteClientdataProc(pmPtr->clientData);
     }
-    ckfree((char *) pmPtr);
+    ckfree(recordPtr);
+}
+
+static void
+DeleteProcedureMethod(
+    ClientData clientData)
+{
+    Tcl_EventuallyFree(clientData, DeleteProcedureMethodRecord);
 }
 
 static int
