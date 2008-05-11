@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.36 2008/05/08 23:04:29 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.37 2008/05/11 10:02:28 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -27,22 +27,27 @@ static const struct {
     int flag;
 } defineCmds[] = {
     {"constructor", TclOODefineConstructorObjCmd, 0},
+    {"deletemethod", TclOODefineDeleteMethodObjCmd, 0},
     {"destructor", TclOODefineDestructorObjCmd, 0},
     {"export", TclOODefineExportObjCmd, 0},
     {"filter", TclOODefineFilterObjCmd, 0},
     {"forward", TclOODefineForwardObjCmd, 0},
     {"method", TclOODefineMethodObjCmd, 0},
     {"mixin", TclOODefineMixinObjCmd, 0},
+    {"renamemethod", TclOODefineRenameMethodObjCmd, 0},
+    {"self", TclOODefineSelfObjCmd, 0},
     {"superclass", TclOODefineSuperclassObjCmd, 0},
     {"unexport", TclOODefineUnexportObjCmd, 0},
     {NULL, NULL, 0}
 }, objdefCmds[] = {
-    {"class", TclOODefineSelfClassObjCmd, 1},
+    {"class", TclOODefineClassObjCmd, 1},
+    {"deletemethod", TclOODefineDeleteMethodObjCmd, 1},
     {"export", TclOODefineExportObjCmd, 1},
     {"filter", TclOODefineFilterObjCmd, 1},
     {"forward", TclOODefineForwardObjCmd, 1},
     {"method", TclOODefineMethodObjCmd, 1},
     {"mixin", TclOODefineMixinObjCmd, 1},
+    {"renamemethod", TclOODefineRenameMethodObjCmd, 1},
     {"unexport", TclOODefineUnexportObjCmd, 1},
     {NULL, NULL, 0}
 };
@@ -448,7 +453,7 @@ AllocObject(
     TclSetNsPath((Namespace *) oPtr->namespacePtr, 1, &fPtr->helpersNs);
 
     oPtr->selfCls = fPtr->objectCls;
-    Tcl_InitObjHashTable(&oPtr->methods);
+    oPtr->methodsPtr = NULL;
     Tcl_InitObjHashTable(&oPtr->publicContextCache);
     Tcl_InitObjHashTable(&oPtr->privateContextCache);
     oPtr->filters.num = 0;
@@ -554,7 +559,7 @@ ObjectRenamedTrace(
 	    if (result != TCL_OK) {
 		Tcl_BackgroundError(interp);
 	    }
-	    (void) Tcl_RestoreInterpState(interp, state);
+	    Tcl_RestoreInterpState(interp, state);
 	    TclOODeleteContext(contextPtr);
 	}
     }
@@ -743,10 +748,13 @@ ObjectNamespaceDeleted(
 	ckfree((char *) oPtr->filters.list);
     }
 
-    FOREACH_HASH_VALUE(mPtr, &oPtr->methods) {
-	TclOODeleteMethod(mPtr);
+    if (oPtr->methodsPtr) {
+	FOREACH_HASH_VALUE(mPtr, oPtr->methodsPtr) {
+	    TclOODeleteMethod(mPtr);
+	}
+	Tcl_DeleteHashTable(oPtr->methodsPtr);
+	ckfree((char *) oPtr->methodsPtr);
     }
-    Tcl_DeleteHashTable(&oPtr->methods);
 
     FOREACH_HASH_VALUE(contextPtr, &oPtr->publicContextCache) {
 	if (contextPtr) {
@@ -1241,7 +1249,7 @@ Tcl_NewObjectInstance(
 		Tcl_DeleteCommandFromToken(interp, oPtr->command);
 		return NULL;
 	    }
-	    (void) Tcl_RestoreInterpState(interp, state);
+	    Tcl_RestoreInterpState(interp, state);
 	}
     }
 
@@ -1303,10 +1311,12 @@ Tcl_CopyObjectInstance(
      * Copy the object-local methods to the new object.
      */
 
-    FOREACH_HASH(keyPtr, mPtr, &oPtr->methods) {
-	if (CloneObjectMethod(interp, o2Ptr, mPtr, keyPtr) != TCL_OK) {
-	    Tcl_DeleteCommandFromToken(interp, o2Ptr->command);
-	    return NULL;
+    if (oPtr->methodsPtr) {
+	FOREACH_HASH(keyPtr, mPtr, oPtr->methodsPtr) {
+	    if (CloneObjectMethod(interp, o2Ptr, mPtr, keyPtr) != TCL_OK) {
+		Tcl_DeleteCommandFromToken(interp, o2Ptr->command);
+		return NULL;
+	    }
 	}
     }
 
@@ -1509,7 +1519,7 @@ CloneObjectMethod(
     Tcl_Obj *namePtr)
 {
     if (mPtr->typePtr == NULL) {
-	(void) Tcl_NewInstanceMethod(interp, (Tcl_Object) oPtr, namePtr,
+	Tcl_NewInstanceMethod(interp, (Tcl_Object) oPtr, namePtr,
 		mPtr->flags & PUBLIC_METHOD, NULL, NULL);
     } else if (mPtr->typePtr->cloneProc) {
 	ClientData newClientData;
@@ -1518,10 +1528,10 @@ CloneObjectMethod(
 		&newClientData) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	(void) Tcl_NewInstanceMethod(interp, (Tcl_Object) oPtr, namePtr,
+	Tcl_NewInstanceMethod(interp, (Tcl_Object) oPtr, namePtr,
 		mPtr->flags & PUBLIC_METHOD, mPtr->typePtr, newClientData);
     } else {
-	(void) Tcl_NewInstanceMethod(interp, (Tcl_Object) oPtr, namePtr,
+	Tcl_NewInstanceMethod(interp, (Tcl_Object) oPtr, namePtr,
 		mPtr->flags & PUBLIC_METHOD, mPtr->typePtr, mPtr->clientData);
     }
     return TCL_OK;
@@ -1616,9 +1626,8 @@ Tcl_ClassGetMetadata(
 
     if (hPtr == NULL) {
 	return NULL;
-    } else {
-	return Tcl_GetHashValue(hPtr);
     }
+    return Tcl_GetHashValue(hPtr);
 }
 
 void
@@ -1697,9 +1706,8 @@ Tcl_ObjectGetMetadata(
 
     if (hPtr == NULL) {
 	return NULL;
-    } else {
-	return Tcl_GetHashValue(hPtr);
     }
+    return Tcl_GetHashValue(hPtr);
 }
 
 void
@@ -1884,8 +1892,9 @@ TclOOObjectCmdCore(
      */
 
     if (startCls != NULL) {
-	while (contextPtr->index<contextPtr->numCallChain) {
-	    struct MInvoke *miPtr = &contextPtr->callChain[contextPtr->index];
+	while (contextPtr->index<contextPtr->call.numChain) {
+	    register struct MInvoke *miPtr =
+		    &contextPtr->call.chain[contextPtr->index];
 
 	    if (miPtr->isFilter || miPtr->mPtr->declaringClassPtr!=startCls) {
 		contextPtr->index++;
@@ -1893,7 +1902,7 @@ TclOOObjectCmdCore(
 		break;
 	    }
 	}
-	if (contextPtr->index >= contextPtr->numCallChain) {
+	if (contextPtr->index >= contextPtr->call.numChain) {
 	    result = TCL_ERROR;
 	    Tcl_SetResult(interp, "no valid method implementation",
 		    TCL_STATIC);
@@ -2517,7 +2526,7 @@ Tcl_ObjectContextInvokeNext(
     int savedSkip = contextPtr->skip;
     int result;
 
-    if (contextPtr->index+1 >= contextPtr->numCallChain) {
+    if (contextPtr->index+1 >= contextPtr->call.numChain) {
 	/*
 	 * We're at the end of the chain; return the empty string (the most
 	 * useful thing we can do, since it turns out that it's not always
@@ -2656,9 +2665,8 @@ SelfObjCmd(
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "subcommand");
 	return TCL_ERROR;
-    }
-    if (objc == 1) {
-	goto doSelfObject;
+    } else if (objc == 1) {
+	index = SELF_OBJECT;
     } else if (Tcl_GetIndexFromObj(interp, objv[1], subcmds, "subcommand", 0,
 	    &index) != TCL_OK) {
 	return TCL_ERROR;
@@ -2666,7 +2674,6 @@ SelfObjCmd(
 
     switch ((enum SelfCmds) index) {
     case SELF_OBJECT:
-    doSelfObject:
 	Tcl_SetObjResult(interp, TclOOObjectName(interp, contextPtr->oPtr));
 	return TCL_OK;
     case SELF_NS:
@@ -2674,7 +2681,7 @@ SelfObjCmd(
 		contextPtr->oPtr->namespacePtr->fullName,-1));
 	return TCL_OK;
     case SELF_CLASS: {
-	Method *mPtr = contextPtr->callChain[contextPtr->index].mPtr;
+	Method *mPtr = contextPtr->call.chain[contextPtr->index].mPtr;
 	Object *declarerPtr;
 
 	if (mPtr->declaringClassPtr != NULL) {
@@ -2699,17 +2706,18 @@ SelfObjCmd(
 	} else if (contextPtr->flags & DESTRUCTOR) {
 	    Tcl_AppendResult(interp, "<destructor>", NULL);
 	} else {
-	    Method *mPtr = contextPtr->callChain[contextPtr->index].mPtr;
+	    Method *mPtr = contextPtr->call.chain[contextPtr->index].mPtr;
 
 	    Tcl_SetObjResult(interp, mPtr->namePtr);
 	}
 	return TCL_OK;
     case SELF_FILTER:
-	if (!contextPtr->callChain[contextPtr->index].isFilter) {
+	if (!contextPtr->call.chain[contextPtr->index].isFilter) {
 	    Tcl_AppendResult(interp, "not inside a filtering context", NULL);
 	    return TCL_ERROR;
 	} else {
-	    struct MInvoke *miPtr = &contextPtr->callChain[contextPtr->index];
+	    register struct MInvoke *miPtr =
+		    &contextPtr->call.chain[contextPtr->index];
 	    Tcl_Obj *result[3];
 	    Object *oPtr;
 	    const char *type;
@@ -2732,7 +2740,7 @@ SelfObjCmd(
 	if ((framePtr->callerVarPtr != NULL) &&
 		(framePtr->callerVarPtr->isProcCallFrame & FRAME_IS_METHOD)) {
 	    CallContext *callerPtr = framePtr->callerVarPtr->clientData;
-	    Method *mPtr = callerPtr->callChain[callerPtr->index].mPtr;
+	    Method *mPtr = callerPtr->call.chain[callerPtr->index].mPtr;
 	    Object *declarerPtr;
 
 	    if (mPtr->declaringClassPtr != NULL) {
@@ -2768,8 +2776,8 @@ SelfObjCmd(
 	    return TCL_ERROR;
 	}
     case SELF_NEXT:
-	if (contextPtr->index < contextPtr->numCallChain-1) {
-	    Method *mPtr = contextPtr->callChain[contextPtr->index+1].mPtr;
+	if (contextPtr->index < contextPtr->call.numChain-1) {
+	    Method *mPtr = contextPtr->call.chain[contextPtr->index+1].mPtr;
 	    Object *declarerPtr;
 
 	    if (mPtr->declaringClassPtr != NULL) {
@@ -2800,7 +2808,7 @@ SelfObjCmd(
 	}
 	return TCL_OK;
     case SELF_TARGET:
-	if (!contextPtr->callChain[contextPtr->index].isFilter) {
+	if (!contextPtr->call.chain[contextPtr->index].isFilter) {
 	    Tcl_AppendResult(interp, "not inside a filtering context", NULL);
 	    return TCL_ERROR;
 	} else {
@@ -2808,15 +2816,15 @@ SelfObjCmd(
 	    Object *declarerPtr;
 	    int i;
 
-	    for (i=contextPtr->index ; i<contextPtr->numCallChain ; i++) {
-		if (!contextPtr->callChain[i].isFilter) {
+	    for (i=contextPtr->index ; i<contextPtr->call.numChain ; i++) {
+		if (!contextPtr->call.chain[i].isFilter) {
 		    break;
 		}
 	    }
-	    if (i == contextPtr->numCallChain) {
+	    if (i == contextPtr->call.numChain) {
 		Tcl_Panic("filtering call chain without terminal non-filter");
 	    }
-	    mPtr = contextPtr->callChain[i].mPtr;
+	    mPtr = contextPtr->call.chain[i].mPtr;
 	    if (mPtr->declaringClassPtr != NULL) {
 		declarerPtr = mPtr->declaringClassPtr->thisPtr;
 	    } else if (mPtr->declaringObjectPtr != NULL) {
@@ -3021,7 +3029,7 @@ Tcl_ObjectContextMethod(
     Tcl_ObjectContext context)
 {
     CallContext *contextPtr = (CallContext *) context;
-    return (Tcl_Method) contextPtr->callChain[contextPtr->index].mPtr;
+    return (Tcl_Method) contextPtr->call.chain[contextPtr->index].mPtr;
 }
 
 int
@@ -3029,7 +3037,7 @@ Tcl_ObjectContextIsFiltering(
     Tcl_ObjectContext context)
 {
     CallContext *contextPtr = (CallContext *) context;
-    return contextPtr->callChain[contextPtr->index].isFilter;
+    return contextPtr->call.chain[contextPtr->index].isFilter;
 }
 
 Tcl_Object

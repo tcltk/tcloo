@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.10 2008/04/02 14:41:13 dkf Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.11 2008/05/11 10:02:28 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -97,8 +97,8 @@ TclOODeleteContext(
     if (--contextPtr->refCount >= 1) {
 	return;
     }
-    if (contextPtr->callChain != contextPtr->staticCallChain) {
-	ckfree((char *) contextPtr->callChain);
+    if (contextPtr->call.chain != contextPtr->call.staticChain) {
+	ckfree((char *) contextPtr->call.chain);
     }
     ckfree((char *) contextPtr);
 }
@@ -184,9 +184,9 @@ TclOOInvokeContext(
     int objc,			/* The number of arguments. */
     Tcl_Obj *const *objv)	/* The arguments as actually seen. */
 {
-    Method *mPtr = contextPtr->callChain[contextPtr->index].mPtr;
+    Method *mPtr = contextPtr->call.chain[contextPtr->index].mPtr;
     int result, isFirst = (contextPtr->index == 0);
-    int isFilter = contextPtr->callChain[contextPtr->index].isFilter;
+    int isFilter = contextPtr->call.chain[contextPtr->index].isFilter;
     int wasFilter;
 
     /*
@@ -198,8 +198,8 @@ TclOOInvokeContext(
     if (isFirst) {
 	int i;
 
-	for (i=0 ; i<contextPtr->numCallChain ; i++) {
-	    Tcl_Preserve(contextPtr->callChain[i].mPtr);
+	for (i=0 ; i<contextPtr->call.numChain ; i++) {
+	    Tcl_Preserve(contextPtr->call.chain[i].mPtr);
 	}
     }
 
@@ -234,8 +234,8 @@ TclOOInvokeContext(
     if (isFirst) {
 	int i;
 
-	for (i=0 ; i<contextPtr->numCallChain ; i++) {
-	    Tcl_Release(contextPtr->callChain[i].mPtr);
+	for (i=0 ; i<contextPtr->call.numChain ; i++) {
+	    Tcl_Release(contextPtr->call.chain[i].mPtr);
 	}
     }
     return result;
@@ -360,18 +360,20 @@ TclOOGetSortedMethodList(
      * Process method names due to the object.
      */
 
-    FOREACH_HASH(namePtr, mPtr, &oPtr->methods) {
-	int isNew;
+    if (oPtr->methodsPtr) {
+	FOREACH_HASH(namePtr, mPtr, oPtr->methodsPtr) {
+	    int isNew;
 
-	if ((mPtr->flags & PRIVATE_METHOD) && !(flags & PRIVATE_METHOD)) {
-	    continue;
-	}
-	hPtr = Tcl_CreateHashEntry(&names, (char *) namePtr, &isNew);
-	if (isNew) {
-	    isWantedIn = ((!(flags & PUBLIC_METHOD)
-		    || mPtr->flags & PUBLIC_METHOD) ? IN_LIST : 0);
-	    isWantedIn |= (mPtr->typePtr == NULL ? NO_IMPLEMENTATION : 0);
-	    Tcl_SetHashValue(hPtr, (void *) isWantedIn);
+	    if ((mPtr->flags & PRIVATE_METHOD) && !(flags & PRIVATE_METHOD)) {
+		continue;
+	    }
+	    hPtr = Tcl_CreateHashEntry(&names, (char *) namePtr, &isNew);
+	    if (isNew) {
+		isWantedIn = ((!(flags & PUBLIC_METHOD)
+			|| mPtr->flags & PUBLIC_METHOD) ? IN_LIST : 0);
+		isWantedIn |= (mPtr->typePtr == NULL ? NO_IMPLEMENTATION : 0);
+		Tcl_SetHashValue(hPtr, (void *) isWantedIn);
+	    }
 	}
     }
 
@@ -573,8 +575,8 @@ AddSimpleChainToCallContext(
 {
     int i;
 
-    if (!(flags & (KNOWN_STATE | SPECIAL))) {
-	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&oPtr->methods,
+    if (!(flags & (KNOWN_STATE | SPECIAL)) && oPtr->methodsPtr) {
+	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(oPtr->methodsPtr,
 		(char *) methodNameObj);
 
 	if (hPtr != NULL) {
@@ -611,10 +613,12 @@ AddSimpleChainToCallContext(
 	    }
 	    i=j;
 	}
-	hPtr = Tcl_FindHashEntry(&oPtr->methods, (char *) methodNameObj);
-	if (hPtr != NULL) {
-	    AddMethodToCallChain(Tcl_GetHashValue(hPtr), cbPtr, doneFilters,
-		    filterDecl);
+	if (oPtr->methodsPtr) {
+	    hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, (char*) methodNameObj);
+	    if (hPtr != NULL) {
+		AddMethodToCallChain(Tcl_GetHashValue(hPtr), cbPtr,
+			doneFilters, filterDecl);
+	    }
 	}
     }
     AddSimpleClassChainToCallContext(oPtr->selfCls, methodNameObj, cbPtr,
@@ -685,9 +689,9 @@ AddMethodToCallChain(
      * any leading filters.
      */
 
-    for (i=cbPtr->filterLength ; i<contextPtr->numCallChain ; i++) {
-	if (contextPtr->callChain[i].mPtr == mPtr
-		&& contextPtr->callChain[i].isFilter == (doneFilters!=NULL)) {
+    for (i=cbPtr->filterLength ; i<contextPtr->call.numChain ; i++) {
+	if (contextPtr->call.chain[i].mPtr == mPtr &&
+		contextPtr->call.chain[i].isFilter == (doneFilters != NULL)) {
 	    /*
 	     * Call chain semantics states that methods come as *late* in the
 	     * call chain as possible. This is done by copying down the
@@ -695,14 +699,14 @@ AddMethodToCallChain(
 	     * method invokations in the call chain; it just rearranges them.
 	     */
 
-	    Class *declCls = contextPtr->callChain[i].filterDeclarer;
+	    Class *declCls = contextPtr->call.chain[i].filterDeclarer;
 
-	    for (; i+1<contextPtr->numCallChain ; i++) {
-		contextPtr->callChain[i] = contextPtr->callChain[i+1];
+	    for (; i+1<contextPtr->call.numChain ; i++) {
+		contextPtr->call.chain[i] = contextPtr->call.chain[i+1];
 	    }
-	    contextPtr->callChain[i].mPtr = mPtr;
-	    contextPtr->callChain[i].isFilter = (doneFilters != NULL);
-	    contextPtr->callChain[i].filterDeclarer = declCls;
+	    contextPtr->call.chain[i].mPtr = mPtr;
+	    contextPtr->call.chain[i].isFilter = (doneFilters != NULL);
+	    contextPtr->call.chain[i].filterDeclarer = declCls;
 	    return;
 	}
     }
@@ -713,20 +717,20 @@ AddMethodToCallChain(
      * realloc-ing if the chain gets long.
      */
 
-    if (contextPtr->numCallChain == CALL_CHAIN_STATIC_SIZE) {
-	contextPtr->callChain = (struct MInvoke *)
-		ckalloc(sizeof(struct MInvoke)*(contextPtr->numCallChain+1));
-	memcpy(contextPtr->callChain, contextPtr->staticCallChain,
-		sizeof(struct MInvoke) * contextPtr->numCallChain);
-    } else if (contextPtr->numCallChain > CALL_CHAIN_STATIC_SIZE) {
-	contextPtr->callChain = (struct MInvoke *)
-		ckrealloc((char *) contextPtr->callChain,
-		sizeof(struct MInvoke) * (contextPtr->numCallChain + 1));
+    if (contextPtr->call.numChain == CALL_CHAIN_STATIC_SIZE) {
+	contextPtr->call.chain = (struct MInvoke *)
+		ckalloc(sizeof(struct MInvoke)*(contextPtr->call.numChain+1));
+	memcpy(contextPtr->call.chain, contextPtr->call.staticChain,
+		sizeof(struct MInvoke) * contextPtr->call.numChain);
+    } else if (contextPtr->call.numChain > CALL_CHAIN_STATIC_SIZE) {
+	contextPtr->call.chain = (struct MInvoke *)
+		ckrealloc((char *) contextPtr->call.chain,
+		sizeof(struct MInvoke) * (contextPtr->call.numChain + 1));
     }
-    contextPtr->callChain[i].mPtr = mPtr;
-    contextPtr->callChain[i].isFilter = (doneFilters != NULL);
-    contextPtr->callChain[i].filterDeclarer = filterDecl;
-    contextPtr->numCallChain++;
+    contextPtr->call.chain[i].mPtr = mPtr;
+    contextPtr->call.chain[i].isFilter = (doneFilters != NULL);
+    contextPtr->call.chain[i].filterDeclarer = filterDecl;
+    contextPtr->call.numChain++;
 }
 
 /*
@@ -790,8 +794,8 @@ TclOOGetCallContext(
 	}
     }
     cb.contextPtr = (CallContext *) ckalloc(sizeof(CallContext));
-    cb.contextPtr->numCallChain = 0;
-    cb.contextPtr->callChain = cb.contextPtr->staticCallChain;
+    cb.contextPtr->call.numChain = 0;
+    cb.contextPtr->call.chain = cb.contextPtr->call.staticChain;
     cb.filterLength = 0;
     cb.contextPtr->globalEpoch = fPtr->epoch;
     cb.contextPtr->localEpoch = oPtr->epoch;
@@ -833,7 +837,7 @@ TclOOGetCallContext(
 	AddClassFiltersToCallContext(oPtr, oPtr->selfCls, &cb, &doneFilters);
 	Tcl_DeleteHashTable(&doneFilters);
     }
-    count = cb.filterLength = cb.contextPtr->numCallChain;
+    count = cb.filterLength = cb.contextPtr->call.numChain;
 
     /*
      * Add the actual method implementations.
@@ -847,7 +851,7 @@ TclOOGetCallContext(
      * cacheing of the method implementation (if relevant).
      */
 
-    if (count == cb.contextPtr->numCallChain) {
+    if (count == cb.contextPtr->call.numChain) {
 	/*
 	 * Method does not actually exist. If we're dealing with constructors
 	 * or destructors, this isn't a problem.
@@ -861,7 +865,7 @@ TclOOGetCallContext(
 		NULL, 0, NULL);
 	cb.contextPtr->flags |= OO_UNKNOWN_METHOD;
 	cb.contextPtr->globalEpoch = -1;
-	if (count == cb.contextPtr->numCallChain) {
+	if (count == cb.contextPtr->call.numChain) {
 	    TclOODeleteContext(cb.contextPtr);
 	    return NULL;
 	}

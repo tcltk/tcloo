@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: define.n,v 1.10 2008/05/08 23:04:29 dkf Exp $
+'\" RCS: @(#) $Id: define.n,v 1.11 2008/05/11 10:02:28 dkf Exp $
 '\"
 .so man.macros
 .TH define n 0.3 TclOO "TclOO Commands"
@@ -51,6 +51,13 @@ namespace of the constructor will be a namespace that is unique to the object
 being constructed. Within the constructor, the \fBnext\fR command should be
 used to call the superclasses' constructors. If \fIbodyScript\fR is the empty
 string, the constructor will be deleted.
+.TP
+\fBdeletemethod\fI name\fR ?\fIname ...\fR
+.
+This deletes each of the methods called \fIname\fR from a class. The methods
+must have previously existed in that class. Does not affect the superclasses
+of the class, nor does it affect the subclasses or instances of the class
+(except when they have a call chain through the class being modified).
 .TP
 \fBdestructor\fI bodyScript\fR
 .
@@ -101,9 +108,9 @@ This creates, updates or deletes a method. The name of the method is
 as for the Tcl \fBproc\fR command) will be \fIargList\fR, and the body of the
 method will be \fIbodyScript\fR. When the body of the method is evaluated, the
 current namespace of the method will be a namespace that is unique to the
-current object. If \fIbodyScript\fR is the empty string, the method will be
-deleted. The method will be exported if \fIname\fR starts with a lower-case
-letter, and non-exported otherwise.
+current object. The method will be exported if \fIname\fR starts with a
+lower-case letter, and non-exported otherwise; this behavior can be overridden
+via \fBexport\fR and \fBunexport\fR.
 .TP
 \fBmixin\fR ?\fIclassName ...\fR?
 .
@@ -111,6 +118,16 @@ This sets or updates the list of additional classes that are to be mixed into
 all the instances of the class being defined. Each \fIclassName\fR argument
 names a single class that is to be mixed in; if no classes are present, the
 list of mixed-in classes is set to be empty.
+.TP
+\fBrenamemethod\fI fromName toName\fR
+.
+This renames the method called \fIfromName\fR in a class to \fItoName\fR. The
+method must have previously existed in the class, and \fItoName\fR must not
+previously refer to a method in that class. Does not affect the superclasses
+of the class, nor does it affect the subclasses or instances of the class
+(except when they have a call chain through the class being modified). Does
+not change the export status of the method; if it was exported before, it will
+be afterwards.
 .TP
 \fBsuperclass\fI className \fR?\fIclassName ...\fR?
 .
@@ -138,6 +155,12 @@ form:
 This allows the class of an object to be changed after creation. Note that the
 class's constructors are not called when this is done, and so the object may
 well be in an inconsistent state unless additional configuration work is done.
+.TP
+\fBdeletemethod\fI name\fR ?\fIname ...\fR
+.
+This deletes each of the methods called \fIname\fR from an object. The methods
+must have previously existed in that object. Does not affect the classes that
+the object is an instance of.
 .TP
 \fBexport\fI name \fR?\fIname ...\fR?
 .
@@ -172,9 +195,8 @@ This creates, updates or deletes an object method. The name of the method is
 as for the Tcl \fBproc\fR command) will be \fIargList\fR, and the body of the
 method will be \fIbodyScript\fR. When the body of the method is evaluated, the
 current namespace of the method will be a namespace that is unique to the
-object. If \fIbodyScript\fR is the empty string, the method will be deleted.
-The method will be exported if \fIname\fR starts with a lower-case letter, and
-non-exported otherwise.
+object. The method will be exported if \fIname\fR starts with a lower-case
+letter, and non-exported otherwise.
 .TP
 \fBmixin\fR ?\fIclassName ...\fR?
 .
@@ -182,6 +204,14 @@ This sets or updates a per-object list of additional classes that are to be
 mixed into the object. Each argument, \fIclassName\fR, names a single class
 that is to be mixed in; if no classes are present, the list of mixed-in
 classes is set to be empty.
+.TP
+\fBrenamemethod\fI fromName toName\fR
+.
+This renames the method called \fIfromName\fR in an object to \fItoName\fR.
+The method must have previously existed in the object, and \fItoName\fR must
+not previously refer to a method in that object. Does not affect the classes
+that the object is an instance of. Does not change the export status of the
+method; if it was exported before, it will be afterwards.
 .TP
 \fBunexport\fI name \fR?\fIname ...\fR?
 .
@@ -191,8 +221,9 @@ just through the \fBmy\fR command visible in the object's context) by the
 object being defined. Note that the methods themselves may be actually defined
 by a class; instance unexports override class visibility.
 .SH EXAMPLES
-This example demonstrates how to use both forms of the \fBoo::define\fR
-command, as well as illustrating three of the subcommands of it.
+This example demonstrates how to use both forms of the \fBoo::define\fR and
+\fBoo::objdefine\fR commands (they work in the same way), as well as
+illustrating four of the subcommands of them.
 .PP
 .CS
 oo::class create c
@@ -211,11 +242,13 @@ c create o
 o bar                \fI\(-> prints "hello world"\fR
 o foo                \fI\(-> error "unknown method foo"\fR
 o Foo Bar            \fI\(-> error "unknown method Foo"\fR
+\fBoo::objdefine\fR o \fBrenamemethod\fR bar lollipop
+o lollipop           \fI\(-> prints "hello world"\fR
 .CE
 .SH "SEE ALSO"
 next(n), oo::class(n), oo::object(n)
 .SH KEYWORDS
-class, definition, object
+class, definition, method, object
 
 .\" Local variables:
 .\" mode: nroff

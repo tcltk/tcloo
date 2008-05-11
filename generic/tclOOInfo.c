@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.11 2008/04/02 14:41:13 dkf Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.12 2008/05/11 10:02:28 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -235,8 +235,12 @@ InfoObjectDefnCmd(
 	return TCL_ERROR;
     }
 
-    hPtr = Tcl_FindHashEntry(&oPtr->methods, (char *) objv[2]);
+    if (!oPtr->methodsPtr) {
+	goto unknownMethod;
+    }
+    hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, (char *) objv[2]);
     if (hPtr == NULL) {
+    unknownMethod:
 	Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[2]),
 		"\"", NULL);
 	return TCL_ERROR;
@@ -347,8 +351,12 @@ InfoObjectForwardCmd(
 	return TCL_ERROR;
     }
 
-    hPtr = Tcl_FindHashEntry(&oPtr->methods, (char *) objv[2]);
+    if (!oPtr->methodsPtr) {
+	goto unknownMethod;
+    }
+    hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, (char *) objv[2]);
     if (hPtr == NULL) {
+    unknownMethod:
 	Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[2]),
 		"\"", NULL);
 	return TCL_ERROR;
@@ -557,9 +565,12 @@ InfoObjectMethodsCmd(
 	return TCL_OK;
     }
 
-    FOREACH_HASH(namePtr, mPtr, &oPtr->methods) {
-	if (mPtr->typePtr != NULL && (mPtr->flags & flag) == flag) {
-	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), namePtr);
+    if (oPtr->methodsPtr) {
+	FOREACH_HASH(namePtr, mPtr, oPtr->methodsPtr) {
+	    if (mPtr->typePtr != NULL && (mPtr->flags & flag) == flag) {
+		Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
+			namePtr);
+	    }
 	}
     }
     return TCL_OK;

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.19 2008/05/08 23:04:30 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.20 2008/05/11 10:02:28 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -139,7 +139,7 @@ typedef struct Object {
     Tcl_Command myCommand;	/* Reference to this object's internal
 				 * command. */
     struct Class *selfCls;	/* This object's class. */
-    Tcl_HashTable methods;	/* Object-local Tcl_Obj (method name) to
+    Tcl_HashTable *methodsPtr;	/* Object-local Tcl_Obj (method name) to
 				 * Method* mapping. */
     LIST_STATIC(struct Class *) mixins;
 				/* Classes mixed into this object. */
@@ -282,6 +282,14 @@ struct MInvoke {
 				 * NULL, it was added by the object. */
 };
 
+typedef struct {
+    int numChain;		/* Size of the call chain. */
+    struct MInvoke *chain;	/* Array of call chain entries. May point to
+				 * staticChain if the number of entries is
+				 * small. */
+    struct MInvoke staticChain[CALL_CHAIN_STATIC_SIZE];
+} CallChain;
+
 typedef struct CallContext {
     Object *oPtr;		/* The object associated with this call. */
     int globalEpoch;		/* Global (class) epoch counter snapshot. */
@@ -292,11 +300,7 @@ typedef struct CallContext {
 				 * executing method implementation. */
     int refCount;		/* Reference count. */
     int skip;
-    int numCallChain;		/* Size of the call chain. */
-    struct MInvoke *callChain;	/* Array of call chain entries. May point to
-				 * staticCallChain if the number of entries is
-				 * small. */
-    struct MInvoke staticCallChain[CALL_CHAIN_STATIC_SIZE];
+    CallChain call;		/* The actual call chain. */
 } CallContext;
 
 /*
@@ -354,6 +358,9 @@ MODULE_SCOPE int	TclOOObjDefObjCmd(ClientData clientData,
 MODULE_SCOPE int	TclOODefineConstructorObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOODefineDeleteMethodObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
 MODULE_SCOPE int	TclOODefineDestructorObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
@@ -372,13 +379,19 @@ MODULE_SCOPE int	TclOODefineMethodObjCmd(ClientData clientData,
 MODULE_SCOPE int	TclOODefineMixinObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, const int objc,
 			    Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOODefineRenameMethodObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
 MODULE_SCOPE int	TclOODefineSuperclassObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
 MODULE_SCOPE int	TclOODefineUnexportObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOODefineSelfClassObjCmd(ClientData clientData,
+MODULE_SCOPE int	TclOODefineClassObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOODefineSelfObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
 

@@ -1,3 +1,16 @@
+2008-05-11  Donal K. Fellows  <dkf@cspool38.cs.man.ac.uk>
+
+	* generic/tclOODefineCmds.c (TclOODefineDeleteMethodObjCmd): Move the
+	delete-a-method functionality into a new command, making the behaviour
+	of the 'method' subcommand less horrible. [FRQ 1959483]
+	(TclOODefineRenameMethodObjCmd, RenameDeleteMethod): Add a new command
+	to allow methods to be renamed. Factor out the large amount of common
+	code with the code to delete methods.
+
+	* generic/tclOOMethod.c (InvokeProcedureMethod): Ensure that method
+	implementations do not vanish from underneath our feet. Prevents some
+	crashes found in the test suite when changing some things.
+
 2008-05-08  Donal K. Fellows  <dkf@users.sf.net>
 
 	* configure.in:			   Bump version to pre-0.3 now that
