@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.37 2008/05/11 10:02:28 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.38 2008/05/11 21:20:28 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -454,8 +454,8 @@ AllocObject(
 
     oPtr->selfCls = fPtr->objectCls;
     oPtr->methodsPtr = NULL;
-    Tcl_InitObjHashTable(&oPtr->publicContextCache);
-    Tcl_InitObjHashTable(&oPtr->privateContextCache);
+    oPtr->publicContextCache = NULL;
+    oPtr->privateContextCache = NULL;
     oPtr->filters.num = 0;
     oPtr->filters.list = NULL;
     oPtr->mixins.num = 0;
@@ -756,19 +756,25 @@ ObjectNamespaceDeleted(
 	ckfree((char *) oPtr->methodsPtr);
     }
 
-    FOREACH_HASH_VALUE(contextPtr, &oPtr->publicContextCache) {
-	if (contextPtr) {
-	    TclOODeleteContext(contextPtr);
+    if (oPtr->publicContextCache) {
+	FOREACH_HASH_VALUE(contextPtr, oPtr->publicContextCache) {
+	    if (contextPtr) {
+		TclOODeleteContext(contextPtr);
+	    }
 	}
+	Tcl_DeleteHashTable(oPtr->publicContextCache);
+	ckfree((char *) oPtr->publicContextCache);
     }
-    Tcl_DeleteHashTable(&oPtr->publicContextCache);
 
-    FOREACH_HASH_VALUE(contextPtr, &oPtr->privateContextCache) {
-	if (contextPtr) {
-	    TclOODeleteContext(contextPtr);
+    if (oPtr->privateContextCache) {
+	FOREACH_HASH_VALUE(contextPtr, oPtr->privateContextCache) {
+	    if (contextPtr) {
+		TclOODeleteContext(contextPtr);
+	    }
 	}
+	Tcl_DeleteHashTable(oPtr->privateContextCache);
+	ckfree((char *) oPtr->privateContextCache);
     }
-    Tcl_DeleteHashTable(&oPtr->privateContextCache);
 
     if (oPtr->cachedNameObj) {
 	Tcl_DecrRefCount(oPtr->cachedNameObj);
@@ -841,10 +847,6 @@ ObjectNamespaceDeleted(
 	if (clsPtr->mixinSubs.list) {
 	    ckfree((char *) clsPtr->mixinSubs.list);
 	    clsPtr->mixinSubs.num = 0;
-	}
-	if (clsPtr->classHierarchy.list) {
-	    ckfree((char *) clsPtr->classHierarchy.list);
-	    clsPtr->classHierarchy.num = 0;
 	}
 
 	FOREACH_HASH_VALUE(mPtr, &clsPtr->classMethods) {
@@ -1129,9 +1131,6 @@ AllocClass(
     clsPtr->mixinSubs.list = NULL;
     clsPtr->mixinSubs.num = 0;
     clsPtr->mixinSubs.size = 0;
-    clsPtr->classHierarchy.list = NULL;
-    clsPtr->classHierarchy.num = 0;
-    clsPtr->classHierarchyEpoch = fPtr->epoch-1;
     Tcl_InitObjHashTable(&clsPtr->classMethods);
     clsPtr->constructorPtr = NULL;
     clsPtr->destructorPtr = NULL;
@@ -1777,8 +1776,13 @@ PublicObjectCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
+    if (((Object *) clientData)->publicContextCache == NULL) {
+	((Object *) clientData)->publicContextCache = (Tcl_HashTable *)
+		ckalloc(sizeof(Tcl_HashTable));
+	Tcl_InitObjHashTable(((Object *) clientData)->publicContextCache);
+    }
     return TclOOObjectCmdCore(clientData, interp, objc, objv, PUBLIC_METHOD,
-	    &((Object *)clientData)->publicContextCache, NULL);
+	    ((Object *)clientData)->publicContextCache, NULL);
 }
 
 static int
@@ -1788,8 +1792,13 @@ PrivateObjectCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
+    if (((Object *) clientData)->privateContextCache == NULL) {
+	((Object *) clientData)->privateContextCache = (Tcl_HashTable *)
+		ckalloc(sizeof(Tcl_HashTable));
+	Tcl_InitObjHashTable(((Object *) clientData)->privateContextCache);
+    }
     return TclOOObjectCmdCore(clientData, interp, objc, objv, 0,
-	    &((Object *)clientData)->privateContextCache, NULL);
+	    ((Object *)clientData)->privateContextCache, NULL);
 }
 
 int
@@ -1812,19 +1821,34 @@ TclOOInvokeObject(
 {
     switch (publicPrivate) {
     case PUBLIC_METHOD:
+	if (((Object *) object)->publicContextCache == NULL) {
+	    ((Object *) object)->publicContextCache = (Tcl_HashTable *)
+		    ckalloc(sizeof(Tcl_HashTable));
+	    Tcl_InitObjHashTable(((Object *) object)->publicContextCache);
+	}
 	return TclOOObjectCmdCore((Object *) object, interp, objc, objv,
-		PUBLIC_METHOD, &((Object *)object)->publicContextCache,
+		PUBLIC_METHOD, ((Object *)object)->publicContextCache,
 		(Class *) startCls);
     case PRIVATE_METHOD:
 	/*
 	 * Is this the right cache?
 	 */
+	if (((Object *) object)->publicContextCache == NULL) {
+	    ((Object *) object)->publicContextCache = (Tcl_HashTable *)
+		    ckalloc(sizeof(Tcl_HashTable));
+	    Tcl_InitObjHashTable(((Object *) object)->publicContextCache);
+	}
 	return TclOOObjectCmdCore((Object *) object, interp, objc, objv,
-		PRIVATE_METHOD, &((Object *)object)->publicContextCache,
+		PRIVATE_METHOD, ((Object *)object)->publicContextCache,
 		(Class *) startCls);
     default:
+	if (((Object *) object)->privateContextCache == NULL) {
+	    ((Object *) object)->privateContextCache = (Tcl_HashTable *)
+		    ckalloc(sizeof(Tcl_HashTable));
+	    Tcl_InitObjHashTable(((Object *) object)->privateContextCache);
+	}
 	return TclOOObjectCmdCore((Object *) object, interp, objc, objv, 0,
-		&((Object *)object)->privateContextCache, (Class *) startCls);
+		((Object *)object)->privateContextCache, (Class *) startCls);
     }
 }
 

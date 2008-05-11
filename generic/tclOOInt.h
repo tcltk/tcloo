@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.20 2008/05/11 10:02:28 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.21 2008/05/11 21:20:29 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -160,8 +160,8 @@ typedef struct Object {
 				 * field starts out as NULL and is only
 				 * allocated if metadata is attached. */
     Tcl_Obj *cachedNameObj;	/* Cache of the name of the object. */
-    Tcl_HashTable publicContextCache;	/* Place to keep unused contexts. */
-    Tcl_HashTable privateContextCache;	/* Place to keep unused contexts. */
+    Tcl_HashTable *publicContextCache;	/* Place to keep unused contexts. */
+    Tcl_HashTable *privateContextCache;	/* Place to keep unused contexts. */
     Tcl_ObjectMapMethodNameProc mapMethodNameProc;
 				/* Function to allow remapping of method
 				 * names. For itcl-ng. */
@@ -208,14 +208,6 @@ typedef struct Class {
 				 * into, used to ensure deletion of dependent
 				 * entities happens properly when the class
 				 * itself is deleted. */
-    LIST_STATIC(struct Class *) classHierarchy;
-				/* List of classes that comprise the basic
-				 * class hierarchy for this class's
-				 * superclasses. If NULL (and this isn't the
-				 * root object class) then this needs
-				 * recomputing. */
-    int classHierarchyEpoch;	/* Differs from the global epoch when it is
-				 * time to recompute the class hierarchy. */
     Tcl_HashTable classMethods;	/* Hash table of all methods. Hash maps from
 				 * the (Tcl_Obj*) method name to the (Method*)
 				 * method record. */

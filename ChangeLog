@@ -1,3 +1,10 @@
+2008-05-11  Donal K. Fellows  <dkf@cspool38.cs.man.ac.uk>
+
+	* generic/tclOOInt.h (Class,Object): Tune down memory consumption by
+	removing the pre-computed class hierarchy (useless because it was
+	wrong) and changing the context caches to be allocated on the fly (as
+	many objects won't need both of them).
+
 2008-05-11  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOCall.c (AddSimpleClassChainToCallContext): Move mixin

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.12 2008/05/11 16:23:21 dkf Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.13 2008/05/11 21:20:29 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -63,8 +63,6 @@ static void		AddSimpleClassChainToCallContext(Class *classPtr,
 			    Tcl_HashTable *const doneFilters, int flags,
 			    Class *const filterDecl);
 static int		CmpStr(const void *ptr1, const void *ptr2);
-static void		InitClassHierarchy(Foundation *const fPtr,
-			    Class *const classPtr);
 static void		DupMethodNameRep(Tcl_Obj *srcPtr, Tcl_Obj *dstPtr);
 static void		FreeMethodNameRep(Tcl_Obj *objPtr);
 
@@ -239,85 +237,6 @@ TclOOInvokeContext(
 	}
     }
     return result;
-}
-
-/*
- * ----------------------------------------------------------------------
- *
- * InitClassHierarchy --
- *
- *	Builds the basic class hierarchy cache. This does not include mixins.
- *
- * ----------------------------------------------------------------------
- */
-
-static void
-InitClassHierarchy(
-    Foundation *const fPtr,
-    Class *const classPtr)
-{
-    if (classPtr == fPtr->objectCls) {
-	return;
-    }
-    if (classPtr->classHierarchyEpoch != fPtr->epoch) {
-	int i;
-	Class *superPtr = NULL;		/* Silence gcc warning. */
-
-	if (classPtr->classHierarchy.num != 0) {
-	    ckfree((char *) classPtr->classHierarchy.list);
-	}
-	FOREACH(superPtr, classPtr->superclasses) {
-	    InitClassHierarchy(fPtr, superPtr);
-	}
-	if (i == 1) {
-	    Class **hierlist = (Class **)
-		    ckalloc(sizeof(Class*) * (1+superPtr->classHierarchy.num));
-
-	    hierlist[0] = superPtr;
-	    memcpy(hierlist+1, superPtr->classHierarchy.list,
-		    sizeof(Class*) * superPtr->classHierarchy.num);
-	    classPtr->classHierarchy.num = 1 + superPtr->classHierarchy.num;
-	    classPtr->classHierarchy.list = hierlist;
-	    classPtr->classHierarchyEpoch = fPtr->epoch;
-	    return;
-	} else {
-	    int num = classPtr->superclasses.num, j = 0, k, realNum;
-	    Class **hierlist;		/* Temporary work space. */
-
-	    FOREACH(superPtr, classPtr->superclasses) {
-		num += superPtr->classHierarchy.num;
-	    }
-	    hierlist = (Class **) ckalloc(sizeof(Class *) * num);
-	    FOREACH(superPtr, classPtr->superclasses) {
-		hierlist[j++] = superPtr;
-		if (superPtr == fPtr->objectCls) {
-		    continue;
-		}
-		memcpy(hierlist+j, superPtr->classHierarchy.list,
-			sizeof(Class *) * superPtr->classHierarchy.num);
-		j += superPtr->classHierarchy.num;
-	    }
-	    realNum = num;
-	    for (j=0 ; j<num-1 ; j++) {
-		for (k=num-1 ; k>j ; k--) {
-		    if (hierlist[j] == hierlist[k]) {
-			hierlist[j] = NULL;
-			realNum--;
-			break;
-		    }
-		}
-	    }
-	    classPtr->classHierarchy.num = realNum;
-	    classPtr->classHierarchy.list = (Class **)
-		    ckalloc(sizeof(Class *) * realNum);
-	    for (j=k=0 ; j<num ; j++) {
-		if (hierlist[j] != NULL) {
-		    classPtr->classHierarchy.list[k++] = hierlist[j];
-		}
-	    }
-	    ckfree((char *) hierlist);
-	}
-    }
 }
 
 /*
@@ -796,12 +715,6 @@ TclOOGetCallContext(
     }
     cb.contextPtr->oPtr = oPtr;
     cb.contextPtr->index = 0;
-
-    /*
-     * Ensure that the class hierarchy is trivially iterable.
-     */
-
-    InitClassHierarchy(fPtr, oPtr->selfCls);
 
     /*
      * Add all defined filters (if any, and if we're going to be processing
