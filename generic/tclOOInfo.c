@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.12 2008/05/11 10:02:28 dkf Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.13 2008/05/11 21:14:58 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1173,6 +1173,14 @@ InfoClassSubsCmd(
     }
 
     FOREACH(subclassPtr, clsPtr->subclasses) {
+	Tcl_Obj *tmpObj = TclOOObjectName(interp, subclassPtr->thisPtr);
+
+	if (pattern && !Tcl_StringMatch(TclGetString(tmpObj), pattern)) {
+	    continue;
+	}
+	Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), tmpObj);
+    }
+    FOREACH(subclassPtr, clsPtr->mixinSubs) {
 	Tcl_Obj *tmpObj = TclOOObjectName(interp, subclassPtr->thisPtr);
 
 	if (pattern && !Tcl_StringMatch(TclGetString(tmpObj), pattern)) {
