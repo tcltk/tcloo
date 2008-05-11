@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.11 2008/05/11 10:02:28 dkf Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.12 2008/05/11 16:23:21 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -595,23 +595,11 @@ AddSimpleChainToCallContext(
     }
     if (!(flags & SPECIAL)) {
 	Tcl_HashEntry *hPtr;
-	Class *mixinPtr, *superPtr;
+	Class *mixinPtr;
 
 	FOREACH(mixinPtr, oPtr->mixins) {
 	    AddSimpleClassChainToCallContext(mixinPtr, methodNameObj, cbPtr,
 		    doneFilters, flags, filterDecl);
-	}
-	FOREACH(mixinPtr, oPtr->selfCls->mixins) {
-	    AddSimpleClassChainToCallContext(mixinPtr, methodNameObj, cbPtr,
-		    doneFilters, flags, filterDecl);
-	}
-	FOREACH(superPtr, oPtr->selfCls->classHierarchy) {
-	    int j=i;		/* HACK: save index so can nest FOREACHes. */
-	    FOREACH(mixinPtr, superPtr->mixins) {
-		AddSimpleClassChainToCallContext(mixinPtr, methodNameObj,
-			cbPtr, doneFilters, flags, filterDecl);
-	    }
-	    i=j;
 	}
 	if (oPtr->methodsPtr) {
 	    hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, (char*) methodNameObj);
@@ -977,6 +965,9 @@ AddSimpleClassChainToCallContext(
 				 * NULL, either the filter was declared by the
 				 * object or this isn't a filter. */
 {
+    int i;
+    Class *superPtr;
+
     /*
      * We hard-code the tail-recursive form. It's by far the most common case
      * *and* it is much more gentle on the stack.
@@ -986,6 +977,7 @@ AddSimpleClassChainToCallContext(
     if (flags & CONSTRUCTOR) {
 	AddMethodToCallChain(classPtr->constructorPtr, cbPtr, doneFilters,
 		filterDecl);
+
     } else if (flags & DESTRUCTOR) {
 	AddMethodToCallChain(classPtr->destructorPtr, cbPtr, doneFilters,
 		filterDecl);
@@ -1011,20 +1003,20 @@ AddSimpleClassChainToCallContext(
 	}
     }
 
+    FOREACH(superPtr, classPtr->mixins) {
+	AddSimpleClassChainToCallContext(superPtr, methodNameObj, cbPtr,
+		doneFilters, flags, filterDecl);
+    }
+
     switch (classPtr->superclasses.num) {
     case 1:
 	classPtr = classPtr->superclasses.list[0];
 	goto tailRecurse;
     default:
-    {
-	int i;
-	Class *superPtr;
-
 	FOREACH(superPtr, classPtr->superclasses) {
 	    AddSimpleClassChainToCallContext(superPtr, methodNameObj, cbPtr,
 		    doneFilters, flags, filterDecl);
 	}
-    }
     case 0:
 	return;
     }
