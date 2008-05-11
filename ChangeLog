@@ -1,11 +1,13 @@
-2008-05-11  Donal K. Fellows  <dkf@cspool38.cs.man.ac.uk>
+2008-05-11  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOCall.c (TclOOGetCallContext): Increase the amount of
+	safety armouring on the cache contents reuse conditions. Hopefully (!)
+	this will fix [Bug 1959637]
 
 	* generic/tclOOInt.h (Class,Object): Tune down memory consumption by
 	removing the pre-computed class hierarchy (useless because it was
 	wrong) and changing the context caches to be allocated on the fly (as
 	many objects won't need both of them).
-
-2008-05-11  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOCall.c (AddSimpleClassChainToCallContext): Move mixin
 	processing to here so that processing mixins of mixins works. [Bug

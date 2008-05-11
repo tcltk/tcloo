@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.13 2008/05/11 21:20:29 dkf Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.14 2008/05/11 22:08:07 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -688,17 +688,19 @@ TclOOGetCallContext(
 	    methodNameObj->typePtr = NULL;
 	    TclOODeleteContext(cb.contextPtr);
 	}
-	doFilters = 1;
 	hPtr = Tcl_FindHashEntry(cachePtr, (char *) methodNameObj);
 	if (hPtr != NULL && Tcl_GetHashValue(hPtr) != NULL) {
 	    cb.contextPtr = Tcl_GetHashValue(hPtr);
 	    Tcl_SetHashValue(hPtr, NULL);
-	    if ((cb.contextPtr->globalEpoch == fPtr->epoch)
-		    && (cb.contextPtr->localEpoch == oPtr->epoch)) {
+	    if ((cb.contextPtr->oPtr->creationEpoch == oPtr->creationEpoch)
+		    && (cb.contextPtr->globalEpoch == fPtr->epoch)
+		    && (cb.contextPtr->localEpoch == oPtr->epoch)
+		    && (cb.contextPtr->flags == flags)) {
 		return cb.contextPtr;
 	    }
 	    TclOODeleteContext(cb.contextPtr);
 	}
+	doFilters = 1;
     }
     cb.contextPtr = (CallContext *) ckalloc(sizeof(CallContext));
     cb.contextPtr->call.numChain = 0;
