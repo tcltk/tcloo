@@ -1,5 +1,8 @@
 2008-05-12  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclOO.c (ObjectNamespaceDeleted): Unstitch class from
+	mixed in class correctly. [Bug 1905797]
+
 	* generic/tclOOCall.c (TclOOGetCallContext): Get the creation epoch of
 	the object referred to in a context and store that separately in the
 	context so that we can safely find out whether a cached context refers

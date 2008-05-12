@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.38 2008/05/11 21:20:28 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.39 2008/05/12 12:46:35 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -820,7 +820,7 @@ ObjectNamespaceDeleted(
 	}
 	FOREACH(mixinPtr, clsPtr->mixins) {
 	    if (!(mixinPtr->flags & OBJECT_DELETED)) {
-		TclOORemoveFromSubclasses(clsPtr, mixinPtr);
+		TclOORemoveFromMixinSubs(clsPtr, mixinPtr);
 	    }
 	}
 	if (i) {
