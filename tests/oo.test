@@ -7,12 +7,9 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.16 2008/05/12 09:49:50 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.17 2008/05/12 10:11:04 dkf Exp $
 
-package require TclOO ;# $env(PACKAGE_VERSION)
-# This next line clears up a whole load of potential problems caused when the
-# version of TclOO is not what you expected!
-puts "Running tests against TclOO [package present TclOO]"
+package require TclOO 0.3a0 ;# Must match value in configure.in
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
     namespace import -force ::tcltest::*
