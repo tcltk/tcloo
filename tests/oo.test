@@ -7,10 +7,11 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.15 2008/05/11 21:12:47 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.16 2008/05/12 09:49:50 dkf Exp $
 
-lappend auto_path .
 package require TclOO ;# $env(PACKAGE_VERSION)
+# This next line clears up a whole load of potential problems caused when the
+# version of TclOO is not what you expected!
 puts "Running tests against TclOO [package present TclOO]"
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -119,6 +120,20 @@ test oo-1.8 {basic test of OO functionality} -setup {
     oo::objdefine obj method foo {} {}
     lappend result [obj foo]
 } -result {bar {}}
+test oo-1.9 {basic test of OO functionality} -setup {
+    oo::object create a
+    oo::object create b
+} -cleanup {
+    catch {a destroy}
+    b destroy
+} -body {
+    oo::objdefine a method foo {} { return A }
+    oo::objdefine b method foo {} { return B }
+    apply {{} {
+	set m foo
+	return [a $m],[a destroy],[b $m]
+    }}
+} -result A,,B
 
 test oo-2.1 {basic test of OO functionality: constructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as
