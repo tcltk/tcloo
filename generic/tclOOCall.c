@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.14 2008/05/11 22:08:07 dkf Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.15 2008/05/12 09:49:49 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -675,9 +675,20 @@ TclOOGetCallContext(
 	hPtr = NULL;
 	doFilters = 0;
     } else {
+	/*
+	 * Check if we can get the chain out of the Tcl_Obj method name or out
+	 * of the cache.
+	 *
+	 * The condition on a chain from a cached location being reusable is:
+	 *	Refers to the same object (same creation epoch), and
+	 *	Still across the same class structure (same global epoch), and
+	 *	Still across the same object strucutre (same local epoch), and
+	 *	No public/private/filter magic leakage (same flags).
+	 */
+
 	if (methodNameObj->typePtr == &methodNameType) {
 	    cb.contextPtr = methodNameObj->internalRep.otherValuePtr;
-	    if ((cb.contextPtr->oPtr->creationEpoch == oPtr->creationEpoch)
+	    if ((cb.contextPtr->objectCreationEpoch == oPtr->creationEpoch)
 		    && (cb.contextPtr->globalEpoch == fPtr->epoch)
 		    && (cb.contextPtr->localEpoch == oPtr->epoch)
 		    && (cb.contextPtr->flags == flags)) {
@@ -692,7 +703,7 @@ TclOOGetCallContext(
 	if (hPtr != NULL && Tcl_GetHashValue(hPtr) != NULL) {
 	    cb.contextPtr = Tcl_GetHashValue(hPtr);
 	    Tcl_SetHashValue(hPtr, NULL);
-	    if ((cb.contextPtr->oPtr->creationEpoch == oPtr->creationEpoch)
+	    if ((cb.contextPtr->objectCreationEpoch == oPtr->creationEpoch)
 		    && (cb.contextPtr->globalEpoch == fPtr->epoch)
 		    && (cb.contextPtr->localEpoch == oPtr->epoch)
 		    && (cb.contextPtr->flags == flags)) {
@@ -702,6 +713,7 @@ TclOOGetCallContext(
 	}
 	doFilters = 1;
     }
+
     cb.contextPtr = (CallContext *) ckalloc(sizeof(CallContext));
     cb.contextPtr->call.numChain = 0;
     cb.contextPtr->call.chain = cb.contextPtr->call.staticChain;
@@ -716,6 +728,7 @@ TclOOGetCallContext(
 		flags&(PUBLIC_METHOD|PRIVATE_METHOD|SPECIAL|FILTER_HANDLING);
     }
     cb.contextPtr->oPtr = oPtr;
+    cb.contextPtr->objectCreationEpoch = oPtr->creationEpoch;
     cb.contextPtr->index = 0;
 
     /*

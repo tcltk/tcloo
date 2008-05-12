@@ -1,3 +1,13 @@
+2008-05-12  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOCall.c (TclOOGetCallContext): Get the creation epoch of
+	the object referred to in a context and store that separately in the
+	context so that we can safely find out whether a cached context refers
+	to a deleted object without needing to read inside that object! This
+	clears a FreeMemoryRead identified in [Bug 1959637]; might clear that
+	bug in its entirety too, if it turns out to be a FMR fundamentally,
+	which would also explain its heisenbug-ness.
+
 2008-05-11  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOCall.c (TclOOGetCallContext): Increase the amount of

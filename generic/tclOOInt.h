@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.21 2008/05/11 21:20:29 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.22 2008/05/12 09:49:50 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -284,6 +284,7 @@ typedef struct {
 
 typedef struct CallContext {
     Object *oPtr;		/* The object associated with this call. */
+    int objectCreationEpoch;	/* The object's creation epoch. */
     int globalEpoch;		/* Global (class) epoch counter snapshot. */
     int localEpoch;		/* Local (single object) epoch counter
 				 * snapshot. */
