@@ -1,3 +1,20 @@
+2008-05-13  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOCall.c (TclOOGetCallContext, etc.): Rework the context
+	management code so that call contexts are split into two parts: a part
+	that is static over the lifetime of the context and which can be
+	cached and shared between calls (allocated with ckalloc) and a part
+	that varies during a call, which isn't shared or cached (and which is
+	allocated with TclStackAlloc). This will make recursive calls to an
+	object's methods *much* more efficient. No public API affected.
+
+	*** POTENTIAL INCOMPATABILITY ***
+	If you used the internal API and poked inside the call context, you
+	will minimally need to recompile. Probably rewrite too; many fields
+	have moved inwards into the shared part. Note that this part of the
+	code is subject to change in the future, e.g. when class-level caches
+	are created...
+
 2008-05-12  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c (ObjectNamespaceDeleted): Unstitch class from

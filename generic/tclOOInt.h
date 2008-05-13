@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.22 2008/05/12 09:49:50 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.23 2008/05/13 15:26:06 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -230,6 +230,7 @@ typedef struct Class {
  */
 
 typedef struct Foundation {
+    Tcl_Interp *interp;
     Class *objectCls;		/* The root of the object system. */
     Class *classCls;		/* The class of all classes. */
     Tcl_Namespace *ooNs;	/* Master ::oo namespace. */
@@ -274,7 +275,15 @@ struct MInvoke {
 				 * NULL, it was added by the object. */
 };
 
-typedef struct {
+typedef struct CallChain {
+    Object *oPtr;		/* The object associated with this call. */
+    int objectCreationEpoch;	/* The object's creation epoch. */
+    int objectEpoch;		/* Local (object structure) epoch counter
+				 * snapshot. */
+    int epoch;			/* Global (class structure) epoch counter
+				 * snapshot. */
+    int flags;			/* Assorted flags, see below. */
+    int refCount;		/* Reference count. */
     int numChain;		/* Size of the call chain. */
     struct MInvoke *chain;	/* Array of call chain entries. May point to
 				 * staticChain if the number of entries is
@@ -283,17 +292,14 @@ typedef struct {
 } CallChain;
 
 typedef struct CallContext {
-    Object *oPtr;		/* The object associated with this call. */
-    int objectCreationEpoch;	/* The object's creation epoch. */
-    int globalEpoch;		/* Global (class) epoch counter snapshot. */
-    int localEpoch;		/* Local (single object) epoch counter
-				 * snapshot. */
-    int flags;			/* Assorted flags, see below. */
+    Tcl_Interp *interp;
     int index;			/* Index into the call chain of the currently
 				 * executing method implementation. */
-    int refCount;		/* Reference count. */
-    int skip;
-    CallChain call;		/* The actual call chain. */
+    int skip;			/* Current number of arguments to skip; can
+				 * vary depending on whether it is a direct
+				 * method call or a continuation via the
+				 * [next] command. */
+    CallChain *callPtr;		/* The actual call chain. */
 } CallContext;
 
 /*
@@ -396,6 +402,8 @@ MODULE_SCOPE int	TclOODefineSelfObjCmd(ClientData clientData,
 MODULE_SCOPE void	TclOOAddToInstances(Object *oPtr, Class *clsPtr);
 MODULE_SCOPE void	TclOOAddToMixinSubs(Class *subPtr, Class *mixinPtr);
 MODULE_SCOPE void	TclOOAddToSubclasses(Class *subPtr, Class *superPtr);
+MODULE_SCOPE Tcl_HashTable *TclOOAllocChainCache(void);
+MODULE_SCOPE void	TclOODeleteChainCache(Tcl_HashTable *tablePtr);
 MODULE_SCOPE void	TclOODeleteContext(CallContext *contextPtr);
 MODULE_SCOPE void	TclOODeleteMethod(Method *method);
 MODULE_SCOPE CallContext *TclOOGetCallContext(Foundation *fPtr, Object *oPtr,

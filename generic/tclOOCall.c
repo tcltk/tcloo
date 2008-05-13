@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.15 2008/05/12 09:49:49 dkf Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.16 2008/05/13 15:26:06 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -24,7 +24,7 @@
  */
 
 struct ChainBuilder {
-    CallContext *contextPtr;	/* The call context being built. */
+    CallChain *callChainPtr;	/* The call chain being built. */
     int filterLength;		/* Number of entries in the call chain that
 				 * are due to processing filters and not the
 				 * main call chain. */
@@ -63,6 +63,7 @@ static void		AddSimpleClassChainToCallContext(Class *classPtr,
 			    Tcl_HashTable *const doneFilters, int flags,
 			    Class *const filterDecl);
 static int		CmpStr(const void *ptr1, const void *ptr2);
+static inline void	DeleteChain(CallChain *callPtr);
 static void		DupMethodNameRep(Tcl_Obj *srcPtr, Tcl_Obj *dstPtr);
 static void		FreeMethodNameRep(Tcl_Obj *objPtr);
 
@@ -92,13 +93,66 @@ void
 TclOODeleteContext(
     CallContext *contextPtr)
 {
-    if (--contextPtr->refCount >= 1) {
+    DeleteChain(contextPtr->callPtr);
+    TclStackFree(contextPtr->interp, contextPtr);
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOAllocChainCache, TclOODeleteChainCache --
+ *
+ *	Create and destroy caches of method call-chains.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+Tcl_HashTable *
+TclOOAllocChainCache(void)
+{
+    Tcl_HashTable *tablePtr = (Tcl_HashTable*) ckalloc(sizeof(Tcl_HashTable));
+
+    Tcl_InitObjHashTable(tablePtr);
+    return tablePtr;
+}
+
+void
+TclOODeleteChainCache(
+    Tcl_HashTable *tablePtr)
+{
+    FOREACH_HASH_DECLS;
+    CallChain *callPtr;
+
+    FOREACH_HASH_VALUE(callPtr, tablePtr) {
+	if (callPtr) {
+	    DeleteChain(callPtr);
+	}
+    }
+    Tcl_DeleteHashTable(tablePtr);
+    ckfree((char *) tablePtr);
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * DeleteChain --
+ *
+ *	Destroys a method call-chain.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static inline void
+DeleteChain(
+    CallChain *callPtr)
+{
+    if (--callPtr->refCount >= 1) {
 	return;
     }
-    if (contextPtr->call.chain != contextPtr->call.staticChain) {
-	ckfree((char *) contextPtr->call.chain);
+    if (callPtr->chain != callPtr->staticChain) {
+	ckfree((char *) callPtr->chain);
     }
-    ckfree((char *) contextPtr);
+    ckfree((char *) callPtr);
 }
 
 /*
@@ -117,12 +171,12 @@ TclOOStashContext(
     Tcl_Obj *objPtr,
     CallContext *contextPtr)
 {
+    contextPtr->callPtr->refCount++;
     if (objPtr->typePtr && objPtr->typePtr->freeIntRepProc) {
 	objPtr->typePtr->freeIntRepProc(objPtr);
     }
     objPtr->typePtr = &methodNameType;
-    objPtr->internalRep.otherValuePtr = contextPtr;
-    contextPtr->refCount++;
+    objPtr->internalRep.otherValuePtr = contextPtr->callPtr;
 }
 
 /*
@@ -141,20 +195,20 @@ DupMethodNameRep(
     Tcl_Obj *srcPtr,
     Tcl_Obj *dstPtr)
 {
-    CallContext *contextPtr = srcPtr->internalRep.otherValuePtr;
+    register CallChain *callPtr = srcPtr->internalRep.otherValuePtr;
 
     dstPtr->typePtr = &methodNameType;
-    dstPtr->internalRep.otherValuePtr = contextPtr;
-    contextPtr->refCount++;
+    dstPtr->internalRep.otherValuePtr = callPtr;
+    callPtr->refCount++;
 }
 
 static void
 FreeMethodNameRep(
     Tcl_Obj *objPtr)
 {
-    register CallContext *contextPtr = objPtr->internalRep.otherValuePtr;
+    register CallChain *callPtr = objPtr->internalRep.otherValuePtr;
 
-    TclOODeleteContext(contextPtr);
+    DeleteChain(callPtr);
     objPtr->internalRep.otherValuePtr = NULL;
     objPtr->typePtr = NULL;
 }
@@ -182,9 +236,9 @@ TclOOInvokeContext(
     int objc,			/* The number of arguments. */
     Tcl_Obj *const *objv)	/* The arguments as actually seen. */
 {
-    Method *mPtr = contextPtr->call.chain[contextPtr->index].mPtr;
+    Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
     int result, isFirst = (contextPtr->index == 0);
-    int isFilter = contextPtr->call.chain[contextPtr->index].isFilter;
+    int isFilter = contextPtr->callPtr->chain[contextPtr->index].isFilter;
     int wasFilter;
 
     /*
@@ -196,8 +250,8 @@ TclOOInvokeContext(
     if (isFirst) {
 	int i;
 
-	for (i=0 ; i<contextPtr->call.numChain ; i++) {
-	    Tcl_Preserve(contextPtr->call.chain[i].mPtr);
+	for (i=0 ; i<contextPtr->callPtr->numChain ; i++) {
+	    Tcl_Preserve(contextPtr->callPtr->chain[i].mPtr);
 	}
     }
 
@@ -205,11 +259,11 @@ TclOOInvokeContext(
      * Save whether we were in a filter and set up whether we are now.
      */
 
-    wasFilter = contextPtr->oPtr->flags & FILTER_HANDLING;
-    if (isFilter || contextPtr->flags & FILTER_HANDLING) {
-	contextPtr->oPtr->flags |= FILTER_HANDLING;
+    wasFilter = contextPtr->callPtr->oPtr->flags & FILTER_HANDLING;
+    if (isFilter || contextPtr->callPtr->flags & FILTER_HANDLING) {
+	contextPtr->callPtr->oPtr->flags |= FILTER_HANDLING;
     } else {
-	contextPtr->oPtr->flags &= ~FILTER_HANDLING;
+	contextPtr->callPtr->oPtr->flags &= ~FILTER_HANDLING;
     }
 
     /*
@@ -225,15 +279,15 @@ TclOOInvokeContext(
      */
 
     if (wasFilter) {
-	contextPtr->oPtr->flags |= FILTER_HANDLING;
+	contextPtr->callPtr->oPtr->flags |= FILTER_HANDLING;
     } else {
-	contextPtr->oPtr->flags &= ~FILTER_HANDLING;
+	contextPtr->callPtr->oPtr->flags &= ~FILTER_HANDLING;
     }
     if (isFirst) {
 	int i;
 
-	for (i=0 ; i<contextPtr->call.numChain ; i++) {
-	    Tcl_Release(contextPtr->call.chain[i].mPtr);
+	for (i=0 ; i<contextPtr->callPtr->numChain ; i++) {
+	    Tcl_Release(contextPtr->callPtr->chain[i].mPtr);
 	}
     }
     return result;
@@ -559,7 +613,7 @@ AddMethodToCallChain(
 				 * NULL, either the filter was declared by the
 				 * object or this isn't a filter. */
 {
-    register CallContext *contextPtr = cbPtr->contextPtr;
+    register CallChain *callPtr = cbPtr->callChainPtr;
     int i;
 
     /*
@@ -584,10 +638,10 @@ AddMethodToCallChain(
      * should be sufficient for [incr Tcl] support though.
      */
 
-    if (!(contextPtr->flags & PRIVATE_METHOD)
+    if (!(callPtr->flags & PRIVATE_METHOD)
 	    && (mPtr->flags & PRIVATE_METHOD)
 	    && (mPtr->declaringClassPtr != NULL)
-	    && (mPtr->declaringClassPtr != contextPtr->oPtr->selfCls)) {
+	    && (mPtr->declaringClassPtr != callPtr->oPtr->selfCls)) {
 	return;
     }
 
@@ -596,9 +650,9 @@ AddMethodToCallChain(
      * any leading filters.
      */
 
-    for (i=cbPtr->filterLength ; i<contextPtr->call.numChain ; i++) {
-	if (contextPtr->call.chain[i].mPtr == mPtr &&
-		contextPtr->call.chain[i].isFilter == (doneFilters != NULL)) {
+    for (i=cbPtr->filterLength ; i<callPtr->numChain ; i++) {
+	if (callPtr->chain[i].mPtr == mPtr &&
+		callPtr->chain[i].isFilter == (doneFilters != NULL)) {
 	    /*
 	     * Call chain semantics states that methods come as *late* in the
 	     * call chain as possible. This is done by copying down the
@@ -606,14 +660,14 @@ AddMethodToCallChain(
 	     * method invokations in the call chain; it just rearranges them.
 	     */
 
-	    Class *declCls = contextPtr->call.chain[i].filterDeclarer;
+	    Class *declCls = callPtr->chain[i].filterDeclarer;
 
-	    for (; i+1<contextPtr->call.numChain ; i++) {
-		contextPtr->call.chain[i] = contextPtr->call.chain[i+1];
+	    for (; i+1<callPtr->numChain ; i++) {
+		callPtr->chain[i] = callPtr->chain[i+1];
 	    }
-	    contextPtr->call.chain[i].mPtr = mPtr;
-	    contextPtr->call.chain[i].isFilter = (doneFilters != NULL);
-	    contextPtr->call.chain[i].filterDeclarer = declCls;
+	    callPtr->chain[i].mPtr = mPtr;
+	    callPtr->chain[i].isFilter = (doneFilters != NULL);
+	    callPtr->chain[i].filterDeclarer = declCls;
 	    return;
 	}
     }
@@ -624,20 +678,50 @@ AddMethodToCallChain(
      * realloc-ing if the chain gets long.
      */
 
-    if (contextPtr->call.numChain == CALL_CHAIN_STATIC_SIZE) {
-	contextPtr->call.chain = (struct MInvoke *)
-		ckalloc(sizeof(struct MInvoke)*(contextPtr->call.numChain+1));
-	memcpy(contextPtr->call.chain, contextPtr->call.staticChain,
-		sizeof(struct MInvoke) * contextPtr->call.numChain);
-    } else if (contextPtr->call.numChain > CALL_CHAIN_STATIC_SIZE) {
-	contextPtr->call.chain = (struct MInvoke *)
-		ckrealloc((char *) contextPtr->call.chain,
-		sizeof(struct MInvoke) * (contextPtr->call.numChain + 1));
+    if (callPtr->numChain == CALL_CHAIN_STATIC_SIZE) {
+	callPtr->chain = (struct MInvoke *)
+		ckalloc(sizeof(struct MInvoke)*(callPtr->numChain+1));
+	memcpy(callPtr->chain, callPtr->staticChain,
+		sizeof(struct MInvoke) * callPtr->numChain);
+    } else if (callPtr->numChain > CALL_CHAIN_STATIC_SIZE) {
+	callPtr->chain = (struct MInvoke *) ckrealloc((char *) callPtr->chain,
+		sizeof(struct MInvoke) * (callPtr->numChain + 1));
     }
-    contextPtr->call.chain[i].mPtr = mPtr;
-    contextPtr->call.chain[i].isFilter = (doneFilters != NULL);
-    contextPtr->call.chain[i].filterDeclarer = filterDecl;
-    contextPtr->call.numChain++;
+    callPtr->chain[i].mPtr = mPtr;
+    callPtr->chain[i].isFilter = (doneFilters != NULL);
+    callPtr->chain[i].filterDeclarer = filterDecl;
+    callPtr->numChain++;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InitCallChain --
+ *	Encoding of the policy of how to set up a call chain. Doesn't populate
+ *	the chain with the method implementation data.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static inline void
+InitCallChain(
+    CallChain *callPtr,
+    Foundation *fPtr,
+    Object *oPtr,
+    int flags)
+{
+    callPtr->epoch = fPtr->epoch;
+    callPtr->oPtr = oPtr;
+    callPtr->objectCreationEpoch = oPtr->creationEpoch;
+    callPtr->objectEpoch = oPtr->epoch;
+    callPtr->flags = 0;
+    if (flags & (PUBLIC_METHOD|PRIVATE_METHOD|SPECIAL|FILTER_HANDLING)) {
+	callPtr->flags |=
+		flags&(PUBLIC_METHOD|PRIVATE_METHOD|SPECIAL|FILTER_HANDLING);
+    }
+    callPtr->refCount = 1;
+    callPtr->numChain = 0;
+    callPtr->chain = callPtr->staticChain;
 }
 
 /*
@@ -666,6 +750,8 @@ TclOOGetCallContext(
     Tcl_HashTable *cachePtr)	/* Where to cache the chain. Ignored for both
 				 * constructors and destructors. */
 {
+    CallContext *contextPtr;
+    CallChain *callPtr;
     struct ChainBuilder cb;
     int i, count, doFilters;
     Tcl_HashEntry *hPtr;
@@ -687,49 +773,37 @@ TclOOGetCallContext(
 	 */
 
 	if (methodNameObj->typePtr == &methodNameType) {
-	    cb.contextPtr = methodNameObj->internalRep.otherValuePtr;
-	    if ((cb.contextPtr->objectCreationEpoch == oPtr->creationEpoch)
-		    && (cb.contextPtr->globalEpoch == fPtr->epoch)
-		    && (cb.contextPtr->localEpoch == oPtr->epoch)
-		    && (cb.contextPtr->flags == flags)) {
-		cb.contextPtr->refCount++;
-		return cb.contextPtr;
+	    callPtr = methodNameObj->internalRep.otherValuePtr;
+	    if ((callPtr->objectCreationEpoch == oPtr->creationEpoch)
+		    && (callPtr->epoch == fPtr->epoch)
+		    && (callPtr->objectEpoch == oPtr->epoch)
+		    && (callPtr->flags == flags)) {
+		callPtr->refCount++;
+		goto returnContext;
 	    }
-	    methodNameObj->internalRep.otherValuePtr = NULL;
-	    methodNameObj->typePtr = NULL;
-	    TclOODeleteContext(cb.contextPtr);
+	    methodNameObj->typePtr->freeIntRepProc(methodNameObj);
 	}
 	hPtr = Tcl_FindHashEntry(cachePtr, (char *) methodNameObj);
 	if (hPtr != NULL && Tcl_GetHashValue(hPtr) != NULL) {
-	    cb.contextPtr = Tcl_GetHashValue(hPtr);
-	    Tcl_SetHashValue(hPtr, NULL);
-	    if ((cb.contextPtr->objectCreationEpoch == oPtr->creationEpoch)
-		    && (cb.contextPtr->globalEpoch == fPtr->epoch)
-		    && (cb.contextPtr->localEpoch == oPtr->epoch)
-		    && (cb.contextPtr->flags == flags)) {
-		return cb.contextPtr;
+	    callPtr = Tcl_GetHashValue(hPtr);
+	    if ((callPtr->objectCreationEpoch == oPtr->creationEpoch)
+		    && (callPtr->epoch == fPtr->epoch)
+		    && (callPtr->objectEpoch == oPtr->epoch)
+		    && (callPtr->flags == flags)) {
+		callPtr->refCount++;
+		goto returnContext;
 	    }
-	    TclOODeleteContext(cb.contextPtr);
+	    Tcl_SetHashValue(hPtr, NULL);
+	    DeleteChain(callPtr);
 	}
 	doFilters = 1;
     }
 
-    cb.contextPtr = (CallContext *) ckalloc(sizeof(CallContext));
-    cb.contextPtr->call.numChain = 0;
-    cb.contextPtr->call.chain = cb.contextPtr->call.staticChain;
+    callPtr = (CallChain *) ckalloc(sizeof(CallChain));
+    InitCallChain(callPtr, fPtr, oPtr, flags);
+
+    cb.callChainPtr = callPtr;
     cb.filterLength = 0;
-    cb.contextPtr->globalEpoch = fPtr->epoch;
-    cb.contextPtr->localEpoch = oPtr->epoch;
-    cb.contextPtr->flags = 0;
-    cb.contextPtr->skip = 2;
-    cb.contextPtr->refCount = 1;
-    if (flags & (PUBLIC_METHOD|PRIVATE_METHOD|SPECIAL|FILTER_HANDLING)) {
-	cb.contextPtr->flags |=
-		flags&(PUBLIC_METHOD|PRIVATE_METHOD|SPECIAL|FILTER_HANDLING);
-    }
-    cb.contextPtr->oPtr = oPtr;
-    cb.contextPtr->objectCreationEpoch = oPtr->creationEpoch;
-    cb.contextPtr->index = 0;
 
     /*
      * Add all defined filters (if any, and if we're going to be processing
@@ -753,7 +827,7 @@ TclOOGetCallContext(
 	AddClassFiltersToCallContext(oPtr, oPtr->selfCls, &cb, &doneFilters);
 	Tcl_DeleteHashTable(&doneFilters);
     }
-    count = cb.filterLength = cb.contextPtr->call.numChain;
+    count = cb.filterLength = callPtr->numChain;
 
     /*
      * Add the actual method implementations.
@@ -767,31 +841,39 @@ TclOOGetCallContext(
      * cacheing of the method implementation (if relevant).
      */
 
-    if (count == cb.contextPtr->call.numChain) {
+    if (count == callPtr->numChain) {
 	/*
 	 * Method does not actually exist. If we're dealing with constructors
 	 * or destructors, this isn't a problem.
 	 */
 
 	if (flags & SPECIAL) {
-	    TclOODeleteContext(cb.contextPtr);
+	    DeleteChain(callPtr);
 	    return NULL;
 	}
 	AddSimpleChainToCallContext(oPtr, fPtr->unknownMethodNameObj, &cb,
 		NULL, 0, NULL);
-	cb.contextPtr->flags |= OO_UNKNOWN_METHOD;
-	cb.contextPtr->globalEpoch = -1;
-	if (count == cb.contextPtr->call.numChain) {
-	    TclOODeleteContext(cb.contextPtr);
+	callPtr->flags |= OO_UNKNOWN_METHOD;
+	callPtr->epoch = -1;
+	if (count == callPtr->numChain) {
+	    DeleteChain(callPtr);
 	    return NULL;
 	}
     } else if (doFilters) {
 	if (hPtr == NULL) {
 	    hPtr = Tcl_CreateHashEntry(cachePtr, (char *) methodNameObj, &i);
 	}
-	Tcl_SetHashValue(hPtr, NULL);
+	callPtr->refCount++;
+	Tcl_SetHashValue(hPtr, callPtr);
     }
-    return cb.contextPtr;
+
+  returnContext:
+    contextPtr = TclStackAlloc(fPtr->interp, sizeof(CallContext));
+    contextPtr->interp = fPtr->interp;
+    contextPtr->callPtr = callPtr;
+    contextPtr->skip = 2;
+    contextPtr->index = 0;
+    return contextPtr;
 }
 
 /*
