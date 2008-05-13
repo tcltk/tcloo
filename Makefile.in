@@ -14,6 +14,7 @@ PKG_LIB_FILE=@PKG_LIB_FILE@
 PKG_STUB_LIB_FILE=@PKG_STUB_LIB_FILE@
 SHELL=@SHELL@
 srcdir=@srcdir@
+datarootdir=@datarootdir@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
