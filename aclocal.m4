@@ -7,11 +7,14 @@ AC_DEFUN([TEAX_FOREACH], [for $1 in $2; do $3; done])
 AC_DEFUN([TEAX_IFEQ], [AS_IF([test "x$1" = "x$2"], [$3])])
 AC_DEFUN([TEAX_IFNEQ], [AS_IF([test "x$1" != "x$2"], [$3])])
 AC_DEFUN([TEAX_SWITCH], [case "$1" in TEAX_SWITCH_Cases(m4_shift($@)) esac])
-AC_DEFUN([TEAX_SWITCH_Cases], [m4_if([$#],0,,[$#],1,,[TEAX_SWITCH_OneCase($1,$2)TEAX_SWITCH_Cases(m4_shift(m4_shift($@)))])])
+AC_DEFUN([TEAX_SWITCH_Cases], [m4_if([$#],0,,[$#],1,,[TEAX_SWITCH_OneCase([$1],[$2])TEAX_SWITCH_Cases(m4_shift(m4_shift($@)))])])
 AC_DEFUN([TEAX_SWITCH_OneCase],[ $1) $2;;])
 AC_DEFUN([CygPath],[`${CYGPATH} $1`])
 
 dnl Interesting macros
+AC_DEFUN([TEAX_INCLUDE_DIR], [
+    TEAX_LAPPEND(TeaXIncludeDirs, $1)
+    TEA_ADD_INCLUDES([-I\"]CygPath($1)[\"])])
 AC_DEFUN([TEAX_SUBST_RESOURCE], [
     AC_REQUIRE([TEA_CONFIG_CFLAGS])dnl
     TEAX_IFEQ($TEA_PLATFORM, windows, [
@@ -34,9 +37,9 @@ AC_DEFUN([TEAX_SUBST_RESOURCE], [
 		RC_=: ])])
     # This next line is because of the brokenness of TEA...
     AC_SUBST(RC, $RC_)
-    TEAX_FOREACH(i, $1, [
+    TEAX_FOREACH(i, $TeaXIncludeDirs, [
 	TEAX_LAPPEND(RES_DEFS, ${rcdef_inc}\"CygPath($i)\")])
-    TEAX_FOREACH(i, $2, [
+    TEAX_FOREACH(i, $1, [
 	TEAX_LAPPEND(RES_DEFS, ${rcdef_start}$i='${rcdef_q}\$($i)${rcdef_q}')])
     AC_SUBST(RES_DEFS)])
 AC_DEFUN([TEAX_ADD_PRIVATE_HEADERS], [
@@ -61,22 +64,35 @@ AC_DEFUN([TEAX_VC_MANIFEST], [
 	    AC_SUBST(ADD_MANIFEST)
 	    TEAX_LAPPEND(CLEANFILES, ${PKG_LIB_FILE}.manifest)])])])
 AC_DEFUN([TEAX_SDX], [
-    AC_PATH_PROG(SDX, sdx, none)
-    TEAX_IFEQ($SDX, none, [
-	AC_PATH_PROG(SDX_KIT, sdx.kit, none)
-	TEAX_IFNEQ($SDX_KIT, none, [
-	    # We assume that sdx.kit is on the path, and that the default
-	    # tclsh is activetcl
-	    SDX="tclsh '${SDX_KIT}'"])])
-    TEAX_IFEQ($SDX, none, [
-	AC_MSG_WARN([cannot find sdx; building starkits will fail])
-	AC_MSG_NOTICE([building as a normal library still supported])])])
+    AC_ARG_WITH([sdx], [AS_HELP_STRING([--with-sdx],
+[where to find the Starkit Developer Extensions (default: search path)])], [:],
+[with_sdx=search])
+    TEAX_SWITCH($with_sdx,
+	no, [
+	    AC_MSG_NOTICE([configured without sdx; building starkits will fail])
+	    AC_MSG_NOTICE([building as a normal library still supported])],
+	search, [
+	    AC_PATH_PROG([SDX], [sdx], [none])
+	    TEAX_IFEQ($SDX, none, [
+		AC_PATH_PROG(SDX_KIT, sdx.kit, none)
+		TEAX_IFNEQ($SDX_KIT, none, [
+		    # We assume that sdx.kit is on the path, and that the
+		    # default tclsh is activetcl
+		    SDX="tclsh '${SDX_KIT}'"])])
+	    TEAX_IFEQ($SDX, none, [
+		AC_MSG_WARN([cannot find sdx; building starkits will fail])
+		AC_MSG_NOTICE([building as a normal library still supported])])],
+	*, [
+	    AC_PATH_PROG(SDX, $with_sdx, none)
+	    TEAX_IFEQ($SDX, none, [
+		AC_MSG_WARN([cannot find $with_sdx; building starkits may fail])
+		AC_MSG_NOTICE([building as a normal library still supported])])])])
 dnl TODO: Adapt this for OSX Frameworks...
 dnl This next bit is a bit ugly, but it makes things for tclooConfig.sh...
-AC_DEFUN([TEAX_INCLUDE_LINE], [
+AC_DEFUN([TEAX_CONFIG_INCLUDE_LINE], [
     eval "$1=\"-I[]CygPath($2)\""
     AC_SUBST($1)])
-AC_DEFUN([TEAX_LINK_LINE], [
+AC_DEFUN([TEAX_CONFIG_LINK_LINE], [
     AS_IF([test ${TCL_LIB_VERSIONS_OK} = nodots], [
 	eval "$1=\"-L[]CygPath($2) -l$3${TCL_TRIM_DOTS}\""
     ], [
