@@ -2,12 +2,12 @@
 # Sourcing this file into Tcl runs the tests and generates output for errors.
 # No output means no errors were found.
 #
-# Copyright (c) 2006 Donal K. Fellows
+# Copyright (c) 2006-2008 Donal K. Fellows
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.17 2008/05/12 10:11:04 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.18 2008/05/13 08:47:37 dkf Exp $
 
 package require TclOO 0.3a0 ;# Must match value in configure.in
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -230,7 +230,7 @@ test oo-4.3 {exporting and error messages, Bug 1824958} -setup {
 } -cleanup {
     testClass destroy
 } -body {
-    oo::objdefine testClass export Bad
+    oo::define testClass self export Bad
     testClass Bad
 } -returnCodes 1 -result {unknown method "Bad": must be create, destroy or new}
 test oo-4.4 {exporting a class method from an object} -setup {
@@ -248,6 +248,54 @@ test oo-5.1 {OO: manipulation of classes as objects} -setup {
     set obj [oo::object new]
 } -body {
     oo::objdefine oo::object method foo {} { return "in object" }
+    catch {$obj foo} result
+    list [catch {$obj foo} result] $result [oo::object foo]
+} -cleanup {
+    oo::objdefine oo::object deletemethod foo
+    $obj destroy
+} -result {1 {unknown method "foo": must be destroy} {in object}}
+test oo-5.2 {OO: manipulation of classes as objects} -setup {
+    set obj [oo::object new]
+} -body {
+    oo::define oo::object self method foo {} { return "in object" }
+    catch {$obj foo} result
+    list [catch {$obj foo} result] $result [oo::object foo]
+} -cleanup {
+    oo::objdefine oo::object deletemethod foo
+    $obj destroy
+} -result {1 {unknown method "foo": must be destroy} {in object}}
+test oo-5.3 {OO: manipulation of classes as objects} -setup {
+    set obj [oo::object new]
+} -body {
+    oo::objdefine oo::object {
+	method foo {} { return "in object" }
+    }
+    catch {$obj foo} result
+    list [catch {$obj foo} result] $result [oo::object foo]
+} -cleanup {
+    oo::objdefine oo::object deletemethod foo
+    $obj destroy
+} -result {1 {unknown method "foo": must be destroy} {in object}}
+test oo-5.4 {OO: manipulation of classes as objects} -setup {
+    set obj [oo::object new]
+} -body {
+    oo::define oo::object {
+	self method foo {} { return "in object" }
+    }
+    catch {$obj foo} result
+    list [catch {$obj foo} result] $result [oo::object foo]
+} -cleanup {
+    oo::objdefine oo::object deletemethod foo
+    $obj destroy
+} -result {1 {unknown method "foo": must be destroy} {in object}}
+test oo-5.5 {OO: manipulation of classes as objects} -setup {
+    set obj [oo::object new]
+} -body {
+    oo::define oo::object {
+	self {
+	    method foo {} { return "in object" }
+	}
+    }
     catch {$obj foo} result
     list [catch {$obj foo} result] $result [oo::object foo]
 } -cleanup {
@@ -328,18 +376,18 @@ test oo-7.3 {OO: inheritance 101} -setup {
 test oo-7.4 {OO: inheritance from oo::class} -body {
     oo::class create meta {
 	superclass oo::class
-    }
-    oo::objdefine meta {
-	unexport create new
-	method make {x {definitions {}}} {
-	    if {![string match ::* $x]} {
-		set ns [uplevel 1 {::namespace current}]
-		set x ${ns}::$x
+	self {
+	    unexport create new
+	    method make {x {definitions {}}} {
+		if {![string match ::* $x]} {
+		    set ns [uplevel 1 {::namespace current}]
+		    set x ${ns}::$x
+		}
+		set o [my create $x]
+		lappend ::result "made $o"
+		oo::define $o $definitions
+		return $o
 	    }
-	    set o [my create $x]
-	    lappend ::result "made $o"
-	    oo::define $o $definitions
-	    return $o
 	}
     }
     set result [list [catch {meta create foo} msg] $msg]
@@ -355,18 +403,18 @@ test oo-7.5 {OO: inheritance from oo::class in the secondary chain} -body {
     oo::class create other
     oo::class create meta {
 	superclass other oo::class
-    }
-    oo::objdefine meta {
-	unexport create new
-	method make {x {definitions {}}} {
-	    if {![string match ::* $x]} {
-		set ns [uplevel 1 {::namespace current}]
-		set x ${ns}::$x
+	self {
+	    unexport create new
+	    method make {x {definitions {}}} {
+		if {![string match ::* $x]} {
+		    set ns [uplevel 1 {::namespace current}]
+		    set x ${ns}::$x
+		}
+		set o [my create $x]
+		lappend ::result "made $o"
+		oo::define $o $definitions
+		return $o
 	    }
-	    set o [my create $x]
-	    lappend ::result "made $o"
-	    oo::define $o $definitions
-	    return $o
 	}
     }
     set result [list [catch {meta create foo} msg] $msg]
@@ -1257,8 +1305,8 @@ test oo-20.5 {OO: variable method} -body {
 test oo-20.6 {OO: variable method} -setup {
     oo::class create testClass {
 	export varname
+	self export eval
     }
-    oo::objdefine testClass export eval
 } -body {
     testClass eval variable a 0
     oo::objdefine [testClass create foo] method bar {other} {
@@ -1506,7 +1554,7 @@ test oo-22.1 {OO and info frame} -setup {
     oo::class create c
     c create i
 } -body {
-    oo::objdefine c method frame {} {
+    oo::define c self method frame {} {
 	info frame 0
     }
     oo::define c {
@@ -1542,8 +1590,8 @@ test oo-23.1 {Self-like derivation; complex case!} -setup {
 	    oo::objdefine $o mixin $o
 	    uplevel 1 [list rename $o $name]\;[list namespace which $name]
 	}
+	self mixin SELF
     }
-    oo::objdefine SELF mixin SELF
     set result {}
 } -body {
     [SELF derive foo1] method bar1 {} {return 1}
