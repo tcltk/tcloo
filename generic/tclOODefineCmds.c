@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.10 2008/05/11 10:02:28 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.11 2008/05/13 21:12:41 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -298,7 +298,7 @@ RenameDeleteMethod(
     Tcl_Obj *const fromPtr,
     Tcl_Obj *const toPtr)
 {
-    Tcl_HashEntry *hPtr, *newHPtr;
+    Tcl_HashEntry *hPtr, *newHPtr = NULL;
     Method *mPtr;
     int isNew;
 
