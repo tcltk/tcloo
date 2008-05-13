@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.16 2008/05/11 10:02:28 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.17 2008/05/13 15:26:06 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -724,7 +724,7 @@ InvokeProcedureMethod(
      */
 
     skip = Tcl_ObjectContextSkippedArgs(context);
-    if (((CallContext *) context)->flags & OO_UNKNOWN_METHOD) {
+    if (((CallContext *) context)->callPtr->flags & OO_UNKNOWN_METHOD) {
 	skip--;
     }
     result = TclObjInterpProcCore(interp, fdPtr->nameObj, skip,
@@ -762,7 +762,7 @@ PushMethodCallFrame(
     PMFrameData *fdPtr)		/* Place to store information about the call
 				 * frame. */
 {
-    Object *oPtr = contextPtr->oPtr;
+    Object *oPtr = contextPtr->callPtr->oPtr;
     Tcl_Namespace *nsPtr = oPtr->namespacePtr;
     int flags = FRAME_IS_METHOD, result;
     const char *namePtr;
@@ -773,14 +773,14 @@ PushMethodCallFrame(
      * Compute basic information on the basis of the type of method it is.
      */
 
-    if (contextPtr->flags & CONSTRUCTOR) {
+    if (contextPtr->callPtr->flags & CONSTRUCTOR) {
 	Foundation *fPtr = TclOOGetFoundation(interp);
 
 	namePtr = "<constructor>";
 	flags |= FRAME_IS_CONSTRUCTOR;
 	fdPtr->nameObj = fPtr->constructorName;
 	fdPtr->errProc = ConstructorErrorHandler;
-    } else if (contextPtr->flags & DESTRUCTOR) {
+    } else if (contextPtr->callPtr->flags & DESTRUCTOR) {
 	Foundation *fPtr = TclOOGetFoundation(interp);
 
 	namePtr = "<destructor>";
@@ -804,7 +804,7 @@ PushMethodCallFrame(
 
     if (pmPtr->flags & USE_DECLARER_NS) {
 	register Method *mPtr =
-		contextPtr->call.chain[contextPtr->index].mPtr;
+		contextPtr->callPtr->chain[contextPtr->index].mPtr;
 
 	if (mPtr->declaringClassPtr != NULL) {
 	    nsPtr = mPtr->declaringClassPtr->thisPtr->namespacePtr;
@@ -934,7 +934,7 @@ MethodErrorHandler(
 {
     int nameLen, objectNameLen;
     CallContext *contextPtr = ((Interp *) interp)->varFramePtr->clientData;
-    Method *mPtr = contextPtr->call.chain[contextPtr->index].mPtr;
+    Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
     const char *objectName, *kindName, *methodName =
 	    Tcl_GetStringFromObj(mPtr->namePtr, &nameLen);
     Object *declarerPtr;
@@ -964,7 +964,7 @@ ConstructorErrorHandler(
     Tcl_Obj *methodNameObj)
 {
     CallContext *contextPtr = ((Interp *) interp)->varFramePtr->clientData;
-    Method *mPtr = contextPtr->call.chain[contextPtr->index].mPtr;
+    Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
     Object *declarerPtr;
     const char *objectName, *kindName;
     int objectNameLen;
@@ -1002,7 +1002,7 @@ DestructorErrorHandler(
     Tcl_Obj *methodNameObj)
 {
     CallContext *contextPtr = ((Interp *) interp)->varFramePtr->clientData;
-    Method *mPtr = contextPtr->call.chain[contextPtr->index].mPtr;
+    Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
     Object *declarerPtr;
     const char *objectName, *kindName;
     int objectNameLen;
@@ -1179,7 +1179,7 @@ InvokeForwardMethod(
      * doing unknown processing.
      */
 
-    if (contextPtr->flags & OO_UNKNOWN_METHOD) {
+    if (contextPtr->callPtr->flags & OO_UNKNOWN_METHOD) {
 	skip--;
     }
 
