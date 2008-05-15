@@ -1,3 +1,9 @@
+2008-05-15  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (Tcl_GetObjectFromObj): Make sure that [namespace
+	import] doesn't fool the code to determine if a command is an object.
+	[Bug 1963130]
+
 2008-05-13  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOCall.c (TclOOGetCallContext, etc.): Rework the context

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.40 2008/05/13 15:26:05 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.41 2008/05/15 08:52:07 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -2925,17 +2925,29 @@ CopyObjectCmd(
 
 Tcl_Object
 Tcl_GetObjectFromObj(
-    Tcl_Interp *interp,
-    Tcl_Obj *objPtr)
+    Tcl_Interp *interp,		/* Interpreter in which to locate the object.
+				 * Will have an error message placed in it if
+				 * the name does not refer to an object. */
+    Tcl_Obj *objPtr)		/* The name of the object to look up, which is
+				 * exactly the name of its public command. */
 {
     Command *cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objPtr);
 
-    if (cmdPtr == NULL || cmdPtr->objProc != PublicObjectCmd) {
-	Tcl_AppendResult(interp, TclGetString(objPtr),
-		" does not refer to an object", NULL);
-	return NULL;
+    if (cmdPtr == NULL) {
+	goto notAnObject;
+    }
+    if (cmdPtr->objProc != PublicObjectCmd) {
+	cmdPtr = (Command *) TclGetOriginalCommand((Tcl_Command) cmdPtr);
+	if (cmdPtr == NULL || cmdPtr->objProc != PublicObjectCmd) {
+	    goto notAnObject;
+	}
     }
     return cmdPtr->objClientData;
+
+  notAnObject:
+    Tcl_AppendResult(interp, TclGetString(objPtr),
+	    " does not refer to an object", NULL);
+    return NULL;
 }
 
 /*

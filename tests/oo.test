@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.18 2008/05/13 08:47:37 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.19 2008/05/15 08:52:07 dkf Exp $
 
 package require TclOO 0.3a0 ;# Must match value in configure.in
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -131,6 +131,18 @@ test oo-1.9 {basic test of OO functionality} -setup {
 	return [a $m],[a destroy],[b $m]
     }}
 } -result A,,B
+test oo-1.10 {basic test of OO functionality} -body {
+    namespace eval foo {
+	namespace eval bar {
+	    oo::object create o
+	    namespace export o
+	}
+	namespace import bar::o
+    }
+    list [info object isa object foo::bar::o] [info object isa object foo::o]
+} -cleanup {
+    namespace delete foo
+} -result {1 1}
 
 test oo-2.1 {basic test of OO functionality: constructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as
