@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.17 2008/05/13 15:26:06 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.18 2008/05/16 08:09:59 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -724,9 +724,6 @@ InvokeProcedureMethod(
      */
 
     skip = Tcl_ObjectContextSkippedArgs(context);
-    if (((CallContext *) context)->callPtr->flags & OO_UNKNOWN_METHOD) {
-	skip--;
-    }
     result = TclObjInterpProcCore(interp, fdPtr->nameObj, skip,
 	    fdPtr->errProc);
 
@@ -1173,15 +1170,6 @@ InvokeForwardMethod(
     ForwardMethod *fmPtr = clientData;
     Tcl_Obj **argObjs, **prefixObjs;
     int numPrefixes, result, len, skip = contextPtr->skip;
-
-    /*
-     * Ensure that the method name itself is part of the arguments when we're
-     * doing unknown processing.
-     */
-
-    if (contextPtr->callPtr->flags & OO_UNKNOWN_METHOD) {
-	skip--;
-    }
 
     /*
      * Build the real list of arguments to use. Note that we know that the

@@ -1,3 +1,11 @@
+2008-05-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOCall.c (TclOOInvokeContext): Relocate the special
+	handling of the count of arguments to here from multiple other
+	locations in the source code. It should only be special at the very
+	first step in the call chain; after that, normal [next] processing
+	should occur. [Bug 1965063]
+
 2008-05-15  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c (Tcl_GetObjectFromObj): Make sure that [namespace
