@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.41 2008/05/15 08:52:07 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.42 2008/05/16 08:09:59 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -2267,15 +2267,6 @@ ObjectUnknown(
     Object *oPtr = contextPtr->callPtr->oPtr;
     const char **methodNames;
     int numMethodNames, i, skip = Tcl_ObjectContextSkippedArgs(context);
-
-    /*
-     * Ensure that the method name itself is part of the arguments when we're
-     * doing unknown processing.
-     */
-
-    if (contextPtr->callPtr->flags & OO_UNKNOWN_METHOD) {
-	skip--;
-    }
 
     if (objc < skip+1) {
 	Tcl_WrongNumArgs(interp, skip, objv, "methodName ?arg ...?");

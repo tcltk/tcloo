@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.16 2008/05/13 15:26:06 dkf Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.17 2008/05/16 08:09:59 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -228,18 +228,20 @@ FreeMethodNameRep(
 
 int
 TclOOInvokeContext(
-    Tcl_Interp *interp,		/* Interpreter for error reporting, and many
+    Tcl_Interp *const interp,	/* Interpreter for error reporting, and many
 				 * other sorts of context handling (e.g.,
 				 * commands, variables) depending on method
 				 * implementation. */
-    CallContext *contextPtr,	/* The method call context. */
-    int objc,			/* The number of arguments. */
-    Tcl_Obj *const *objv)	/* The arguments as actually seen. */
+    CallContext *const contextPtr,
+				/* The method call context. */
+    const int objc,		/* The number of arguments. */
+    Tcl_Obj *const *const objv)	/* The arguments as actually seen. */
 {
-    Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
-    int result, isFirst = (contextPtr->index == 0);
-    int isFilter = contextPtr->callPtr->chain[contextPtr->index].isFilter;
-    int wasFilter;
+    Method *const mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
+    const int isFirst = (contextPtr->index == 0);
+    const int isFilter =
+	    contextPtr->callPtr->chain[contextPtr->index].isFilter;
+    int result, wasFilter;
 
     /*
      * If this is the first step along the chain, we preserve the method
@@ -252,6 +254,15 @@ TclOOInvokeContext(
 
 	for (i=0 ; i<contextPtr->callPtr->numChain ; i++) {
 	    Tcl_Preserve(contextPtr->callPtr->chain[i].mPtr);
+	}
+
+	/*
+	 * Ensure that the method name itself is part of the arguments when
+	 * we're doing unknown processing.
+	 */
+
+	if (contextPtr->callPtr->flags & OO_UNKNOWN_METHOD) {
+	    contextPtr->skip--;
 	}
     }
 
