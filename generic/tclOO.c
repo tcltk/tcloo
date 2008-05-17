@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.42 2008/05/16 08:09:59 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.43 2008/05/17 14:49:53 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -121,7 +121,7 @@ static int		SelfObjCmd(ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
 
 /*
- * Methods in the oo::object class.
+ * Methods in the oo::object and oo::class classes.
  */
 
 static const DeclaredClassMethod objMethods[] = {
@@ -131,13 +131,7 @@ static const DeclaredClassMethod objMethods[] = {
     {"variable", 0, ObjectLinkVar},
     {"varname", 0, ObjectVarName},
     {NULL, 0, NULL}
-};
-
-/*
- * Additional methods in the oo::class class.
- */
-
-static const DeclaredClassMethod clsMethods[] = {
+}, clsMethods[] = {
     {"create", 1, ClassCreate},
     {"new", 1, ClassNew},
     {"createWithNamespace", 0, ClassCreateNs},
@@ -161,7 +155,7 @@ extern struct TclOOStubAPI tclOOStubAPI;
 /*
  * ----------------------------------------------------------------------
  *
- * TclOO_Init --
+ * Tcloo_Init, Tcloo_SafeInit --
  *
  *	Called to initialise the OO system within an interpreter.
  *
@@ -215,6 +209,13 @@ Tcloo_Init(
     }
 
     return Tcl_PkgProvideEx(interp, "TclOO", TCLOO_VERSION, &tclOOStubAPI);
+}
+
+int DLLEXPORT
+Tcloo_SafeInit(
+    Tcl_Interp *interp)		/* The safe interpreter to install into. */
+{
+    return Tcloo_Init(interp);
 }
 
 /*
