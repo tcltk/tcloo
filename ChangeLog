@@ -1,5 +1,9 @@
 2008-05-17  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclOO.c (Tcloo_SafeInit): Defined this so that TclOO is
+	loadable in safe interpreters; nothing it does is unsafe as it does
+	not manipulate system resources.
+
 	* generic/tclOODefineCmds.c (TclOODefineExportObjCmd)
 	(TclOODefineUnexportObjCmd): Only invalidate method chains when the
 	export status of a method is actually changed.
