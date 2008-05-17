@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.11 2008/05/13 21:12:41 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.12 2008/05/17 13:15:29 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1061,6 +1061,11 @@ TclOODefineDestructorObjCmd(
      */
 
     Tcl_ClassSetDestructor((Tcl_Class) clsPtr, method);
+
+    /*
+     * No chain invalidation; destructor chains are not (currently) saved.
+     */
+
     return TCL_OK;
 }
 
@@ -1086,7 +1091,7 @@ TclOODefineExportObjCmd(
     Method *mPtr;
     Tcl_HashEntry *hPtr;
     Class *clsPtr;
-    int i, isNew;
+    int i, isNew, changed = 0;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?name ...?");
@@ -1133,12 +1138,22 @@ TclOODefineExportObjCmd(
 	} else {
 	    mPtr = Tcl_GetHashValue(hPtr);
 	}
-	mPtr->flags |= PUBLIC_METHOD;
+	if (isNew || !(mPtr->flags & PUBLIC_METHOD)) {
+	    mPtr->flags |= PUBLIC_METHOD;
+	    changed = 1;
+	}
     }
-    if (isInstanceExport) {
-	oPtr->epoch++;
-    } else {
-	BumpGlobalEpoch(interp, clsPtr);
+
+    /*
+     * Bump the right epoch if we actually changed anything.
+     */
+
+    if (changed) {
+	if (isInstanceExport) {
+	    oPtr->epoch++;
+	} else {
+	    BumpGlobalEpoch(interp, clsPtr);
+	}
     }
     return TCL_OK;
 }
@@ -1538,7 +1553,7 @@ TclOODefineUnexportObjCmd(
     Method *mPtr;
     Tcl_HashEntry *hPtr;
     Class *clsPtr;
-    int i, isNew;
+    int i, isNew, changed = 0;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?name ...?");
@@ -1585,12 +1600,22 @@ TclOODefineUnexportObjCmd(
 	} else {
 	    mPtr = Tcl_GetHashValue(hPtr);
 	}
-	mPtr->flags &= ~PUBLIC_METHOD;
+	if (isNew || mPtr->flags & PUBLIC_METHOD) {
+	    mPtr->flags &= ~PUBLIC_METHOD;
+	    changed = 1;
+	}
     }
-    if (isInstanceUnexport) {
-	oPtr->epoch++;
-    } else {
-	BumpGlobalEpoch(interp, clsPtr);
+
+    /*
+     * Bump the right epoch if we actually changed anything.
+     */
+
+    if (changed) {
+	if (isInstanceUnexport) {
+	    oPtr->epoch++;
+	} else {
+	    BumpGlobalEpoch(interp, clsPtr);
+	}
     }
     return TCL_OK;
 }

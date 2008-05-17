@@ -1,3 +1,9 @@
+2008-05-17  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOODefineCmds.c (TclOODefineExportObjCmd)
+	(TclOODefineUnexportObjCmd): Only invalidate method chains when the
+	export status of a method is actually changed.
+
 2008-05-16  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOCall.c (TclOOInvokeContext): Relocate the special
