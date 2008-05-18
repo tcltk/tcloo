@@ -1,5 +1,13 @@
 2008-05-18  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclOO.c (TclOOInvokeObject): Strip out one of the context
+	caches (no longer needed because the key differences between public
+	and private contexts are no longer cached anyway) and rename to better
+	reflect the true nature.
+	* generic/tclOOCall.c (TclOOGetCallContext): Revise flag handling to
+	take account of the fact that public and private call chains are now
+	cached together.
+
 	* generic/tclOO.c, generic/tclOOMethod.c: Strip out overhead from the
 	call path for the basic predefined methods.
 

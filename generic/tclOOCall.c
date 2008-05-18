@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.17 2008/05/16 08:09:59 dkf Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.18 2008/05/18 20:33:31 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -780,15 +780,18 @@ TclOOGetCallContext(
 	 *	Refers to the same object (same creation epoch), and
 	 *	Still across the same class structure (same global epoch), and
 	 *	Still across the same object strucutre (same local epoch), and
-	 *	No public/private/filter magic leakage (same flags).
+	 *	No public/private/filter magic leakage (same flags, modulo the
+	 *	fact that a public chain will satisfy a non-public call).
 	 */
+
+	const int reuseMask = ((flags & PUBLIC_METHOD) ? ~0 : ~PUBLIC_METHOD);
 
 	if (methodNameObj->typePtr == &methodNameType) {
 	    callPtr = methodNameObj->internalRep.otherValuePtr;
 	    if ((callPtr->objectCreationEpoch == oPtr->creationEpoch)
 		    && (callPtr->epoch == fPtr->epoch)
 		    && (callPtr->objectEpoch == oPtr->epoch)
-		    && (callPtr->flags == flags)) {
+		    && ((callPtr->flags&reuseMask) == (flags&reuseMask))) {
 		callPtr->refCount++;
 		goto returnContext;
 	    }
@@ -800,7 +803,7 @@ TclOOGetCallContext(
 	    if ((callPtr->objectCreationEpoch == oPtr->creationEpoch)
 		    && (callPtr->epoch == fPtr->epoch)
 		    && (callPtr->objectEpoch == oPtr->epoch)
-		    && (callPtr->flags == flags)) {
+		    && ((callPtr->flags&reuseMask) == (flags&reuseMask))) {
 		callPtr->refCount++;
 		goto returnContext;
 	    }
