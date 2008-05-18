@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.18 2008/05/16 08:09:59 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.19 2008/05/18 06:57:27 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -76,9 +76,6 @@ static int		InvokeForwardMethod(ClientData clientData,
 static void		DeleteForwardMethod(ClientData clientData);
 static int		CloneForwardMethod(Tcl_Interp *interp,
 			    ClientData clientData, ClientData *newClientData);
-static int		BasicMethodInvoke(ClientData clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
 
 /*
  * The types of methods defined by the core OO system.
@@ -91,10 +88,6 @@ static const Tcl_MethodType procMethodType = {
 static const Tcl_MethodType fwdMethodType = {
     TCL_OO_METHOD_VERSION_CURRENT, "forward",
     InvokeForwardMethod, DeleteForwardMethod, CloneForwardMethod
-};
-static const Tcl_MethodType coreMethodType = {
-    TCL_OO_METHOD_VERSION_CURRENT, "core method",
-    BasicMethodInvoke, NULL, NULL
 };
 
 /*
@@ -294,33 +287,8 @@ TclOONewBasicMethod(
 
     Tcl_IncrRefCount(namePtr);
     Tcl_NewMethod(interp, (Tcl_Class) clsPtr, namePtr,
-	    (dcm->isPublic ? PUBLIC_METHOD : 0), &coreMethodType,
-	    (ClientData) dcm);
+	    (dcm->isPublic ? PUBLIC_METHOD : 0), &dcm->definition, NULL);
     Tcl_DecrRefCount(namePtr);
-}
-
-/*
- * ----------------------------------------------------------------------
- *
- * BasicMethodInvoke --
- *
- *	How to invoke a simple method.
- *
- * ----------------------------------------------------------------------
- */
-
-static int
-BasicMethodInvoke(
-    ClientData clientData,	/* Pointer to function that implements the
-				 * method. */
-    Tcl_Interp *interp,
-    Tcl_ObjectContext context,	/* The method calling context. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const *objv)	/* Arguments as actually seen. */
-{
-    const DeclaredClassMethod *dcm = clientData;
-
-    return (dcm->callProc)(NULL, interp, context, objc, objv);
 }
 
 /*
