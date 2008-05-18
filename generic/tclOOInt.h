@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.24 2008/05/18 06:57:27 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.25 2008/05/18 20:33:31 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -160,8 +160,8 @@ typedef struct Object {
 				 * field starts out as NULL and is only
 				 * allocated if metadata is attached. */
     Tcl_Obj *cachedNameObj;	/* Cache of the name of the object. */
-    Tcl_HashTable *publicContextCache;	/* Place to keep unused contexts. */
-    Tcl_HashTable *privateContextCache;	/* Place to keep unused contexts. */
+    Tcl_HashTable *chainCache;	/* Place to keep unused contexts. This table
+				 * is indexed by method name as Tcl_Obj. */
     Tcl_ObjectMapMethodNameProc mapMethodNameProc;
 				/* Function to allow remapping of method
 				 * names. For itcl-ng. */

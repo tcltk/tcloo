@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.44 2008/05/18 06:57:27 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.45 2008/05/18 20:33:31 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -429,6 +429,18 @@ AllocObject(
     oPtr = (Object *) ckalloc(sizeof(Object));
     memset(oPtr, 0, sizeof(Object));
 
+    /*
+     * Every object has a namespace; make one. Note that this also normally
+     * computes the creation epoch value for the object, a sequence number
+     * that is unique to the object (and which allows us to manage method
+     * caching without comparing pointers).
+     *
+     * When creating a namespace, we first check to see if the caller
+     * specified the name for the namespace. If not, we generate namespace
+     * names using the epoch until such time as a new namespace is actually
+     * created.
+     */
+
     if (nsNameStr != NULL) {
 	oPtr->namespacePtr = Tcl_CreateNamespace(interp, nsNameStr, oPtr,
 		ObjectNamespaceDeleted);
@@ -459,13 +471,21 @@ AllocObject(
 	Tcl_ResetResult(interp);
     }
 
+    /*
+     * Make the namespace know about the helper commands. This grants access
+     * to the [self] and [next] commands.
+     */
+
   configNamespace:
     TclSetNsPath((Namespace *) oPtr->namespacePtr, 1, &fPtr->helpersNs);
 
+    /*
+     * Fill in the rest of the structure.
+     */
+
     oPtr->selfCls = fPtr->objectCls;
     oPtr->methodsPtr = NULL;
-    oPtr->publicContextCache = NULL;
-    oPtr->privateContextCache = NULL;
+    oPtr->chainCache = NULL;
     oPtr->filters.num = 0;
     oPtr->filters.list = NULL;
     oPtr->mixins.num = 0;
@@ -476,7 +496,9 @@ AllocObject(
     oPtr->metadataPtr = NULL;
 
     /*
-     * Initialize the traces.
+     * Finally, create the object commands and initialize the trace on the
+     * public command (so that the object structures are deleted when the
+     * command is deleted).
      */
 
     Tcl_DStringInit(&buffer);
@@ -765,12 +787,8 @@ ObjectNamespaceDeleted(
 	ckfree((char *) oPtr->methodsPtr);
     }
 
-    if (oPtr->publicContextCache) {
-	TclOODeleteChainCache(oPtr->publicContextCache);
-    }
-
-    if (oPtr->privateContextCache) {
-	TclOODeleteChainCache(oPtr->privateContextCache);
+    if (oPtr->chainCache) {
+	TclOODeleteChainCache(oPtr->chainCache);
     }
 
     if (oPtr->cachedNameObj) {
@@ -1094,6 +1112,11 @@ AllocClass(
 				 * to it as well and that saves a lookup. */
 {
     Class *clsPtr = (Class *) ckalloc(sizeof(Class));
+    Tcl_Namespace *path[2];
+
+    /*
+     * Make an object if we haven't been given one.
+     */
 
     memset(clsPtr, 0, sizeof(Class));
     if (useThisObj == NULL) {
@@ -1101,19 +1124,42 @@ AllocClass(
     } else {
 	clsPtr->thisPtr = useThisObj;
     }
-    clsPtr->thisPtr->selfCls = fPtr->classCls;
-    {
-	Tcl_Namespace *path[2];
 
-	path[0] = fPtr->helpersNs;
-	path[1] = fPtr->ooNs;
-	TclSetNsPath((Namespace *) clsPtr->thisPtr->namespacePtr, 2, path);
-    }
-    clsPtr->thisPtr->classPtr = clsPtr;
-    clsPtr->flags = 0;
+    /*
+     * Configure the namespace path for the class's object.
+     */
+
+    path[0] = fPtr->helpersNs;
+    path[1] = fPtr->ooNs;
+    TclSetNsPath((Namespace *) clsPtr->thisPtr->namespacePtr, 2, path);
+
+    /*
+     * Class objects inherit from the class of classes unless they inherit
+     * from some subclass of it. Enforce this right now.
+     */
+
+    clsPtr->thisPtr->selfCls = fPtr->classCls;
+
+    /*
+     * Classes are subclasses of oo::object, i.e. the objects they create are
+     * objects.
+     */
+
     clsPtr->superclasses.num = 1;
     clsPtr->superclasses.list = (Class **) ckalloc(sizeof(Class *));
     clsPtr->superclasses.list[0] = fPtr->objectCls;
+
+    /*
+     * Finish connecting the class structure to the object structure.
+     */
+
+    clsPtr->thisPtr->classPtr = clsPtr;
+
+    /*
+     * That's the complicated bit. Now fill in the rest of the fields.
+     */
+
+    clsPtr->flags = 0;
     clsPtr->subclasses.num = 0;
     clsPtr->subclasses.list = NULL;
     clsPtr->subclasses.size = 0;
@@ -1181,27 +1227,29 @@ Tcl_NewObjectInstance(
 
 	TclGetNamespaceForQualName(interp, nameStr, NULL, TCL_NAMESPACE_ONLY,
 		&nsPtr, &dummy, &dummy, &simpleName);
-	if (simpleName == NULL || nsPtr == NULL) {
-	    goto skipRename;
+	if (simpleName != NULL && nsPtr != NULL) {
+	    /*
+	     * Rename the object to the name that the user wanted.
+	     */
+
+	    Tcl_DStringInit(&buf);
+	    Tcl_DStringAppend(&buf, nsPtr->fullName, -1);
+	    if (nsPtr->parentPtr) {
+		Tcl_DStringAppend(&buf, "::", 2);
+	    }
+	    Tcl_DStringAppend(&buf, simpleName, -1);
+	    cmp = strcmp(TclGetString(cmdnameObj), Tcl_DStringValue(&buf));
+	    Tcl_DStringFree(&buf);
+	    if (cmp && TclRenameCommand(interp, TclGetString(cmdnameObj),
+		    nameStr) != TCL_OK) {
+		Tcl_ResetResult(interp);
+		Tcl_AppendResult(interp, "can't create object \"", nameStr,
+			"\": command already exists with that name", NULL);
+		Tcl_DecrRefCount(cmdnameObj);
+		Tcl_DeleteCommandFromToken(interp, oPtr->command);
+		return NULL;
+	    }
 	}
-	Tcl_DStringInit(&buf);
-	Tcl_DStringAppend(&buf, nsPtr->fullName, -1);
-	if (nsPtr->parentPtr) {
-	    Tcl_DStringAppend(&buf, "::", 2);
-	}
-	Tcl_DStringAppend(&buf, simpleName, -1);
-	cmp = strcmp(TclGetString(cmdnameObj), Tcl_DStringValue(&buf));
-	Tcl_DStringFree(&buf);
-	if (cmp && TclRenameCommand(interp, TclGetString(cmdnameObj),
-		nameStr) != TCL_OK) {
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp, "can't create object \"", nameStr,
-		    "\": command already exists with that name", NULL);
-	    Tcl_DecrRefCount(cmdnameObj);
-	    Tcl_DeleteCommandFromToken(interp, oPtr->command);
-	    return NULL;
-	}
-    skipRename:
 	Tcl_DecrRefCount(cmdnameObj);
     }
 
@@ -1772,11 +1820,11 @@ PublicObjectCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    if (((Object *) clientData)->publicContextCache == NULL) {
-	((Object *) clientData)->publicContextCache = TclOOAllocChainCache();
+    if (((Object *) clientData)->chainCache == NULL) {
+	((Object *) clientData)->chainCache = TclOOAllocChainCache();
     }
     return TclOOObjectCmdCore(clientData, interp, objc, objv, PUBLIC_METHOD,
-	    ((Object *)clientData)->publicContextCache, NULL);
+	    ((Object *)clientData)->chainCache, NULL);
 }
 
 static int
@@ -1786,11 +1834,11 @@ PrivateObjectCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    if (((Object *) clientData)->privateContextCache == NULL) {
-	((Object *) clientData)->privateContextCache = TclOOAllocChainCache();
+    if (((Object *) clientData)->chainCache == NULL) {
+	((Object *) clientData)->chainCache = TclOOAllocChainCache();
     }
     return TclOOObjectCmdCore(clientData, interp, objc, objv, 0,
-	    ((Object *)clientData)->privateContextCache, NULL);
+	    ((Object *)clientData)->chainCache, NULL);
 }
 
 int
@@ -1811,30 +1859,21 @@ TclOOInvokeObject(
 				 * that the name of the method to invoke will
 				 * be at index 1. */
 {
+    if (((Object *) object)->chainCache == NULL) {
+	((Object *) object)->chainCache = TclOOAllocChainCache();
+    }
     switch (publicPrivate) {
     case PUBLIC_METHOD:
-	if (((Object *) object)->publicContextCache == NULL) {
-	    ((Object *) object)->publicContextCache = TclOOAllocChainCache();
-	}
 	return TclOOObjectCmdCore((Object *) object, interp, objc, objv,
-		PUBLIC_METHOD, ((Object *)object)->publicContextCache,
+		PUBLIC_METHOD, ((Object *)object)->chainCache,
 		(Class *) startCls);
     case PRIVATE_METHOD:
-	/*
-	 * Is this the right cache?
-	 */
-	if (((Object *) object)->publicContextCache == NULL) {
-	    ((Object *) object)->publicContextCache = TclOOAllocChainCache();
-	}
 	return TclOOObjectCmdCore((Object *) object, interp, objc, objv,
-		PRIVATE_METHOD, ((Object *)object)->publicContextCache,
+		PRIVATE_METHOD, ((Object *)object)->chainCache,
 		(Class *) startCls);
     default:
-	if (((Object *) object)->privateContextCache == NULL) {
-	    ((Object *) object)->privateContextCache = TclOOAllocChainCache();
-	}
 	return TclOOObjectCmdCore((Object *) object, interp, objc, objv, 0,
-		((Object *)object)->privateContextCache, (Class *) startCls);
+		((Object *)object)->chainCache, (Class *) startCls);
     }
 }
 
