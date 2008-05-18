@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.43 2008/05/17 14:49:53 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.44 2008/05/18 06:57:27 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -121,21 +121,29 @@ static int		SelfObjCmd(ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
 
 /*
- * Methods in the oo::object and oo::class classes.
+ * Methods in the oo::object and oo::class classes. First, we define a helper
+ * macro that makes building the method type declaration structure a lot
+ * easier. No point in making life harder than it has to be!
+ *
+ * Note that the core methods don't need clone or free proc callbacks.
  */
 
+#define DCM(name,visibility,proc) \
+    {name,visibility,\
+	{TCL_OO_METHOD_VERSION_CURRENT,"core method: "#name,proc,NULL,NULL}}
+
 static const DeclaredClassMethod objMethods[] = {
-    {"destroy", 1, ObjectDestroy},
-    {"eval", 0, ObjectEval},
-    {"unknown", 0, ObjectUnknown},
-    {"variable", 0, ObjectLinkVar},
-    {"varname", 0, ObjectVarName},
-    {NULL, 0, NULL}
+    DCM("destroy", 1, ObjectDestroy),
+    DCM("eval", 0, ObjectEval),
+    DCM("unknown", 0, ObjectUnknown),
+    DCM("variable", 0, ObjectLinkVar),
+    DCM("varname", 0, ObjectVarName),
+    {NULL}
 }, clsMethods[] = {
-    {"create", 1, ClassCreate},
-    {"new", 1, ClassNew},
-    {"createWithNamespace", 0, ClassCreateNs},
-    {NULL, 0, NULL}
+    DCM("create", 1, ClassCreate),
+    DCM("new", 1, ClassNew),
+    DCM("createWithNamespace", 0, ClassCreateNs),
+    {NULL}
 };
 
 static char initScript[] =

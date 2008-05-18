@@ -1,3 +1,8 @@
+2008-05-18  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c, generic/tclOOMethod.c: Strip out overhead from the
+	call path for the basic predefined methods.
+
 2008-05-17  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c (Tcloo_SafeInit): Defined this so that TclOO is

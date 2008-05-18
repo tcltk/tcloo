@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.23 2008/05/13 15:26:06 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.24 2008/05/18 06:57:27 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -338,7 +338,7 @@ typedef struct CallContext {
 typedef struct {
     const char *name;		/* Name of the method in question. */
     int isPublic;		/* Whether the method is public by default. */
-    Tcl_MethodCallProc callProc;/* How to call the method. */
+    Tcl_MethodType definition;	/* How to call the method. */
 } DeclaredClassMethod;
 
 /*
