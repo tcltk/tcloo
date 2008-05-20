@@ -1,5 +1,5 @@
 # -*- tcl -*-
-# $Id: tclOO.decls,v 1.13 2008/04/04 15:21:41 dkf Exp $
+# $Id: tclOO.decls,v 1.14 2008/05/20 15:44:19 dkf Exp $
 
 # public API
 library tclOO
@@ -103,10 +103,12 @@ declare 25 current {
 	    Tcl_ObjectMapMethodNameProc mapMethodNameProc)
 }
 declare 26 current {
-    void Tcl_ClassSetConstructor(Tcl_Class clazz, Tcl_Method method)
+    void Tcl_ClassSetConstructor(Tcl_Interp *interp, Tcl_Class clazz,
+	    Tcl_Method method)
 }
 declare 27 current {
-    void Tcl_ClassSetDestructor(Tcl_Class clazz, Tcl_Method method)
+    void Tcl_ClassSetDestructor(Tcl_Interp *interp, Tcl_Class clazz,
+	    Tcl_Method method)
 }
 
 # private API, exposed to support advanced OO systems that plug in on top
@@ -138,8 +140,7 @@ declare 4 current {
 }
 declare 5 current {
     int TclOOObjectCmdCore(Object *oPtr, Tcl_Interp *interp, int objc,
-	    Tcl_Obj *const *objv, int publicOnly, Tcl_HashTable *cachePtr,
-	    Class *startCls)
+	    Tcl_Obj *const *objv, int publicOnly, Class *startCls)
 }
 declare 6 current {
     int TclOOIsReachable(Class *targetPtr, Class *startPtr)

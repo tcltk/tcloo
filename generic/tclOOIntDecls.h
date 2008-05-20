@@ -1,5 +1,5 @@
 /*
- * $Id: tclOOIntDecls.h,v 1.11 2008/04/04 15:22:28 dkf Exp $
+ * $Id: tclOOIntDecls.h,v 1.12 2008/05/20 15:44:22 dkf Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  */
@@ -44,7 +44,7 @@ TCLOOAPI Method *	TclOONewProcMethod (Tcl_Interp * interp,
 TCLOOAPI int		TclOOObjectCmdCore (Object * oPtr, 
 				Tcl_Interp * interp, int objc, 
 				Tcl_Obj *const * objv, int publicOnly, 
-				Tcl_HashTable * cachePtr, Class * startCls);
+				Class * startCls);
 /* 6 */
 TCLOOAPI int		TclOOIsReachable (Class * targetPtr, 
 				Class * startPtr);
@@ -107,7 +107,7 @@ typedef struct TclOOIntStubs {
     Tcl_Method (*tclOOMakeProcMethod) (Tcl_Interp * interp, Class * clsPtr, int flags, Tcl_Obj * nameObj, const char * namePtr, Tcl_Obj * argsObj, Tcl_Obj * bodyObj, const Tcl_MethodType * typePtr, ClientData clientData, Proc ** procPtrPtr); /* 2 */
     Method * (*tclOONewProcInstanceMethod) (Tcl_Interp * interp, Object * oPtr, int flags, Tcl_Obj * nameObj, Tcl_Obj * argsObj, Tcl_Obj * bodyObj, ProcedureMethod ** pmPtrPtr); /* 3 */
     Method * (*tclOONewProcMethod) (Tcl_Interp * interp, Class * clsPtr, int flags, Tcl_Obj * nameObj, Tcl_Obj * argsObj, Tcl_Obj * bodyObj, ProcedureMethod ** pmPtrPtr); /* 4 */
-    int (*tclOOObjectCmdCore) (Object * oPtr, Tcl_Interp * interp, int objc, Tcl_Obj *const * objv, int publicOnly, Tcl_HashTable * cachePtr, Class * startCls); /* 5 */
+    int (*tclOOObjectCmdCore) (Object * oPtr, Tcl_Interp * interp, int objc, Tcl_Obj *const * objv, int publicOnly, Class * startCls); /* 5 */
     int (*tclOOIsReachable) (Class * targetPtr, Class * startPtr); /* 6 */
     Method * (*tclOONewForwardMethod) (Tcl_Interp * interp, Class * clsPtr, int isPublic, Tcl_Obj * nameObj, Tcl_Obj * prefixObj); /* 7 */
     Method * (*tclOONewForwardInstanceMethod) (Tcl_Interp * interp, Object * oPtr, int isPublic, Tcl_Obj * nameObj, Tcl_Obj * prefixObj); /* 8 */
