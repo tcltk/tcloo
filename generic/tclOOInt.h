@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.25 2008/05/18 20:33:31 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.26 2008/05/20 15:44:22 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -19,7 +19,9 @@
  * Forward declarations.
  */
 
+struct CallChain;
 struct Class;
+struct Foundation;
 struct Object;
 
 /*
@@ -133,6 +135,10 @@ typedef struct ForwardMethod {
  */
 
 typedef struct Object {
+    struct Foundation *fPtr;	/* The basis for the object system. Putting
+				 * this here allows the avoidance of quite a
+				 * lot of hash lookups on the critical path
+				 * for object invokation and creation. */
     Tcl_Namespace *namespacePtr;/* This object's tame namespace. */
     Tcl_Command command;	/* Reference to this object's public
 				 * command. */
@@ -220,6 +226,8 @@ typedef struct Class {
 				 * of each piece of attached metadata. This
 				 * field starts out as NULL and is only
 				 * allocated if metadata is attached. */
+    struct CallChain *constructorChainPtr;
+    struct CallChain *destructorChainPtr;
 } Class;
 
 /*
@@ -276,8 +284,9 @@ struct MInvoke {
 };
 
 typedef struct CallChain {
-    Object *oPtr;		/* The object associated with this call. */
-    int objectCreationEpoch;	/* The object's creation epoch. */
+    int objectCreationEpoch;	/* The object's creation epoch. Note that the
+				 * object reference is not stored in the call
+				 * chain; it is in the call context. */
     int objectEpoch;		/* Local (object structure) epoch counter
 				 * snapshot. */
     int epoch;			/* Global (class structure) epoch counter
@@ -292,7 +301,7 @@ typedef struct CallChain {
 } CallChain;
 
 typedef struct CallContext {
-    Tcl_Interp *interp;
+    Object *oPtr;		/* The object associated with this call. */
     int index;			/* Index into the call chain of the currently
 				 * executing method implementation. */
     int skip;			/* Current number of arguments to skip; can
@@ -402,13 +411,12 @@ MODULE_SCOPE int	TclOODefineSelfObjCmd(ClientData clientData,
 MODULE_SCOPE void	TclOOAddToInstances(Object *oPtr, Class *clsPtr);
 MODULE_SCOPE void	TclOOAddToMixinSubs(Class *subPtr, Class *mixinPtr);
 MODULE_SCOPE void	TclOOAddToSubclasses(Class *subPtr, Class *superPtr);
-MODULE_SCOPE Tcl_HashTable *TclOOAllocChainCache(void);
+MODULE_SCOPE void	TclOODeleteChain(CallChain *callPtr);
 MODULE_SCOPE void	TclOODeleteChainCache(Tcl_HashTable *tablePtr);
 MODULE_SCOPE void	TclOODeleteContext(CallContext *contextPtr);
 MODULE_SCOPE void	TclOODeleteMethod(Method *method);
-MODULE_SCOPE CallContext *TclOOGetCallContext(Foundation *fPtr, Object *oPtr,
-			    Tcl_Obj *methodNameObj, int flags,
-			    Tcl_HashTable *cachePtr);
+MODULE_SCOPE CallContext *TclOOGetCallContext(Object *oPtr,
+			    Tcl_Obj *methodNameObj, int flags);
 MODULE_SCOPE Foundation	*TclOOGetFoundation(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclOOGetFwdFromMethod(Method *mPtr);
 MODULE_SCOPE Proc *	TclOOGetProcFromMethod(Method *mPtr);

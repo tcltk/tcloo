@@ -1,5 +1,5 @@
 /*
- * $Id: tclOODecls.h,v 1.16 2008/04/04 15:22:28 dkf Exp $
+ * $Id: tclOODecls.h,v 1.17 2008/05/20 15:44:22 dkf Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  */
@@ -106,11 +106,11 @@ TCLOOAPI Tcl_ObjectMapMethodNameProc Tcl_ObjectGetMethodNameMapper (
 TCLOOAPI void		Tcl_ObjectSetMethodNameMapper (Tcl_Object object, 
 				Tcl_ObjectMapMethodNameProc mapMethodNameProc);
 /* 26 */
-TCLOOAPI void		Tcl_ClassSetConstructor (Tcl_Class clazz, 
-				Tcl_Method method);
+TCLOOAPI void		Tcl_ClassSetConstructor (Tcl_Interp * interp, 
+				Tcl_Class clazz, Tcl_Method method);
 /* 27 */
-TCLOOAPI void		Tcl_ClassSetDestructor (Tcl_Class clazz, 
-				Tcl_Method method);
+TCLOOAPI void		Tcl_ClassSetDestructor (Tcl_Interp * interp, 
+				Tcl_Class clazz, Tcl_Method method);
 
 #endif /* !defined(USE_TCLOO_STUBS) */
 
@@ -146,8 +146,8 @@ typedef struct TclOOStubs {
     int (*tcl_ObjectContextInvokeNext) (Tcl_Interp * interp, Tcl_ObjectContext context, int objc, Tcl_Obj *const * objv, int skip); /* 23 */
     Tcl_ObjectMapMethodNameProc (*tcl_ObjectGetMethodNameMapper) (Tcl_Object object); /* 24 */
     void (*tcl_ObjectSetMethodNameMapper) (Tcl_Object object, Tcl_ObjectMapMethodNameProc mapMethodNameProc); /* 25 */
-    void (*tcl_ClassSetConstructor) (Tcl_Class clazz, Tcl_Method method); /* 26 */
-    void (*tcl_ClassSetDestructor) (Tcl_Class clazz, Tcl_Method method); /* 27 */
+    void (*tcl_ClassSetConstructor) (Tcl_Interp * interp, Tcl_Class clazz, Tcl_Method method); /* 26 */
+    void (*tcl_ClassSetDestructor) (Tcl_Interp * interp, Tcl_Class clazz, Tcl_Method method); /* 27 */
 } TclOOStubs;
 
 #ifdef __cplusplus

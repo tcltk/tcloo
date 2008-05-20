@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.12 2008/05/17 13:15:29 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.13 2008/05/20 15:44:22 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -942,7 +942,7 @@ TclOODefineConstructorObjCmd(
      * execution of the constructor itself.
      */
 
-    Tcl_ClassSetConstructor((Tcl_Class) clsPtr, method);
+    Tcl_ClassSetConstructor(interp, (Tcl_Class) clsPtr, method);
     return TCL_OK;
 }
 
@@ -1060,12 +1060,7 @@ TclOODefineDestructorObjCmd(
      * destructor during a destructor is fairly dumb anyway.
      */
 
-    Tcl_ClassSetDestructor((Tcl_Class) clsPtr, method);
-
-    /*
-     * No chain invalidation; destructor chains are not (currently) saved.
-     */
-
+    Tcl_ClassSetDestructor(interp, (Tcl_Class) clsPtr, method);
     return TCL_OK;
 }
 
@@ -1618,6 +1613,36 @@ TclOODefineUnexportObjCmd(
 	}
     }
     return TCL_OK;
+}
+
+void
+Tcl_ClassSetConstructor(
+    Tcl_Interp *interp,
+    Tcl_Class clazz,
+    Tcl_Method method)
+{
+    Class *clsPtr = (Class *) clazz;
+
+    if (method != (Tcl_Method) clsPtr->constructorPtr) {
+	TclOODeleteMethod(clsPtr->constructorPtr);
+	clsPtr->constructorPtr = (Method *) method;
+	BumpGlobalEpoch(interp, clsPtr);
+    }
+}
+
+void
+Tcl_ClassSetDestructor(
+    Tcl_Interp *interp,
+    Tcl_Class clazz,
+    Tcl_Method method)
+{
+    Class *clsPtr = (Class *) clazz;
+
+    if (method != (Tcl_Method) clsPtr->destructorPtr) {
+	TclOODeleteMethod(clsPtr->destructorPtr);
+	clsPtr->destructorPtr = (Method *) method;
+	BumpGlobalEpoch(interp, clsPtr);
+    }
 }
 
 /*

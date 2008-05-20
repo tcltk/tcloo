@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.45 2008/05/18 20:33:31 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.46 2008/05/20 15:44:18 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -64,8 +64,8 @@ static const struct {
 
 static Class *		AllocClass(Tcl_Interp *interp, Object *useThisObj,
 			    Foundation *fPtr);
-static Object *		AllocObject(Tcl_Interp *interp, const char *nameStr,
-			    const char *nsNameStr);
+static Object *		AllocObject(Foundation *fPtr, Tcl_Interp *interp,
+			    const char *nameStr, const char *nsNameStr);
 static int		CloneClassMethod(Tcl_Interp *interp, Class *clsPtr,
 			    Method *mPtr, Tcl_Obj *namePtr,
 			    Method **newMPtrPtr);
@@ -319,10 +319,10 @@ InitFoundation(
      * spliced manually.
      */
 
-    fPtr->objectCls = AllocClass(interp, AllocObject(interp, "::oo::object",
-	    NULL), fPtr);
-    fPtr->classCls = AllocClass(interp, AllocObject(interp, "::oo::class",
-	    NULL), fPtr);
+    fPtr->objectCls = AllocClass(interp, AllocObject(fPtr, interp,
+	    "::oo::object", NULL), fPtr);
+    fPtr->classCls = AllocClass(interp, AllocObject(fPtr, interp,
+	    "::oo::class", NULL), fPtr);
     fPtr->objectCls->thisPtr->selfCls = fPtr->classCls;
     fPtr->objectCls->thisPtr->flags |= ROOT_OBJECT;
     fPtr->objectCls->superclasses.num = 0;
@@ -408,6 +408,7 @@ KillFoundation(
 
 static Object *
 AllocObject(
+    Foundation *fPtr,		/* The basis for the object system. */
     Tcl_Interp *interp,		/* Interpreter within which to create the
 				 * object. */
     const char *nameStr,	/* The name of the object to create, or NULL
@@ -420,7 +421,6 @@ AllocObject(
 				 * a namespace that already exists, the effect
 				 * will be the same as if this was NULL. */
 {
-    Foundation *fPtr = TclOOGetFoundation(interp);
     Tcl_Obj *cmdnameObj;
     Tcl_DString buffer;
     Object *oPtr;
@@ -480,20 +480,12 @@ AllocObject(
     TclSetNsPath((Namespace *) oPtr->namespacePtr, 1, &fPtr->helpersNs);
 
     /*
-     * Fill in the rest of the structure.
+     * Fill in the rest of the non-zero/NULL parts of the structure.
      */
 
+    oPtr->fPtr = fPtr;
     oPtr->selfCls = fPtr->objectCls;
-    oPtr->methodsPtr = NULL;
-    oPtr->chainCache = NULL;
-    oPtr->filters.num = 0;
-    oPtr->filters.list = NULL;
-    oPtr->mixins.num = 0;
-    oPtr->mixins.list = NULL;
-    oPtr->classPtr = NULL;
-    oPtr->flags = 0;
     oPtr->creationEpoch = creationEpoch;
-    oPtr->metadataPtr = NULL;
 
     /*
      * Finally, create the object commands and initialize the trace on the
@@ -576,9 +568,7 @@ ObjectRenamedTrace(
     Tcl_Preserve(oPtr);
     oPtr->flags |= OBJECT_DELETED;
     if (!Tcl_InterpDeleted(interp)) {
-	CallContext *contextPtr =
-		TclOOGetCallContext(TclOOGetFoundation(interp), oPtr, NULL,
-		DESTRUCTOR, NULL);
+	CallContext *contextPtr = TclOOGetCallContext(oPtr, NULL, DESTRUCTOR);
 
 	if (contextPtr != NULL) {
 	    int result;
@@ -694,6 +684,13 @@ ReleaseClassContents(
 	ckfree((char *) insts);
     }
 
+    if (clsPtr->constructorChainPtr) {
+	TclOODeleteChain(clsPtr->constructorChainPtr);
+    }
+    if (clsPtr->destructorChainPtr) {
+	TclOODeleteChain(clsPtr->destructorChainPtr);
+    }
+
     if (clsPtr->filters.num) {
 	Tcl_Obj *filterObj;
 
@@ -703,6 +700,7 @@ ReleaseClassContents(
 	ckfree((char *) clsPtr->filters.list);
 	clsPtr->filters.num = 0;
     }
+
 
     if (clsPtr->metadataPtr != NULL) {
 	FOREACH_HASH_DECLS;
@@ -1120,7 +1118,7 @@ AllocClass(
 
     memset(clsPtr, 0, sizeof(Class));
     if (useThisObj == NULL) {
-	clsPtr->thisPtr = AllocObject(interp, NULL, NULL);
+	clsPtr->thisPtr = AllocObject(fPtr, interp, NULL, NULL);
     } else {
 	clsPtr->thisPtr = useThisObj;
     }
@@ -1156,27 +1154,11 @@ AllocClass(
     clsPtr->thisPtr->classPtr = clsPtr;
 
     /*
-     * That's the complicated bit. Now fill in the rest of the fields.
+     * That's the complicated bit. Now fill in the rest of the non-zero/NULL
+     * fields.
      */
 
-    clsPtr->flags = 0;
-    clsPtr->subclasses.num = 0;
-    clsPtr->subclasses.list = NULL;
-    clsPtr->subclasses.size = 0;
-    clsPtr->instances.num = 0;
-    clsPtr->instances.list = NULL;
-    clsPtr->instances.size = 0;
-    clsPtr->filters.list = NULL;
-    clsPtr->filters.num = 0;
-    clsPtr->mixins.list = NULL;
-    clsPtr->mixins.num = 0;
-    clsPtr->mixinSubs.list = NULL;
-    clsPtr->mixinSubs.num = 0;
-    clsPtr->mixinSubs.size = 0;
     Tcl_InitObjHashTable(&clsPtr->classMethods);
-    clsPtr->constructorPtr = NULL;
-    clsPtr->destructorPtr = NULL;
-    clsPtr->metadataPtr = NULL;
     return clsPtr;
 }
 
@@ -1205,7 +1187,8 @@ Tcl_NewObjectInstance(
     int skip)			/* Number of arguments to _not_ pass to the
 				 * constructor. */
 {
-    Object *oPtr = AllocObject(interp, NULL, nsNameStr);
+    Foundation *fPtr = ((Class *) cls)->thisPtr->fPtr;
+    Object *oPtr = AllocObject(fPtr, interp, NULL, nsNameStr);
     CallContext *contextPtr;
 
     oPtr->selfCls = (Class *) cls;
@@ -1258,9 +1241,7 @@ Tcl_NewObjectInstance(
      * class structure as well.
      */
 
-    if (TclOOIsReachable(TclOOGetFoundation(interp)->classCls, (Class*)cls)) {
-	Foundation *fPtr = TclOOGetFoundation(interp);
-
+    if (TclOOIsReachable(fPtr->classCls, (Class*)cls)) {
 	/*
 	 * Is a class, so attach a class structure. Note that the AllocClass
 	 * function splices the structure into the object, so we don't have
@@ -1274,8 +1255,7 @@ Tcl_NewObjectInstance(
     }
 
     if (objc >= 0) {
-	contextPtr = TclOOGetCallContext(TclOOGetFoundation(interp), oPtr,
-		NULL, CONSTRUCTOR, NULL);
+	contextPtr = TclOOGetCallContext(oPtr, NULL, CONSTRUCTOR);
 	if (contextPtr != NULL) {
 	    int result;
 	    Tcl_InterpState state;
@@ -1334,7 +1314,7 @@ Tcl_CopyObjectInstance(
 		NULL);
 	return NULL;
     }
-    if (oPtr->classPtr == TclOOGetFoundation(interp)->classCls) {
+    if (oPtr->classPtr == oPtr->fPtr->classCls) {
 	Tcl_AppendResult(interp, "may not clone the class of classes", NULL);
 	return NULL;
     }
@@ -1820,11 +1800,8 @@ PublicObjectCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    if (((Object *) clientData)->chainCache == NULL) {
-	((Object *) clientData)->chainCache = TclOOAllocChainCache();
-    }
     return TclOOObjectCmdCore(clientData, interp, objc, objv, PUBLIC_METHOD,
-	    ((Object *)clientData)->chainCache, NULL);
+	    NULL);
 }
 
 static int
@@ -1834,11 +1811,7 @@ PrivateObjectCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    if (((Object *) clientData)->chainCache == NULL) {
-	((Object *) clientData)->chainCache = TclOOAllocChainCache();
-    }
-    return TclOOObjectCmdCore(clientData, interp, objc, objv, 0,
-	    ((Object *)clientData)->chainCache, NULL);
+    return TclOOObjectCmdCore(clientData, interp, objc, objv, 0, NULL);
 }
 
 int
@@ -1859,21 +1832,16 @@ TclOOInvokeObject(
 				 * that the name of the method to invoke will
 				 * be at index 1. */
 {
-    if (((Object *) object)->chainCache == NULL) {
-	((Object *) object)->chainCache = TclOOAllocChainCache();
-    }
     switch (publicPrivate) {
     case PUBLIC_METHOD:
 	return TclOOObjectCmdCore((Object *) object, interp, objc, objv,
-		PUBLIC_METHOD, ((Object *)object)->chainCache,
-		(Class *) startCls);
+		PUBLIC_METHOD, (Class *) startCls);
     case PRIVATE_METHOD:
 	return TclOOObjectCmdCore((Object *) object, interp, objc, objv,
-		PRIVATE_METHOD, ((Object *)object)->chainCache,
-		(Class *) startCls);
+		PRIVATE_METHOD, (Class *) startCls);
     default:
 	return TclOOObjectCmdCore((Object *) object, interp, objc, objv, 0,
-		((Object *)object)->chainCache, (Class *) startCls);
+		(Class *) startCls);
     }
 }
 
@@ -1885,7 +1853,6 @@ TclOOObjectCmdCore(
     Tcl_Obj *const *objv,	/* The array of arguments. */
     int flags,			/* Whether this is an invokation through the
 				 * public or the private command interface. */
-    Tcl_HashTable *cachePtr,	/* What call chain cache to use. */
     Class *startCls)		/* Where to start in the call chain, or NULL
 				 * if we are to start at the front with
 				 * filters and the object's methods (which is
@@ -1925,8 +1892,8 @@ TclOOObjectCmdCore(
      * Get the call chain.
      */
 
-    contextPtr = TclOOGetCallContext(TclOOGetFoundation(interp), oPtr,
-	    methodNamePtr, flags | (oPtr->flags & FILTER_HANDLING), cachePtr);
+    contextPtr = TclOOGetCallContext(oPtr, methodNamePtr,
+	    flags | (oPtr->flags & FILTER_HANDLING));
     if (contextPtr == NULL) {
 	Tcl_AppendResult(interp, "impossible to invoke method \"",
 		TclGetString(methodNamePtr),
@@ -2312,7 +2279,7 @@ ObjectUnknown(
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     CallContext *contextPtr = (CallContext *) context;
-    Object *oPtr = contextPtr->callPtr->oPtr;
+    Object *oPtr = contextPtr->oPtr;
     const char **methodNames;
     int numMethodNames, i, skip = Tcl_ObjectContextSkippedArgs(context);
 
@@ -2703,12 +2670,11 @@ SelfObjCmd(
 
     switch ((enum SelfCmds) index) {
     case SELF_OBJECT:
-	Tcl_SetObjResult(interp,
-		TclOOObjectName(interp, contextPtr->callPtr->oPtr));
+	Tcl_SetObjResult(interp, TclOOObjectName(interp, contextPtr->oPtr));
 	return TCL_OK;
     case SELF_NS:
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		contextPtr->callPtr->oPtr->namespacePtr->fullName,-1));
+		contextPtr->oPtr->namespacePtr->fullName,-1));
 	return TCL_OK;
     case SELF_CLASS: {
 	Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
@@ -2756,7 +2722,7 @@ SelfObjCmd(
 		oPtr = miPtr->filterDeclarer->thisPtr;
 		type = "class";
 	    } else {
-		oPtr = contextPtr->callPtr->oPtr;
+		oPtr = contextPtr->oPtr;
 		type = "object";
 	    }
 
@@ -2789,7 +2755,7 @@ SelfObjCmd(
 	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
 		    TclOOObjectName(interp, declarerPtr));
 	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
-		    TclOOObjectName(interp, callerPtr->callPtr->oPtr));
+		    TclOOObjectName(interp, callerPtr->oPtr));
 	    if (callerPtr->callPtr->flags & CONSTRUCTOR) {
 		Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
 			Tcl_NewStringObj("<constructor>", -1));
@@ -3087,7 +3053,7 @@ Tcl_Object
 Tcl_ObjectContextObject(
     Tcl_ObjectContext context)
 {
-    return (Tcl_Object) ((CallContext *)context)->callPtr->oPtr;
+    return (Tcl_Object) ((CallContext *)context)->oPtr;
 }
 
 int
@@ -3145,32 +3111,6 @@ Tcl_ObjectSetMethodNameMapper(
     Tcl_ObjectMapMethodNameProc mapMethodNameProc)
 {
     ((Object *) object)->mapMethodNameProc = mapMethodNameProc;
-}
-
-void
-Tcl_ClassSetConstructor(
-    Tcl_Class clazz,
-    Tcl_Method method)
-{
-    Class *clsPtr = (Class *) clazz;
-
-    if (method != (Tcl_Method) clsPtr->constructorPtr) {
-	TclOODeleteMethod(clsPtr->constructorPtr);
-	clsPtr->constructorPtr = (Method *) method;
-    }
-}
-
-void
-Tcl_ClassSetDestructor(
-    Tcl_Class clazz,
-    Tcl_Method method)
-{
-    Class *clsPtr = (Class *) clazz;
-
-    if (method != (Tcl_Method) clsPtr->destructorPtr) {
-	TclOODeleteMethod(clsPtr->destructorPtr);
-	clsPtr->destructorPtr = (Method *) method;
-    }
 }
 
 /*

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.19 2008/05/18 06:57:27 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.20 2008/05/20 15:44:22 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -205,7 +205,7 @@ Tcl_NewMethod(
     }
 
   populate:
-    TclOOGetFoundation(interp)->epoch++;
+    clsPtr->thisPtr->fPtr->epoch++;
     mPtr->typePtr = typePtr;
     mPtr->clientData = clientData;
     mPtr->flags = 0;
@@ -727,8 +727,7 @@ PushMethodCallFrame(
     PMFrameData *fdPtr)		/* Place to store information about the call
 				 * frame. */
 {
-    Object *oPtr = contextPtr->callPtr->oPtr;
-    Tcl_Namespace *nsPtr = oPtr->namespacePtr;
+    Tcl_Namespace *nsPtr = contextPtr->oPtr->namespacePtr;
     int flags = FRAME_IS_METHOD, result;
     const char *namePtr;
     CallFrame **framePtrPtr = &fdPtr->framePtr;
@@ -739,18 +738,14 @@ PushMethodCallFrame(
      */
 
     if (contextPtr->callPtr->flags & CONSTRUCTOR) {
-	Foundation *fPtr = TclOOGetFoundation(interp);
-
 	namePtr = "<constructor>";
 	flags |= FRAME_IS_CONSTRUCTOR;
-	fdPtr->nameObj = fPtr->constructorName;
+	fdPtr->nameObj = contextPtr->oPtr->fPtr->constructorName;
 	fdPtr->errProc = ConstructorErrorHandler;
     } else if (contextPtr->callPtr->flags & DESTRUCTOR) {
-	Foundation *fPtr = TclOOGetFoundation(interp);
-
 	namePtr = "<destructor>";
 	flags |= FRAME_IS_DESTRUCTOR;
-	fdPtr->nameObj = fPtr->destructorName;
+	fdPtr->nameObj = contextPtr->oPtr->fPtr->destructorName;
 	fdPtr->errProc = DestructorErrorHandler;
     } else {
 	fdPtr->nameObj = Tcl_MethodName(
