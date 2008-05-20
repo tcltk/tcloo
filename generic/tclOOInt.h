@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.26 2008/05/20 15:44:22 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.27 2008/05/20 22:04:22 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -400,6 +400,9 @@ MODULE_SCOPE int	TclOODefineClassObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
 MODULE_SCOPE int	TclOODefineSelfObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOOUnknownDefinition(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
 

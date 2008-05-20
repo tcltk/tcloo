@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.46 2008/05/20 15:44:18 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.47 2008/05/20 22:04:22 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -288,6 +288,11 @@ InitFoundation(
     Tcl_IncrRefCount(fPtr->unknownMethodNameObj);
     Tcl_IncrRefCount(fPtr->constructorName);
     Tcl_IncrRefCount(fPtr->destructorName);
+    Tcl_CreateObjCommand(interp, "::oo::UnknownDefinition",
+	    TclOOUnknownDefinition, NULL, NULL);
+    namePtr = Tcl_NewStringObj("::oo::UnknownDefinition", -1);
+    Tcl_SetNamespaceUnknownHandler(interp, fPtr->defineNs, namePtr);
+    Tcl_SetNamespaceUnknownHandler(interp, fPtr->objdefNs, namePtr);
 
     /*
      * Create the subcommands in the oo::define and oo::objdefine spaces.

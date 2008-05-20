@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.13 2008/05/20 15:44:22 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.14 2008/05/20 22:04:22 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -360,6 +360,80 @@ RenameDeleteMethod(
     }
     Tcl_DeleteHashEntry(hPtr);
     return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOUnknownDefinition --
+ *	Handles what happens when an unknown command is encountered during the
+ *	processing of a definition script. Works by finding a command in the
+ *	operating definition namespace that the requested command is a unique
+ *	prefix of.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+int
+TclOOUnknownDefinition(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Namespace *nsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
+    Tcl_HashSearch search;
+    Tcl_HashEntry *hPtr;
+    int soughtLen;
+    const char *soughtStr, *matchedStr = NULL;
+
+    if (objc < 2) {
+	Tcl_AppendResult(interp, "bad call of unknown handler", NULL);
+	return TCL_ERROR;
+    }
+    if (TclOOGetDefineCmdContext(interp) == NULL) {
+	return TCL_ERROR;
+    }
+
+    soughtStr = Tcl_GetStringFromObj(objv[1], &soughtLen);
+    if (soughtLen == 0) {
+	goto noMatch;
+    }
+    hPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
+    while (hPtr != NULL) {
+	const char *nameStr = Tcl_GetHashKey(&nsPtr->cmdTable, hPtr);
+
+	if (strncmp(soughtStr, nameStr, soughtLen) == 0) {
+	    if (matchedStr != NULL) {
+		goto noMatch;
+	    }
+	    matchedStr = nameStr;
+	}
+	hPtr = Tcl_NextHashEntry(&search);
+    }
+
+    if (matchedStr != NULL) {
+	/*
+	 * Got one match, and only one match!
+	 */
+
+	Tcl_Obj **newObjv = TclStackAlloc(interp, sizeof(Tcl_Obj*)*(objc-1));
+	int result;
+
+	newObjv[0] = Tcl_NewStringObj(matchedStr, -1);
+	Tcl_IncrRefCount(newObjv[0]);
+	if (objc > 2) {
+	    memcpy(newObjv+1, objv+2, sizeof(Tcl_Obj *) * (objc-2));
+	}
+	result = Tcl_EvalObjv(interp, objc-1, newObjv, 0);
+	Tcl_DecrRefCount(newObjv[0]);
+	TclStackFree(interp, newObjv);
+	return result;
+    }
+
+  noMatch:
+    Tcl_AppendResult(interp, "invalid command name \"",soughtStr,"\"", NULL);
+    return TCL_ERROR;
 }
 
 /*
