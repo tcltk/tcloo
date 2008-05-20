@@ -1,5 +1,10 @@
 2008-05-20  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclOODefineCmds.c (TclOOUnknownDefinition): Added an unknown
+	handler to the oo::define and oo::objdefine commands internal
+	namespace processing so that you can use unique prefixes. Addresses
+	[Bug 1962026] on a practical level (though not aesthetically).
+
 	* generic/tclOOInt.h (Object): Put a reference to the object system
 	foundation into the object structure so that fewer hash table lookups
 	are required during the creation of objects and the invokation of
