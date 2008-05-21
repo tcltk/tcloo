@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.47 2008/05/20 22:04:22 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.48 2008/05/21 13:12:26 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -426,7 +426,6 @@ AllocObject(
 				 * a namespace that already exists, the effect
 				 * will be the same as if this was NULL. */
 {
-    Tcl_Obj *cmdnameObj;
     Tcl_DString buffer;
     Object *oPtr;
     int creationEpoch;
@@ -498,30 +497,46 @@ AllocObject(
      * command is deleted).
      */
 
-    Tcl_DStringInit(&buffer);
     if (nameStr) {
 	if (nameStr[0] != ':' || nameStr[1] != ':') {
+	    Tcl_DStringInit(&buffer);
 	    Tcl_DStringAppend(&buffer,
 		    Tcl_GetCurrentNamespace(interp)->fullName, -1);
 	    Tcl_DStringAppend(&buffer, "::", 2);
+	    Tcl_DStringAppend(&buffer, nameStr, -1);
+	    oPtr->command = Tcl_CreateObjCommand(interp,
+		    Tcl_DStringValue(&buffer), PublicObjectCmd, oPtr, NULL);
+	    Tcl_DStringFree(&buffer);
+	} else {
+	    oPtr->command = Tcl_CreateObjCommand(interp, nameStr,
+		    PublicObjectCmd, oPtr, NULL);
 	}
-	Tcl_DStringAppend(&buffer, nameStr, -1);
     } else {
-	Tcl_DStringAppend(&buffer, oPtr->namespacePtr->fullName, -1);
+	oPtr->command = Tcl_CreateObjCommand(interp,
+		oPtr->namespacePtr->fullName, PublicObjectCmd, oPtr, NULL);
     }
-    oPtr->command = Tcl_CreateObjCommand(interp, Tcl_DStringValue(&buffer),
-	    PublicObjectCmd, oPtr, NULL);
-    if (nameStr) {
-	Tcl_DStringFree(&buffer);
-	Tcl_DStringAppend(&buffer, oPtr->namespacePtr->fullName, -1);
-    }
-    Tcl_DStringAppend(&buffer, "::my", 4);
-    oPtr->myCommand = Tcl_CreateObjCommand(interp, Tcl_DStringValue(&buffer),
-	    PrivateObjectCmd, oPtr, NULL);
-    Tcl_DStringFree(&buffer);
 
-    cmdnameObj = TclOOObjectName(interp, oPtr);
-    Tcl_TraceCommand(interp, TclGetString(cmdnameObj),
+    /*
+     * Access the namespace command table directly when creating "my" to avoid
+     * a bottleneck in string manipulation. 
+     */
+
+    {
+	register Command *cmdPtr = (Command *) ckalloc(sizeof(Command));
+
+	memset(cmdPtr, 0, sizeof(Command));
+	cmdPtr->nsPtr = (Namespace *) oPtr->namespacePtr;
+	cmdPtr->hPtr = Tcl_CreateHashEntry(&cmdPtr->nsPtr->cmdTable, "my",
+		&creationEpoch /*ignored*/ );
+	cmdPtr->refCount = 1;
+	cmdPtr->objProc = PrivateObjectCmd;
+	cmdPtr->objClientData = oPtr;
+	cmdPtr->proc = TclInvokeObjectCommand;
+	cmdPtr->clientData = cmdPtr;
+	Tcl_SetHashValue(cmdPtr->hPtr, cmdPtr);
+    }
+
+    Tcl_TraceCommand(interp, TclGetString(TclOOObjectName(interp, oPtr)),
 	    TCL_TRACE_RENAME|TCL_TRACE_DELETE, ObjectRenamedTrace, oPtr);
 
     return oPtr;
@@ -1193,53 +1208,26 @@ Tcl_NewObjectInstance(
 				 * constructor. */
 {
     Foundation *fPtr = ((Class *) cls)->thisPtr->fPtr;
-    Object *oPtr = AllocObject(fPtr, interp, NULL, nsNameStr);
-    CallContext *contextPtr;
+    Object *oPtr;
 
+    /*
+     * Check if we're going to create an object over an existing command;
+     * that's not allowed.
+     */
+
+    if (nameStr && Tcl_FindCommand(interp, nameStr, NULL, 0)) {
+	Tcl_AppendResult(interp, "can't create object \"", nameStr,
+		"\": command already exists with that name", NULL);
+	return NULL;
+    }
+
+    /*
+     * Create the object.
+     */
+
+    oPtr = AllocObject(fPtr, interp, nameStr, nsNameStr);
     oPtr->selfCls = (Class *) cls;
     TclOOAddToInstances(oPtr, (Class *) cls);
-
-    if (nameStr != NULL) {
-	Tcl_Obj *cmdnameObj = Tcl_NewObj();
-	Namespace *nsPtr, *dummy;
-	const char *simpleName;
-	Tcl_DString buf;
-	int cmp;
-
-	Tcl_GetCommandFullName(interp, oPtr->command, cmdnameObj);
-
-	/*
-	 * Take extra care to verify that we are not renaming a command to
-	 * itself.
-	 */
-
-	TclGetNamespaceForQualName(interp, nameStr, NULL, TCL_NAMESPACE_ONLY,
-		&nsPtr, &dummy, &dummy, &simpleName);
-	if (simpleName != NULL && nsPtr != NULL) {
-	    /*
-	     * Rename the object to the name that the user wanted.
-	     */
-
-	    Tcl_DStringInit(&buf);
-	    Tcl_DStringAppend(&buf, nsPtr->fullName, -1);
-	    if (nsPtr->parentPtr) {
-		Tcl_DStringAppend(&buf, "::", 2);
-	    }
-	    Tcl_DStringAppend(&buf, simpleName, -1);
-	    cmp = strcmp(TclGetString(cmdnameObj), Tcl_DStringValue(&buf));
-	    Tcl_DStringFree(&buf);
-	    if (cmp && TclRenameCommand(interp, TclGetString(cmdnameObj),
-		    nameStr) != TCL_OK) {
-		Tcl_ResetResult(interp);
-		Tcl_AppendResult(interp, "can't create object \"", nameStr,
-			"\": command already exists with that name", NULL);
-		Tcl_DecrRefCount(cmdnameObj);
-		Tcl_DeleteCommandFromToken(interp, oPtr->command);
-		return NULL;
-	    }
-	}
-	Tcl_DecrRefCount(cmdnameObj);
-    }
 
     /*
      * Check to see if we're really creating a class. If so, allocate the
@@ -1259,8 +1247,14 @@ Tcl_NewObjectInstance(
 	TclOOAddToSubclasses(oPtr->classPtr, fPtr->objectCls);
     }
 
+    /*
+     * Run constructors, except when objc < 0 (a special flag case used for
+     * object cloning only).
+     */
+
     if (objc >= 0) {
-	contextPtr = TclOOGetCallContext(oPtr, NULL, CONSTRUCTOR);
+	CallContext *contextPtr = TclOOGetCallContext(oPtr,NULL,CONSTRUCTOR);
+
 	if (contextPtr != NULL) {
 	    int result;
 	    Tcl_InterpState state;

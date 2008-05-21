@@ -1,5 +1,11 @@
 2008-05-21  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclOO.c (AllocObject): Directly allocate structures relating
+	to the object's [my] command; we know that's a fresh namespace so the
+	extra checks performed by Tcl_CreateObjCommand are pure overhead.
+	(Tcl_NewObjectInstance): Remove bottlenecks relating to command
+	renaming; using Tcl_FindCommand for the safety check is much faster!
+
 	* generic/tclOODefineCmds.c (FindCommand): Factor out the code to do
 	lookup of commands with abbreviations in the case where the definition
 	command is not given a script.

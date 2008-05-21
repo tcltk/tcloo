@@ -50,8 +50,10 @@ f bar
 cps {f bar} $iterations
 f destroy
 
-puts "Object creation/deletion microbenchmark"
+puts "Object creation/deletion microbenchmarks"
+cps {[foo new] destroy} $iterations
 cps {[foo create f] destroy} $iterations
+cps {[foo create ::f] destroy} $iterations
 
 puts "Method inherited invokation microbenchmark"
 boo create f
@@ -60,6 +62,6 @@ cps {f bar} $iterations
 f destroy
 
 puts "Object inherited creation/deletion microbenchmark"
-cps {[boo create f] destroy} $iterations
+cps {[boo new] destroy} $iterations
 
 foo destroy
