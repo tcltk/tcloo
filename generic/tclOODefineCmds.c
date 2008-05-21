@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.15 2008/05/21 09:58:24 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.16 2008/05/21 14:25:31 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -467,39 +467,47 @@ FindCommand(
     Tcl_Namespace *const namespacePtr)
 {
     int length;
-    const char *string = Tcl_GetStringFromObj(stringObj, &length);
-    Namespace *const nsPtr = (Namespace *) namespacePtr;
-    Tcl_Command cmd;
-    Tcl_HashSearch search;
-    Tcl_HashEntry *hPtr, *matchedPtr = NULL;
+    const char *nameStr, *string = Tcl_GetStringFromObj(stringObj, &length);
+    register Namespace *const nsPtr = (Namespace *) namespacePtr;
+    FOREACH_HASH_DECLS;
+    Tcl_Command cmd, cmd2;
 
-    if (strstr(string, "..") != NULL) {
-	goto noMatch;
+    /*
+     * If someone is playing games, we stop playing right now.
+     */
+
+    if (string[0] == '\0' || strstr(string, "::") != NULL) {
+	return NULL;
     }
+
+    /*
+     * Do the exact lookup first.
+     */
+
     cmd = Tcl_FindCommand(interp, string, namespacePtr, TCL_NAMESPACE_ONLY);
     if (cmd != NULL) {
 	return cmd;
     }
 
-    hPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
-    while (hPtr != NULL) {
-	const char *nameStr = Tcl_GetHashKey(&nsPtr->cmdTable, hPtr);
+    /*
+     * Bother, need to perform an approximate match. Iterate across the hash
+     * table of commands in the namespace.
+     */
 
+    FOREACH_HASH(nameStr, cmd2, &nsPtr->cmdTable) {
 	if (strncmp(string, nameStr, length) == 0) {
-	    if (matchedPtr != NULL) {
-		goto noMatch;
+	    if (cmd != NULL) {
+		return NULL;
 	    }
-	    matchedPtr = hPtr;
+	    cmd = cmd2;
 	}
-	hPtr = Tcl_NextHashEntry(&search);
     }
 
-    if (matchedPtr) {
-	return Tcl_GetHashValue(matchedPtr);
-    }
+    /*
+     * Either we found one thing or we found nothing. Either way, return it.
+     */
 
-  noMatch:
-    return NULL;
+    return cmd;
 }
 
 /*
