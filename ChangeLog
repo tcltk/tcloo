@@ -1,3 +1,9 @@
+2008-05-21  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOODefineCmds.c (FindCommand): Factor out the code to do
+	lookup of commands with abbreviations in the case where the definition
+	command is not given a script.
+
 2008-05-20  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOODefineCmds.c (TclOOUnknownDefinition): Added an unknown

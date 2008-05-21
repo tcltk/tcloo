@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.20 2008/05/16 08:09:59 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.21 2008/05/21 09:58:24 dkf Exp $
 
 package require TclOO 0.3a0 ;# Must match value in configure.in
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -143,6 +143,54 @@ test oo-1.10 {basic test of OO functionality} -body {
 } -cleanup {
     namespace delete foo
 } -result {1 1}
+test oo-1.11 {basic test of OO functionality: abbreviating} -setup {
+    oo::class create c
+} -cleanup {
+    c destroy
+} -body {
+    oo::define c super oo::class
+    info class super c
+} -result ::oo::class
+test oo-1.12 {basic test of OO functionality: abbreviating} -setup {
+    oo::class create c
+} -cleanup {
+    c destroy
+} -body {
+    oo::define c {super oo::class}
+    info class super c
+} -result ::oo::class
+test oo-1.13 {basic test of OO functionality: abbreviating} -setup {
+    oo::class create c
+} -cleanup {
+    c destroy
+} -body {
+    oo::define c self {forw a b}
+    info object forw c a
+} -result b
+test oo-1.14 {basic test of OO functionality: abbreviating} -setup {
+    oo::class create c
+} -cleanup {
+    c destroy
+} -body {
+    oo::define c self forw a b
+    info object forw c a
+} -result b
+test oo-1.15 {basic test of OO functionality: abbreviating} -setup {
+    oo::object create o
+} -cleanup {
+    o destroy
+} -body {
+    oo::objdefine o {forw a b}
+    info object forw o a
+} -result b
+test oo-1.16 {basic test of OO functionality: abbreviating} -setup {
+    oo::object create o
+} -cleanup {
+    o destroy
+} -body {
+    oo::objdefine o forw a b
+    info object forw o a
+} -result b
 
 test oo-2.1 {basic test of OO functionality: constructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as
