@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.48 2008/05/21 13:12:26 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.49 2008/05/21 14:43:48 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1940,7 +1940,8 @@ TclOOObjectCmdCore(
 
   disposeChain:
     if (!(contextPtr->callPtr->flags & OO_UNKNOWN_METHOD)
-	    && !(oPtr->flags & OBJECT_DELETED)) {
+	    && !(oPtr->flags & OBJECT_DELETED)
+	    && (startCls == NULL)) {
 	TclOOStashContext(methodNamePtr, contextPtr);
     }
     TclOODeleteContext(contextPtr);
