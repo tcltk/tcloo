@@ -1,5 +1,10 @@
 2008-05-21  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclOO.c (TclOOObjectCmdCore): Turn off caching in the
+	primary case that causes problems when a method name mapper is
+	installed. API will need rethinking, but it's very complex to handle
+	efficiently. [Bug 1895546]
+
 	* generic/tclOO.c (AllocObject): Directly allocate structures relating
 	to the object's [my] command; we know that's a fresh namespace so the
 	extra checks performed by Tcl_CreateObjCommand are pure overhead.
