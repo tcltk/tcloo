@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.14 2008/05/20 22:04:22 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.15 2008/05/21 09:58:24 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -17,6 +17,20 @@
 #endif
 #include "tclInt.h"
 #include "tclOOInt.h"
+
+/*
+ * Forward declarations.
+ */
+
+static inline void	BumpGlobalEpoch(Tcl_Interp *interp, Class *classPtr);
+static Tcl_Command	FindCommand(Tcl_Interp *interp, Tcl_Obj *stringObj,
+			    Tcl_Namespace *const namespacePtr);
+static inline int	InitDefineContext(Tcl_Interp *interp,
+			    Tcl_Namespace *namespacePtr, Object *oPtr,
+			    int objc, Tcl_Obj *const objv[]);
+static int		RenameDeleteMethod(Tcl_Interp *interp, Object *oPtr,
+			    int useClass, Tcl_Obj *const fromPtr,
+			    Tcl_Obj *const toPtr);
 
 /*
  * ----------------------------------------------------------------------
@@ -439,6 +453,58 @@ TclOOUnknownDefinition(
 /*
  * ----------------------------------------------------------------------
  *
+ * FindCommand --
+ *	Specialized version of Tcl_FindCommand that handles command prefixes
+ *	and disallows namespace magic.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static Tcl_Command
+FindCommand(
+    Tcl_Interp *interp,
+    Tcl_Obj *stringObj,
+    Tcl_Namespace *const namespacePtr)
+{
+    int length;
+    const char *string = Tcl_GetStringFromObj(stringObj, &length);
+    Namespace *const nsPtr = (Namespace *) namespacePtr;
+    Tcl_Command cmd;
+    Tcl_HashSearch search;
+    Tcl_HashEntry *hPtr, *matchedPtr = NULL;
+
+    if (strstr(string, "..") != NULL) {
+	goto noMatch;
+    }
+    cmd = Tcl_FindCommand(interp, string, namespacePtr, TCL_NAMESPACE_ONLY);
+    if (cmd != NULL) {
+	return cmd;
+    }
+
+    hPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
+    while (hPtr != NULL) {
+	const char *nameStr = Tcl_GetHashKey(&nsPtr->cmdTable, hPtr);
+
+	if (strncmp(string, nameStr, length) == 0) {
+	    if (matchedPtr != NULL) {
+		goto noMatch;
+	    }
+	    matchedPtr = hPtr;
+	}
+	hPtr = Tcl_NextHashEntry(&search);
+    }
+
+    if (matchedPtr) {
+	return Tcl_GetHashValue(matchedPtr);
+    }
+
+  noMatch:
+    return NULL;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * InitDefineContext --
  *	Does the magic incantations necessary to push the special stack frame
  *	used when processing object definitions. It is up to the caller to
@@ -598,8 +664,7 @@ TclOODefineObjCmd(
 
 	objPtr = Tcl_NewObj();
 	obj2Ptr = Tcl_NewObj();
-	cmd = Tcl_FindCommand(interp, TclGetString(objv[2]), fPtr->defineNs,
-		TCL_NAMESPACE_ONLY);
+	cmd = FindCommand(interp, objv[2], fPtr->defineNs);
 	if (cmd == NULL) {
 	    /* punt this case! */
 	    Tcl_AppendObjToObj(obj2Ptr, objv[2]);
@@ -718,8 +783,7 @@ TclOOObjDefObjCmd(
 
 	objPtr = Tcl_NewObj();
 	obj2Ptr = Tcl_NewObj();
-	cmd = Tcl_FindCommand(interp, TclGetString(objv[2]), fPtr->objdefNs,
-		TCL_NAMESPACE_ONLY);
+	cmd = FindCommand(interp, objv[2], fPtr->objdefNs);
 	if (cmd == NULL) {
 	    /* punt this case! */
 	    Tcl_AppendObjToObj(obj2Ptr, objv[2]);
@@ -839,8 +903,7 @@ TclOODefineSelfObjCmd(
 
 	objPtr = Tcl_NewObj();
 	obj2Ptr = Tcl_NewObj();
-	cmd = Tcl_FindCommand(interp, TclGetString(objv[1]), fPtr->objdefNs,
-		TCL_NAMESPACE_ONLY);
+	cmd = FindCommand(interp, objv[1], fPtr->objdefNs);
 	if (cmd == NULL) {
 	    /* punt this case! */
 	    Tcl_AppendObjToObj(obj2Ptr, objv[1]);
