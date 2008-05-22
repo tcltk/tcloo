@@ -1,3 +1,8 @@
+2008-05-22  Donal K. Fellows  <dkf@users.sf.net>
+
+	* configure.in, generic/tclOO.h, tests/oo.test, win/TclOO.rc: Update
+	version numbers for 0.3 release.
+
 2008-05-21  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c (TclOOObjectCmdCore): Turn off caching in the
