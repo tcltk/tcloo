@@ -1,5 +1,4 @@
-lappend auto_path [file dirname [file dirname [file normalize [info script]]]]
-package require TclOO 0.3a0
+package require TclOO
 puts "cps benchmark using TclOO [package provide TclOO]"
 # See http://wiki.tcl.tk/18152 for table of comparison
 
