@@ -1,5 +1,7 @@
 2008-05-22  Donal K. Fellows  <dkf@users.sf.net>
 
+	=== RELEASE OF TCLOO VERSION 0.3 ===
+
 	* configure.in, generic/tclOO.h, tests/oo.test, win/TclOO.rc: Update
 	version numbers for 0.3 release.
 
