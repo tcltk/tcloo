@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.20 2008/05/20 15:44:22 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.21 2008/05/23 21:42:10 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -59,7 +59,7 @@ static int		PushMethodCallFrame(Tcl_Interp *interp,
 			    CallContext *contextPtr, ProcedureMethod *pmPtr,
 			    int objc, Tcl_Obj *const *objv,
 			    PMFrameData *fdPtr);
-static void		DeleteProcedureMethodRecord(char *recordPtr);
+static void		DeleteProcedureMethodRecord(ProcedureMethod *pmPtr);
 static void		DeleteProcedureMethod(ClientData clientData);
 static int		CloneProcedureMethod(Tcl_Interp *interp,
 			    ClientData clientData, ClientData *newClientData);
@@ -146,6 +146,7 @@ Tcl_NewInstanceMethod(
   populate:
     mPtr->typePtr = typePtr;
     mPtr->clientData = clientData;
+    mPtr->refCount = 1;
     mPtr->flags = 0;
     mPtr->declaringObjectPtr = oPtr;
     mPtr->declaringClassPtr = NULL;
@@ -208,6 +209,7 @@ Tcl_NewMethod(
     clsPtr->thisPtr->fPtr->epoch++;
     mPtr->typePtr = typePtr;
     mPtr->clientData = clientData;
+    mPtr->refCount = 1;
     mPtr->flags = 0;
     mPtr->declaringObjectPtr = NULL;
     mPtr->declaringClassPtr = clsPtr;
@@ -221,34 +223,7 @@ Tcl_NewMethod(
 /*
  * ----------------------------------------------------------------------
  *
- * DeleteMethodStruct --
- *
- *	Function used when deleting a method. Always called indirectly via
- *	Tcl_EventuallyFree().
- *
- * ----------------------------------------------------------------------
- */
-
-static void
-DeleteMethodStruct(
-    char *buffer)
-{
-    Method *mPtr = (Method *) buffer;
-
-    if (mPtr->typePtr != NULL && mPtr->typePtr->deleteProc != NULL) {
-	mPtr->typePtr->deleteProc(mPtr->clientData);
-    }
-    if (mPtr->namePtr != NULL) {
-	Tcl_DecrRefCount(mPtr->namePtr);
-    }
-
-    ckfree(buffer);
-}
-
-/*
- * ----------------------------------------------------------------------
- *
- * TclOODeleteMethod --
+ * TclOODelMethodRef --
  *
  *	How to delete a method.
  *
@@ -256,11 +231,18 @@ DeleteMethodStruct(
  */
 
 void
-TclOODeleteMethod(
+TclOODelMethodRef(
     Method *mPtr)
 {
-    if (mPtr != NULL) {
-	Tcl_EventuallyFree(mPtr, DeleteMethodStruct);
+    if ((mPtr != NULL) && (--mPtr->refCount < 0)) {
+	if (mPtr->typePtr != NULL && mPtr->typePtr->deleteProc != NULL) {
+	    mPtr->typePtr->deleteProc(mPtr->clientData);
+	}
+	if (mPtr->namePtr != NULL) {
+	    Tcl_DecrRefCount(mPtr->namePtr);
+	}
+
+	ckfree((char *) mPtr);
     }
 }
 
@@ -328,6 +310,7 @@ TclOONewProcInstanceMethod(
     memset(pmPtr, 0, sizeof(ProcedureMethod));
     pmPtr->version = TCLOO_PROCEDURE_METHOD_VERSION;
     pmPtr->flags = flags & USE_DECLARER_NS;
+    pmPtr->refCount = 1;
     method = TclOOMakeProcInstanceMethod(interp, oPtr, flags, nameObj,
 	    argsObj, bodyObj, &procMethodType, pmPtr, &pmPtr->procPtr);
     if (method == NULL) {
@@ -387,6 +370,7 @@ TclOONewProcMethod(
     memset(pmPtr, 0, sizeof(ProcedureMethod));
     pmPtr->version = TCLOO_PROCEDURE_METHOD_VERSION;
     pmPtr->flags = flags & USE_DECLARER_NS;
+    pmPtr->refCount = 1;
 
     method = TclOOMakeProcMethod(interp, clsPtr, flags, nameObj,
 	    procName, argsObj, bodyObj, &procMethodType, pmPtr,
@@ -656,7 +640,7 @@ InvokeProcedureMethod(
      */
 
     fdPtr = (PMFrameData *) TclStackAlloc(interp, sizeof(PMFrameData));
-    Tcl_Preserve(pmPtr);
+    pmPtr->refCount++;
 
     /*
      * Create a call frame for this method.
@@ -707,11 +691,15 @@ InvokeProcedureMethod(
     }
 
     /*
-     * Scrap the special frame data now that we're done with it.
+     * Scrap the special frame data now that we're done with it. Note that we
+     * are inlining DeleteProcedureMethod() here; this location is highly
+     * sensitive when it comes to performance!
      */
 
   done:
-    Tcl_Release(pmPtr);
+    if (--pmPtr->refCount < 1) {
+	DeleteProcedureMethodRecord(pmPtr);
+    }
     TclStackFree(interp, fdPtr);
     return result;
 }
@@ -997,22 +985,24 @@ DestructorErrorHandler(
 
 static void
 DeleteProcedureMethodRecord(
-    char *recordPtr)
+    ProcedureMethod *pmPtr)
 {
-    register ProcedureMethod *pmPtr = (ProcedureMethod *) recordPtr;
-
     TclProcDeleteProc(pmPtr->procPtr);
     if (pmPtr->deleteClientdataProc) {
 	pmPtr->deleteClientdataProc(pmPtr->clientData);
     }
-    ckfree(recordPtr);
+    ckfree((char *) pmPtr);
 }
 
 static void
 DeleteProcedureMethod(
     ClientData clientData)
 {
-    Tcl_EventuallyFree(clientData, DeleteProcedureMethodRecord);
+    register ProcedureMethod *pmPtr = clientData;
+
+    if (--pmPtr->refCount < 1) {
+	DeleteProcedureMethodRecord(pmPtr);
+    }
 }
 
 static int
@@ -1026,6 +1016,7 @@ CloneProcedureMethod(
 	    ckalloc(sizeof(ProcedureMethod));
 
     memcpy(pm2Ptr, pmPtr, sizeof(ProcedureMethod));
+    pm2Ptr->refCount = 1;
     pm2Ptr->procPtr->refCount++;
     if (pmPtr->cloneClientdataProc) {
 	pm2Ptr->clientData = pmPtr->cloneClientdataProc(pmPtr->clientData);

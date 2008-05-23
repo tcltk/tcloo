@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.16 2008/05/21 14:25:31 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.17 2008/05/23 21:42:10 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -370,7 +370,7 @@ RenameDeleteMethod(
 	mPtr->namePtr = toPtr;
 	Tcl_SetHashValue(newHPtr, mPtr);
     } else {
-	TclOODeleteMethod(mPtr);
+	TclOODelMethodRef(mPtr);
     }
     Tcl_DeleteHashEntry(hPtr);
     return TCL_OK;
@@ -620,7 +620,7 @@ TclOODefineObjCmd(
 	return TCL_ERROR;
     }
 
-    Tcl_Preserve(oPtr);
+    AddRef(oPtr);
     if (objc == 3) {
 	result = TclEvalObjEx(interp, objv[2], 0,
 		((Interp *)interp)->cmdFramePtr, 2);
@@ -686,7 +686,7 @@ TclOODefineObjCmd(
 	result = Tcl_EvalObjv(interp, objc-2, objs, TCL_EVAL_INVOKE);
 	Tcl_DecrRefCount(objPtr);
     }
-    Tcl_Release(oPtr);
+    DelRef(oPtr);
 
     /*
      * Restore the previous "current" namespace.
@@ -739,7 +739,7 @@ TclOOObjDefObjCmd(
 	return TCL_ERROR;
     }
 
-    Tcl_Preserve(oPtr);
+    AddRef(oPtr);
     if (objc == 3) {
 	result = TclEvalObjEx(interp, objv[2], 0,
 		((Interp *)interp)->cmdFramePtr, 2);
@@ -805,7 +805,7 @@ TclOOObjDefObjCmd(
 	result = Tcl_EvalObjv(interp, objc-2, objs, TCL_EVAL_INVOKE);
 	Tcl_DecrRefCount(objPtr);
     }
-    Tcl_Release(oPtr);
+    DelRef(oPtr);
 
     /*
      * Restore the previous "current" namespace.
@@ -858,7 +858,7 @@ TclOODefineSelfObjCmd(
 	return TCL_ERROR;
     }
 
-    Tcl_Preserve(oPtr);
+    AddRef(oPtr);
     if (objc == 2) {
 	result = TclEvalObjEx(interp, objv[1], 0,
 		((Interp *)interp)->cmdFramePtr, 2);
@@ -925,7 +925,7 @@ TclOODefineSelfObjCmd(
 	result = Tcl_EvalObjv(interp, objc-1, objs, TCL_EVAL_INVOKE);
 	Tcl_DecrRefCount(objPtr);
     }
-    Tcl_Release(oPtr);
+    DelRef(oPtr);
 
     /*
      * Restore the previous "current" namespace.
@@ -1769,7 +1769,7 @@ Tcl_ClassSetConstructor(
     Class *clsPtr = (Class *) clazz;
 
     if (method != (Tcl_Method) clsPtr->constructorPtr) {
-	TclOODeleteMethod(clsPtr->constructorPtr);
+	TclOODelMethodRef(clsPtr->constructorPtr);
 	clsPtr->constructorPtr = (Method *) method;
 	BumpGlobalEpoch(interp, clsPtr);
     }
@@ -1784,7 +1784,7 @@ Tcl_ClassSetDestructor(
     Class *clsPtr = (Class *) clazz;
 
     if (method != (Tcl_Method) clsPtr->destructorPtr) {
-	TclOODeleteMethod(clsPtr->destructorPtr);
+	TclOODelMethodRef(clsPtr->destructorPtr);
 	clsPtr->destructorPtr = (Method *) method;
 	BumpGlobalEpoch(interp, clsPtr);
     }

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.49 2008/05/21 14:43:48 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.50 2008/05/23 21:42:10 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -490,6 +490,7 @@ AllocObject(
     oPtr->fPtr = fPtr;
     oPtr->selfCls = fPtr->objectCls;
     oPtr->creationEpoch = creationEpoch;
+    oPtr->refCount = 1;
 
     /*
      * Finally, create the object commands and initialize the trace on the
@@ -585,7 +586,7 @@ ObjectRenamedTrace(
      * the real object structures to be deleted.
      */
 
-    Tcl_Preserve(oPtr);
+    AddRef(oPtr);
     oPtr->flags |= OBJECT_DELETED;
     if (!Tcl_InterpDeleted(interp)) {
 	CallContext *contextPtr = TclOOGetCallContext(oPtr, NULL, DESTRUCTOR);
@@ -614,14 +615,14 @@ ObjectRenamedTrace(
 
     clsPtr = oPtr->classPtr;
     if (clsPtr != NULL) {
-	Tcl_Preserve(clsPtr);
+	AddRef(clsPtr);
 	ReleaseClassContents(interp, oPtr);
     }
     Tcl_DeleteNamespace(oPtr->namespacePtr);
     if (clsPtr) {
-	Tcl_Release(clsPtr);
+	DelRef(clsPtr);
     }
-    Tcl_Release(oPtr);
+    DelRef(oPtr);
 }
 
 /*
@@ -656,13 +657,13 @@ ReleaseClassContents(
     clsPtr->mixinSubs.num = 0;
     clsPtr->mixinSubs.size = 0;
     for (i=0 ; i<n ; i++) {
-	Tcl_Preserve(list[i]);
+	AddRef(list[i]);
     }
     for (i=0 ; i<n ; i++) {
 	if (!(list[i]->flags & OBJECT_DELETED) && interp != NULL) {
 	    Tcl_DeleteCommandFromToken(interp, list[i]->thisPtr->command);
 	}
-	Tcl_Release(list[i]);
+	DelRef(list[i]);
     }
     if (list != NULL) {
 	ckfree((char *) list);
@@ -674,13 +675,13 @@ ReleaseClassContents(
     clsPtr->subclasses.num = 0;
     clsPtr->subclasses.size = 0;
     for (i=0 ; i<n ; i++) {
-	Tcl_Preserve(list[i]);
+	AddRef(list[i]);
     }
     for (i=0 ; i<n ; i++) {
 	if (!(list[i]->flags & OBJECT_DELETED) && interp != NULL) {
 	    Tcl_DeleteCommandFromToken(interp, list[i]->thisPtr->command);
 	}
-	Tcl_Release(list[i]);
+	DelRef(list[i]);
     }
     if (list != NULL) {
 	ckfree((char *) list);
@@ -692,13 +693,13 @@ ReleaseClassContents(
     clsPtr->instances.num = 0;
     clsPtr->instances.size = 0;
     for (i=0 ; i<n ; i++) {
-	Tcl_Preserve(insts[i]);
+	AddRef(insts[i]);
     }
     for (i=0 ; i<n ; i++) {
 	if (!(insts[i]->flags & OBJECT_DELETED) && interp != NULL) {
 	    Tcl_DeleteCommandFromToken(interp, insts[i]->command);
 	}
-	Tcl_Release(insts[i]);
+	DelRef(insts[i]);
     }
     if (insts != NULL) {
 	ckfree((char *) insts);
@@ -766,9 +767,9 @@ ObjectNamespaceDeleted(
      */
 
     if (preserved) {
-	Tcl_Preserve(oPtr);
+	AddRef(oPtr);
 	if (clsPtr != NULL) {
-	    Tcl_Preserve(clsPtr);
+	    AddRef(clsPtr);
 	    ReleaseClassContents(NULL, oPtr);
 	}
     }
@@ -799,7 +800,7 @@ ObjectNamespaceDeleted(
 
     if (oPtr->methodsPtr) {
 	FOREACH_HASH_VALUE(mPtr, oPtr->methodsPtr) {
-	    TclOODeleteMethod(mPtr);
+	    TclOODelMethodRef(mPtr);
 	}
 	Tcl_DeleteHashTable(oPtr->methodsPtr);
 	ckfree((char *) oPtr->methodsPtr);
@@ -882,24 +883,24 @@ ObjectNamespaceDeleted(
 	}
 
 	FOREACH_HASH_VALUE(mPtr, &clsPtr->classMethods) {
-	    TclOODeleteMethod(mPtr);
+	    TclOODelMethodRef(mPtr);
 	}
 	Tcl_DeleteHashTable(&clsPtr->classMethods);
-	TclOODeleteMethod(clsPtr->constructorPtr);
-	TclOODeleteMethod(clsPtr->destructorPtr);
-	Tcl_EventuallyFree(clsPtr, TCL_DYNAMIC);
+	TclOODelMethodRef(clsPtr->constructorPtr);
+	TclOODelMethodRef(clsPtr->destructorPtr);
+	DelRef(clsPtr);
     }
 
     /*
      * Delete the object structure itself.
      */
 
-    Tcl_EventuallyFree(oPtr, TCL_DYNAMIC);
+    DelRef(oPtr);
     if (preserved) {
 	if (clsPtr) {
-	    Tcl_Release(clsPtr);
+	    DelRef(clsPtr);
 	}
-	Tcl_Release(oPtr);
+	DelRef(oPtr);
     }
 }
 
@@ -1178,6 +1179,7 @@ AllocClass(
      * fields.
      */
 
+    clsPtr->refCount = 1;
     Tcl_InitObjHashTable(&clsPtr->classMethods);
     return clsPtr;
 }
@@ -1259,13 +1261,13 @@ Tcl_NewObjectInstance(
 	    int result;
 	    Tcl_InterpState state;
 
-	    Tcl_Preserve(oPtr);
+	    AddRef(oPtr);
 	    state = Tcl_SaveInterpState(interp, TCL_OK);
 	    contextPtr->callPtr->flags |= CONSTRUCTOR;
 	    contextPtr->skip = skip;
 	    result = TclOOInvokeContext(interp, contextPtr, objc, objv);
 	    TclOODeleteContext(contextPtr);
-	    Tcl_Release(oPtr);
+	    DelRef(oPtr);
 	    if (result != TCL_OK) {
 		Tcl_DiscardInterpState(state);
 		Tcl_DeleteCommandFromToken(interp, oPtr->command);
@@ -1900,7 +1902,7 @@ TclOOObjectCmdCore(
 	Tcl_DecrRefCount(methodNamePtr);
 	return TCL_ERROR;
     }
-    Tcl_Preserve(oPtr);
+    Tcl_DecrRefCount(methodNamePtr);
 
     /*
      * Check to see if we need to apply magical tricks to start part way
@@ -1922,6 +1924,7 @@ TclOOObjectCmdCore(
 	    result = TCL_ERROR;
 	    Tcl_SetResult(interp, "no valid method implementation",
 		    TCL_STATIC);
+	    AddRef(oPtr);		/* Just to balance. */
 	    goto disposeChain;
 	}
     }
@@ -1931,27 +1934,16 @@ TclOOObjectCmdCore(
      * for the duration.
      */
 
+    AddRef(oPtr);
     result = TclOOInvokeContext(interp, contextPtr, objc, objv);
 
     /*
-     * Dispose of the call chain, either back into the ether or into the
-     * chain cache.
+     * Dispose of the call chain and drop the lock on the object's structure.
      */
 
   disposeChain:
-    if (!(contextPtr->callPtr->flags & OO_UNKNOWN_METHOD)
-	    && !(oPtr->flags & OBJECT_DELETED)
-	    && (startCls == NULL)) {
-	TclOOStashContext(methodNamePtr, contextPtr);
-    }
     TclOODeleteContext(contextPtr);
-
-    /*
-     * Drop the lock on the object's structure.
-     */
-
-    Tcl_Release(oPtr);
-    Tcl_DecrRefCount(methodNamePtr);
+    DelRef(oPtr);
     return result;
 }
 
