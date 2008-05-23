@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.27 2008/05/20 22:04:22 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.28 2008/05/23 21:42:10 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -35,6 +35,7 @@ typedef struct Method {
 				/* The type of method. If NULL, this is a
 				 * special flag record which is just used for
 				 * the setting of the flags field. */
+    int refCount;
     ClientData clientData;	/* Type-specific data. */
     Tcl_Obj *namePtr;		/* Name of the method. */
     struct Object *declaringObjectPtr;
@@ -61,9 +62,7 @@ typedef void (*TclOO_PmCDDeleteProc)(ClientData clientData);
 typedef ClientData (*TclOO_PmCDCloneProc)(ClientData clientData);
 
 /*
- * Procedure-like methods have the following extra information. It is a
- * single-field structure because this allows for future expansion without
- * changing vast amounts of code.
+ * Procedure-like methods have the following extra information.
  */
 
 typedef struct ProcedureMethod {
@@ -73,6 +72,7 @@ typedef struct ProcedureMethod {
 				 * includes the argument definition and the
 				 * body bytecodes. */
     int flags;			/* Flags to control features. */
+    int refCount;
     ClientData clientData;
     TclOO_PmCDDeleteProc deleteClientdataProc;
     TclOO_PmCDCloneProc cloneClientdataProc;
@@ -154,6 +154,10 @@ typedef struct Object {
     struct Class *classPtr;	/* All classes have this non-NULL; it points
 				 * to the class structure. Everything else has
 				 * this NULL. */
+    int refCount;		/* Number of strong references to this object.
+				 * Note that there may be many more weak
+				 * references; this mechanism is there to
+				 * avoid Tcl_Preserve. */
     int flags;
     int creationEpoch;		/* Unique value to make comparisons of objects
 				 * easier. */
@@ -191,6 +195,10 @@ typedef struct Object {
 typedef struct Class {
     Object *thisPtr;		/* Reference to the object associated with
 				 * this class. */
+    int refCount;		/* Number of strong references to this class.
+				 * Weak references are not counted; the
+				 * purpose of this is to avoid Tcl_Preserve as
+				 * that is quite slow. */
     int flags;			/* Assorted flags. */
     LIST_STATIC(struct Class *) superclasses;
 				/* List of superclasses, used for generation
@@ -417,7 +425,7 @@ MODULE_SCOPE void	TclOOAddToSubclasses(Class *subPtr, Class *superPtr);
 MODULE_SCOPE void	TclOODeleteChain(CallChain *callPtr);
 MODULE_SCOPE void	TclOODeleteChainCache(Tcl_HashTable *tablePtr);
 MODULE_SCOPE void	TclOODeleteContext(CallContext *contextPtr);
-MODULE_SCOPE void	TclOODeleteMethod(Method *method);
+MODULE_SCOPE void	TclOODelMethodRef(Method *method);
 MODULE_SCOPE CallContext *TclOOGetCallContext(Object *oPtr,
 			    Tcl_Obj *methodNameObj, int flags);
 MODULE_SCOPE Foundation	*TclOOGetFoundation(Tcl_Interp *interp);
@@ -490,6 +498,17 @@ MODULE_SCOPE void	TclOOStashContext(Tcl_Obj *objPtr,
 	} else { \
 	    (target).list = NULL; \
 	} \
+    } while(0)
+
+/*
+ * Alternatives to Tcl_Preserve/Tcl_EventuallyFree/Tcl_Release.
+ */
+
+#define AddRef(ptr) ((ptr)->refCount++)
+#define DelRef(ptr) do {			\
+	if (--(ptr)->refCount < 1) {		\
+	    ckfree((char *) (ptr));		\
+	}					\
     } while(0)
 
 /*

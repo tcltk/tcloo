@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.19 2008/05/20 15:44:22 dkf Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.20 2008/05/23 21:42:10 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -67,6 +67,7 @@ static void		AddSimpleClassChainToCallContext(Class *classPtr,
 static int		CmpStr(const void *ptr1, const void *ptr2);
 static void		DupMethodNameRep(Tcl_Obj *srcPtr, Tcl_Obj *dstPtr);
 static void		FreeMethodNameRep(Tcl_Obj *objPtr);
+static inline void	StashCallChain(Tcl_Obj *objPtr, CallChain *callPtr);
 
 /*
  * Object type used to manage type caches attached to method names.
@@ -158,17 +159,25 @@ TclOODeleteChain(
  * ----------------------------------------------------------------------
  */
 
+static inline void
+StashCallChain(
+    Tcl_Obj *objPtr,
+    CallChain *callPtr)
+{
+    callPtr->refCount++;
+    if (objPtr->typePtr && objPtr->typePtr->freeIntRepProc) {
+	objPtr->typePtr->freeIntRepProc(objPtr);
+    }
+    objPtr->typePtr = &methodNameType;
+    objPtr->internalRep.otherValuePtr = callPtr;
+}
+
 void
 TclOOStashContext(
     Tcl_Obj *objPtr,
     CallContext *contextPtr)
 {
-    contextPtr->callPtr->refCount++;
-    if (objPtr->typePtr && objPtr->typePtr->freeIntRepProc) {
-	objPtr->typePtr->freeIntRepProc(objPtr);
-    }
-    objPtr->typePtr = &methodNameType;
-    objPtr->internalRep.otherValuePtr = contextPtr->callPtr;
+    StashCallChain(objPtr, contextPtr->callPtr);
 }
 
 /*
@@ -245,7 +254,7 @@ TclOOInvokeContext(
 	int i;
 
 	for (i=0 ; i<contextPtr->callPtr->numChain ; i++) {
-	    Tcl_Preserve(contextPtr->callPtr->chain[i].mPtr);
+	    AddRef(contextPtr->callPtr->chain[i].mPtr);
 	}
 
 	/*
@@ -290,7 +299,7 @@ TclOOInvokeContext(
 	int i;
 
 	for (i=0 ; i<contextPtr->callPtr->numChain ; i++) {
-	    Tcl_Release(contextPtr->callPtr->chain[i].mPtr);
+	    TclOODelMethodRef(contextPtr->callPtr->chain[i].mPtr);
 	}
     }
     return result;
@@ -904,6 +913,7 @@ TclOOGetCallContext(
 	}
 	callPtr->refCount++;
 	Tcl_SetHashValue(hPtr, callPtr);
+	StashCallChain(methodNameObj, callPtr);
     } else if (flags & CONSTRUCTOR) {
 	if (oPtr->selfCls->constructorChainPtr) {
 	    TclOODeleteChain(oPtr->selfCls->constructorChainPtr);

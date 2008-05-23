@@ -1,3 +1,10 @@
+2008-05-23  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c and others: Removed use of Tcl_Preserve for
+	structure lifetime management and replaced with a reference counting
+	scheme instead, for a small but consistent speed boost on all method
+	calls and especially object destruction.
+
 2008-05-22  Donal K. Fellows  <dkf@users.sf.net>
 
 	=== RELEASE OF TCLOO VERSION 0.3 ===
