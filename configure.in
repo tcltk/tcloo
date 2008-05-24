@@ -1,10 +1,10 @@
-# $Id: configure.in,v 1.32 2008/05/22 14:54:28 dkf Exp $
+# $Id: configure.in,v 1.33 2008/05/24 08:08:25 dkf Exp $
 
-AC_REVISION($Revision: 1.32 $)
+AC_REVISION($Revision: 1.33 $)
 dnl Also *must* update generic/tclOO.h when changing the version number.
 dnl Also *must* update tests/oo.test when changing the version number.
 dnl Also should update win/TclOO.rc when changing the version number.
-AC_INIT([TclOO],[0.3])
+AC_INIT([TclOO],[0.4a0])
 AC_CONFIG_AUX_DIR(tclconfig)
 AC_CONFIG_HEADERS(config.h)
 
@@ -15,8 +15,8 @@ TEA_PREFIX
 TEA_SETUP_COMPILER
 AC_C_INLINE
 TEA_ADD_SOURCES(
-	tclOO.c tclOOCall.c tclOODefineCmds.c tclOOInfo.c tclOOMethod.c
-	tclOOStubInit.c)
+	tclOO.c tclOOBasic.c tclOOCall.c tclOODefineCmds.c tclOOInfo.c
+	tclOOMethod.c tclOOStubInit.c)
 TEA_ADD_STUB_SOURCES(tclOOStubLib.c)
 TEA_ADD_HEADERS(generic/tclOO.h generic/tclOODecls.h)
 TEAX_ADD_PRIVATE_HEADERS(generic/tclOOInt.h generic/tclOOIntDecls.h)
