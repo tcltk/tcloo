@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.28 2008/05/23 21:42:10 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.29 2008/05/24 08:08:26 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -413,6 +413,44 @@ MODULE_SCOPE int	TclOODefineSelfObjCmd(ClientData clientData,
 MODULE_SCOPE int	TclOOUnknownDefinition(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOOCopyObjectCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOONextObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOOSelfObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
+
+/*
+ * Method implementations (in tclOOBasic.c).
+ */
+
+MODULE_SCOPE int	TclOO_Class_Create(ClientData clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOO_Class_CreateNs(ClientData clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOO_Class_New(ClientData clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOO_Object_Destroy(ClientData clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOO_Object_Eval(ClientData clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOO_Object_LinkVar(ClientData clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOO_Object_Unknown(ClientData clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOO_Object_VarName(ClientData clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
 
 /*
  * Private definitions, some of which perhaps ought to be exposed properly or

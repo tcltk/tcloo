@@ -1,3 +1,13 @@
+2008-05-24  Donal K. Fellows  <dkf@users.sf.net>
+
+	* configure.in: Bump version to pre-0.4.
+
+	* generic/tclOOBasic.c: Factor out the implementations of commands and
+	methods. Makes it easier to see which parts are script-level API.
+
+	* generic/tclOO.c: Clean up responsibilities between InitFoundation
+	and Tcloo_Init.
+
 2008-05-23  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c and others: Removed use of Tcl_Preserve for
