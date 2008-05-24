@@ -1,5 +1,10 @@
 2008-05-24  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclOOMethod.c (PushMethodCallFrame): Reduce number of
+	different stack frame flags used. Just use two now, one to indicate
+	that this is a method and one to indicate that this is a definition
+	context.
+
 	* configure.in: Bump version to pre-0.4.
 
 	* generic/tclOOBasic.c: Factor out the implementations of commands and

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.21 2008/05/23 21:42:10 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.22 2008/05/24 16:18:23 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -716,10 +716,10 @@ PushMethodCallFrame(
 				 * frame. */
 {
     Tcl_Namespace *nsPtr = contextPtr->oPtr->namespacePtr;
-    int flags = FRAME_IS_METHOD, result;
+    register int result;
     const char *namePtr;
     CallFrame **framePtrPtr = &fdPtr->framePtr;
-    static Tcl_ObjType *byteCodeTypePtr = NULL;
+    static Tcl_ObjType *byteCodeTypePtr = NULL;	/* HACK! */
 
     /*
      * Compute basic information on the basis of the type of method it is.
@@ -727,12 +727,10 @@ PushMethodCallFrame(
 
     if (contextPtr->callPtr->flags & CONSTRUCTOR) {
 	namePtr = "<constructor>";
-	flags |= FRAME_IS_CONSTRUCTOR;
 	fdPtr->nameObj = contextPtr->oPtr->fPtr->constructorName;
 	fdPtr->errProc = ConstructorErrorHandler;
     } else if (contextPtr->callPtr->flags & DESTRUCTOR) {
 	namePtr = "<destructor>";
-	flags |= FRAME_IS_DESTRUCTOR;
 	fdPtr->nameObj = contextPtr->oPtr->fPtr->destructorName;
 	fdPtr->errProc = DestructorErrorHandler;
     } else {
@@ -790,9 +788,8 @@ PushMethodCallFrame(
      * This operation may fail.
      */
 
-    flags |= FRAME_IS_PROC;
     result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr, nsPtr,
-	    flags);
+	    FRAME_IS_PROC|FRAME_IS_METHOD);
     if (result != TCL_OK) {
 	return result;
     }

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.29 2008/05/24 08:08:26 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.30 2008/05/24 16:18:23 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -342,11 +342,6 @@ typedef struct CallContext {
 				 * the [oo::define] command; the clientData
 				 * field contains an Object reference that has
 				 * been confirmed to refer to a class. */
-#define FRAME_IS_CONSTRUCTOR 0x10
-				/* The frame is a constructor, and not just a
-				 * normal method. */
-#define FRAME_IS_DESTRUCTOR 0x20/* The frame is a destructor, and not just a
-				 * normal method. */
 
 /*
  * Structure containing definition information about basic class methods.
