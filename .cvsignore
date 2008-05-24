@@ -13,3 +13,6 @@ pkgIndex.tcl
 .project
 .cdtproject
 tclooConfig.sh
+*.dylib
+.cproject
+.DS_Store
