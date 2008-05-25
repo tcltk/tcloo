@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.23 2008/05/24 08:08:26 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.24 2008/05/25 11:29:40 dkf Exp $
 
 package require TclOO 0.4a0 ;# Must match value in configure.in
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -1695,6 +1695,25 @@ test oo-24.2 {unknown method method - Bug 1965063} -setup {
     }
     obj foo bar
 } -result {unknown method "foo": must be destroy, dummy, dummy2 or unknown}
+
+# Probably need a better set of tests, but this is quite difficult to devise
+test oo-25.1 {call chain caching} -setup {
+    oo::class create cls {
+	method ab {} {return ok}
+    }
+    set result {}
+} -cleanup {
+    cls destroy
+} -body {
+    cls create foo
+    cls create bar
+    set m1 ab
+    set m2 a; append m2 b ;# different object!
+    lappend result [foo $m1] [foo $m1] [bar $m1] [foo $m1]
+    lappend result [foo $m2] [bar $m2]
+    oo::objdefine foo method ab {} {return good}
+    lappend result [foo $m1] [bar $m2]
+} -result {ok ok ok ok ok ok good ok}
 
 cleanupTests
 return

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.51 2008/05/24 08:08:25 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.52 2008/05/25 11:29:39 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -458,6 +458,7 @@ AllocObject(
     oPtr->selfCls = fPtr->objectCls;
     oPtr->creationEpoch = creationEpoch;
     oPtr->refCount = 1;
+    oPtr->flags = USE_CLASS_CACHE;
 
     /*
      * Finally, create the object commands and initialize the trace on the
@@ -677,6 +678,16 @@ ReleaseClassContents(
     }
     if (clsPtr->destructorChainPtr) {
 	TclOODeleteChain(clsPtr->destructorChainPtr);
+    }
+    if (clsPtr->classChainCache) {
+	FOREACH_HASH_DECLS;
+	CallChain *callPtr;
+
+	FOREACH_HASH_VALUE(callPtr, clsPtr->classChainCache) {
+	    TclOODeleteChain(callPtr);
+	}
+	Tcl_DeleteHashTable(clsPtr->classChainCache);
+	ckfree((char *) clsPtr->classChainCache);
     }
 
     if (clsPtr->filters.num) {
@@ -1176,7 +1187,8 @@ Tcl_NewObjectInstance(
     int skip)			/* Number of arguments to _not_ pass to the
 				 * constructor. */
 {
-    Foundation *fPtr = ((Class *) cls)->thisPtr->fPtr;
+    register Class *classPtr = (Class *) cls;
+    Foundation *fPtr = classPtr->thisPtr->fPtr;
     Object *oPtr;
 
     /*
@@ -1195,15 +1207,15 @@ Tcl_NewObjectInstance(
      */
 
     oPtr = AllocObject(fPtr, interp, nameStr, nsNameStr);
-    oPtr->selfCls = (Class *) cls;
-    TclOOAddToInstances(oPtr, (Class *) cls);
+    oPtr->selfCls = classPtr;
+    TclOOAddToInstances(oPtr, classPtr);
 
     /*
      * Check to see if we're really creating a class. If so, allocate the
      * class structure as well.
      */
 
-    if (TclOOIsReachable(fPtr->classCls, (Class*)cls)) {
+    if (TclOOIsReachable(fPtr->classCls, classPtr)) {
 	/*
 	 * Is a class, so attach a class structure. Note that the AllocClass
 	 * function splices the structure into the object, so we don't have
@@ -1212,7 +1224,7 @@ Tcl_NewObjectInstance(
 	 */
 
 	AllocClass(interp, oPtr, fPtr);
-	oPtr->selfCls = (Class *) cls;
+	oPtr->selfCls = classPtr;
 	TclOOAddToSubclasses(oPtr->classPtr, fPtr->objectCls);
     }
 

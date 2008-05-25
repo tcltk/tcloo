@@ -1,3 +1,12 @@
+2008-05-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOCall.c (TclOOGetCallContext): Cache call chains at the
+	class level when possible. This should speed up the case where an
+	object is a "typical" member of the class quite a bit by not requiring
+	a rebuild of the call chain for each instance. Will do quite a bit to
+	reduce the memory consumption (fewer hash tables!) at a cost of some
+	comparisons being marginally slower.
+
 2008-05-24  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOMethod.c (PushMethodCallFrame): Reduce number of
