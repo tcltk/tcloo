@@ -2,20 +2,19 @@ package require TclOO
 puts "cps benchmark using TclOO [package provide TclOO]"
 # See http://wiki.tcl.tk/18152 for table of comparison
 
-proc cps {script {iters 100000}} {
-    set s [uplevel 1 [list time $script $iters]]
-    set cps [expr {1/([lindex $s 0]/1e6)}]
-    puts "$cps calls per second of: $script"
-}
-
-if {$argc > 0} {
-    set iterations [lindex $argv 0]
-    if {![string is integer -strict $iterations]} {
-	puts stderr "\"$iterations\" is not an integer!"
-	exit 1
+proc cps {script} {
+    # Eat the script compilation costs
+    uplevel 1 [list time $script]
+    # Have a guess at how many iterations to run for around a second
+    set s [uplevel 1 [list time $script 5]]
+    set iters [expr {round(1/([lindex $s 0]/1e6))}]
+    if {$iters < 50} {
+	puts "WARNING: number of iterations low"
     }
-} else {
-    set iterations 1000000
+    # The main timing run
+    set s [uplevel 1 [list time $script $iters]]
+    set cps [expr {round(1/([lindex $s 0]/1e6))}]
+    puts "$cps calls per second of: $script"
 }
 
 # ----------------------------------------------------------------------
@@ -24,6 +23,7 @@ class create foo {
     constructor {} {
 	variable x 1
     }
+    method emptyMethod {} { }
     method bar {} {
 	variable x
 	set x [expr {!$x}]
@@ -38,7 +38,8 @@ class create boo {
     }
     method bar {} {
 	variable y
-	return [next],[incr y]
+	incr y
+	next
     }
 }
 
@@ -46,21 +47,31 @@ class create boo {
 puts "Method invokation microbenchmark"
 foo create f
 f bar
-cps {f bar} $iterations
+cps {f bar}
+cps {f emptyMethod}
 f destroy
 
 puts "Object creation/deletion microbenchmarks"
-cps {[foo new] destroy} $iterations
-cps {[foo create f] destroy} $iterations
-cps {[foo create ::f] destroy} $iterations
+cps {[foo new] destroy}
+cps {[foo create f] destroy}
+cps {[foo create ::f] destroy}
+
+puts "Combined microbenchmark"
+cps {foo create ::f;f bar;f destroy}
 
 puts "Method inherited invokation microbenchmark"
 boo create f
 f bar
-cps {f bar} $iterations
+cps {f bar}
+cps {f emptyMethod}
 f destroy
 
 puts "Object inherited creation/deletion microbenchmark"
-cps {[boo new] destroy} $iterations
+cps {[boo new] destroy}
+cps {[boo create f] destroy}
+cps {[boo create ::f] destroy}
+
+puts "Combined inherited microbenchmark"
+cps {boo create ::f;f bar;f destroy}
 
 foo destroy

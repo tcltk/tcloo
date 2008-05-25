@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.30 2008/05/24 16:18:23 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.31 2008/05/25 11:29:39 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -186,6 +186,10 @@ typedef struct Object {
 				 * filter; when set, filters are *not*
 				 * processed on the object, preventing nasty
 				 * recursive filtering problems. */
+#define USE_CLASS_CACHE 0x4000	/* Flag set to say that the object is a pure
+				 * instance of the class, and has had nothing
+				 * added that changes the dispatch chain (i.e.
+				 * no methods, mixins, or filters. */
 
 /*
  * And the definition of a class. Note that every class also has an associated
@@ -236,6 +240,14 @@ typedef struct Class {
 				 * allocated if metadata is attached. */
     struct CallChain *constructorChainPtr;
     struct CallChain *destructorChainPtr;
+    Tcl_HashTable *classChainCache;
+				/* Places where call chains are stored. For
+				 * constructors, the class chain is always
+				 * used. For destructors and ordinary methods,
+				 * the class chain is only used when the
+				 * object doesn't override with its own mixins
+				 * (and filters and method implementations for
+				 * when getting method chains). */
 } Class;
 
 /*

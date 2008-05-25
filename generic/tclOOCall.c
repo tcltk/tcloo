@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.20 2008/05/23 21:42:10 dkf Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.21 2008/05/25 11:29:39 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -67,6 +67,8 @@ static void		AddSimpleClassChainToCallContext(Class *classPtr,
 static int		CmpStr(const void *ptr1, const void *ptr2);
 static void		DupMethodNameRep(Tcl_Obj *srcPtr, Tcl_Obj *dstPtr);
 static void		FreeMethodNameRep(Tcl_Obj *objPtr);
+static inline int	IsStillValid(CallChain *callPtr, Object *oPtr,
+			    int flags, int reuseMask);
 static inline void	StashCallChain(Tcl_Obj *objPtr, CallChain *callPtr);
 
 /*
@@ -718,21 +720,57 @@ AddMethodToCallChain(
 static inline void
 InitCallChain(
     CallChain *callPtr,
-    Foundation *fPtr,
     Object *oPtr,
     int flags)
 {
-    callPtr->epoch = fPtr->epoch;
+    if (oPtr->flags & USE_CLASS_CACHE) {
+	oPtr = oPtr->selfCls->thisPtr;
+    }
+    callPtr->epoch = oPtr->fPtr->epoch;
     callPtr->objectCreationEpoch = oPtr->creationEpoch;
     callPtr->objectEpoch = oPtr->epoch;
-    callPtr->flags = 0;
-    if (flags & (PUBLIC_METHOD|PRIVATE_METHOD|SPECIAL|FILTER_HANDLING)) {
-	callPtr->flags |=
-		flags&(PUBLIC_METHOD|PRIVATE_METHOD|SPECIAL|FILTER_HANDLING);
-    }
+    callPtr->flags = flags &
+	    (PUBLIC_METHOD | PRIVATE_METHOD | SPECIAL | FILTER_HANDLING);
     callPtr->refCount = 1;
     callPtr->numChain = 0;
     callPtr->chain = callPtr->staticChain;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * IsStillValid --
+ *	Calculates whether the given call chain can be used for executing a
+ *	method for the given object. The condition on a chain from a cached
+ *	location being reusable is:
+ *	- Refers to the same object (same creation epoch), and
+ *	- Still across the same class structure (same global epoch), and
+ *	- Still across the same object strucutre (same local epoch), and
+ *	- No public/private/filter magic leakage (same flags, modulo the fact
+ *	  that a public chain will satisfy a non-public call).
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static inline int
+IsStillValid(
+    CallChain *callPtr,
+    Object *oPtr,
+    int flags,
+    int mask)
+{
+    if ((oPtr->flags & USE_CLASS_CACHE)) {
+	register Object *coPtr = oPtr->selfCls->thisPtr;
+
+	return ((callPtr->objectCreationEpoch == coPtr->creationEpoch)
+		&& (callPtr->epoch == coPtr->fPtr->epoch)
+		&& (callPtr->objectEpoch == coPtr->epoch)
+		&& ((callPtr->flags & mask) == (flags & mask)));
+    }
+    return ((callPtr->objectCreationEpoch == oPtr->creationEpoch)
+	    && (callPtr->epoch == oPtr->fPtr->epoch)
+	    && (callPtr->objectEpoch == oPtr->epoch)
+	    && ((callPtr->flags & mask) == (flags & mask)));
 }
 
 /*
@@ -793,42 +831,41 @@ TclOOGetCallContext(
     } else {
 	/*
 	 * Check if we can get the chain out of the Tcl_Obj method name or out
-	 * of the cache.
-	 *
-	 * The condition on a chain from a cached location being reusable is:
-	 *	Refers to the same object (same creation epoch), and
-	 *	Still across the same class structure (same global epoch), and
-	 *	Still across the same object strucutre (same local epoch), and
-	 *	No public/private/filter magic leakage (same flags, modulo the
-	 *	fact that a public chain will satisfy a non-public call).
+	 * of the cache. This is made a bit more complex by the fact that
+	 * there are multiple different layers of cache (in the Tcl_Obj, in
+	 * the object, and in the class).
 	 */
 
 	const int reuseMask = ((flags & PUBLIC_METHOD) ? ~0 : ~PUBLIC_METHOD);
 
 	if (methodNameObj->typePtr == &methodNameType) {
 	    callPtr = methodNameObj->internalRep.otherValuePtr;
-	    if ((callPtr->objectCreationEpoch == oPtr->creationEpoch)
-		    && (callPtr->epoch == oPtr->fPtr->epoch)
-		    && (callPtr->objectEpoch == oPtr->epoch)
-		    && ((callPtr->flags&reuseMask) == (flags&reuseMask))) {
+	    if (IsStillValid(callPtr, oPtr, flags, reuseMask)) {
 		callPtr->refCount++;
 		goto returnContext;
 	    }
 	    methodNameObj->typePtr->freeIntRepProc(methodNameObj);
 	}
 
-	if (oPtr->chainCache != NULL) {
-	    hPtr = Tcl_FindHashEntry(oPtr->chainCache, (char*) methodNameObj);
+	if (oPtr->flags & USE_CLASS_CACHE) {
+	    if (oPtr->selfCls->classChainCache != NULL) {
+		hPtr = Tcl_FindHashEntry(oPtr->selfCls->classChainCache,
+			(char *) methodNameObj);
+	    } else {
+		hPtr = NULL;
+	    }
 	} else {
-	    hPtr = NULL;
+	    if (oPtr->chainCache != NULL) {
+		hPtr = Tcl_FindHashEntry(oPtr->chainCache,
+			(char *) methodNameObj);
+	    } else {
+		hPtr = NULL;
+	    }
 	}
 
 	if (hPtr != NULL && Tcl_GetHashValue(hPtr) != NULL) {
 	    callPtr = Tcl_GetHashValue(hPtr);
-	    if ((callPtr->objectCreationEpoch == oPtr->creationEpoch)
-		    && (callPtr->epoch == oPtr->fPtr->epoch)
-		    && (callPtr->objectEpoch == oPtr->epoch)
-		    && ((callPtr->flags&reuseMask)==(flags&reuseMask))) {
+	    if (IsStillValid(callPtr, oPtr, flags, reuseMask)) {
 		callPtr->refCount++;
 		goto returnContext;
 	    }
@@ -840,7 +877,7 @@ TclOOGetCallContext(
     }
 
     callPtr = (CallChain *) ckalloc(sizeof(CallChain));
-    InitCallChain(callPtr, oPtr->fPtr, oPtr, flags);
+    InitCallChain(callPtr, oPtr, flags);
 
     cb.callChainPtr = callPtr;
     cb.filterLength = 0;
@@ -902,14 +939,25 @@ TclOOGetCallContext(
 	}
     } else if (doFilters) {
 	if (hPtr == NULL) {
-	    if (oPtr->chainCache == NULL) {
-		oPtr->chainCache = (Tcl_HashTable *)
-			ckalloc(sizeof(Tcl_HashTable));
+	    if (oPtr->flags & USE_CLASS_CACHE) {
+		if (oPtr->selfCls->classChainCache == NULL) {
+		    oPtr->selfCls->classChainCache = (Tcl_HashTable *)
+			    ckalloc(sizeof(Tcl_HashTable));
 
-		Tcl_InitObjHashTable(oPtr->chainCache);
+		    Tcl_InitObjHashTable(oPtr->selfCls->classChainCache);
+		}
+		hPtr = Tcl_CreateHashEntry(oPtr->selfCls->classChainCache,
+			(char *) methodNameObj, &i);
+	    } else {
+		if (oPtr->chainCache == NULL) {
+		    oPtr->chainCache = (Tcl_HashTable *)
+			    ckalloc(sizeof(Tcl_HashTable));
+
+		    Tcl_InitObjHashTable(oPtr->chainCache);
+		}
+		hPtr = Tcl_CreateHashEntry(oPtr->chainCache,
+			(char *) methodNameObj, &i);
 	    }
-	    hPtr = Tcl_CreateHashEntry(oPtr->chainCache,
-		    (char *) methodNameObj, &i);
 	}
 	callPtr->refCount++;
 	Tcl_SetHashValue(hPtr, callPtr);

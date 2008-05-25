@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.22 2008/05/24 16:18:23 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.23 2008/05/25 11:29:40 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -129,6 +129,7 @@ Tcl_NewInstanceMethod(
     if (!oPtr->methodsPtr) {
 	oPtr->methodsPtr = (Tcl_HashTable *) ckalloc(sizeof(Tcl_HashTable));
 	Tcl_InitObjHashTable(oPtr->methodsPtr);
+	oPtr->flags &= ~USE_CLASS_CACHE;
     }
     hPtr = Tcl_CreateHashEntry(oPtr->methodsPtr, (char *) nameObj, &isNew);
     if (isNew) {

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.17 2008/05/23 21:42:10 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.18 2008/05/25 11:29:39 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -28,6 +28,7 @@ static Tcl_Command	FindCommand(Tcl_Interp *interp, Tcl_Obj *stringObj,
 static inline int	InitDefineContext(Tcl_Interp *interp,
 			    Tcl_Namespace *namespacePtr, Object *oPtr,
 			    int objc, Tcl_Obj *const objv[]);
+static inline void	RecomputeClassCacheFlag(Object *oPtr);
 static int		RenameDeleteMethod(Tcl_Interp *interp, Object *oPtr,
 			    int useClass, Tcl_Obj *const fromPtr,
 			    Tcl_Obj *const toPtr);
@@ -79,6 +80,28 @@ BumpGlobalEpoch(
 /*
  * ----------------------------------------------------------------------
  *
+ * RecomputeClassCacheFlag --
+ *	Determine whether the object is prototypical of its class, and hence
+ *	able to use the class's method chain cache.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static inline void
+RecomputeClassCacheFlag(
+    Object *oPtr)
+{
+    if ((oPtr->methodsPtr == NULL || oPtr->methodsPtr->numEntries == 0)
+	    && (oPtr->mixins.num == 0) && (oPtr->filters.num == 0)) {
+	oPtr->flags |= USE_CLASS_CACHE;
+    } else {
+	oPtr->flags &= ~USE_CLASS_CACHE;
+    }
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * TclOOObjectSetFilters --
  *	Install a list of filter method names into an object.
  *
@@ -109,6 +132,7 @@ TclOOObjectSetFilters(
 	ckfree((char *) oPtr->filters.list);
 	oPtr->filters.list = NULL;
 	oPtr->filters.num = 0;
+	RecomputeClassCacheFlag(oPtr);
     } else {
 	/*
 	 * We've got a list of filters, so we're creating filters.
@@ -129,6 +153,7 @@ TclOOObjectSetFilters(
 	}
 	oPtr->filters.list = filtersList;
 	oPtr->filters.num = numFilters;
+	oPtr->flags &= ~USE_CLASS_CACHE;
     }
     oPtr->epoch++;		/* Only this object can be affected. */
 }
@@ -222,6 +247,7 @@ TclOOObjectSetMixins(
 	    ckfree((char *) oPtr->mixins.list);
 	    oPtr->mixins.num = 0;
 	}
+	RecomputeClassCacheFlag(oPtr);
     } else {
 	if (oPtr->mixins.num != 0) {
 	    FOREACH(mixinPtr, oPtr->mixins) {
@@ -235,6 +261,7 @@ TclOOObjectSetMixins(
 	} else {
 	    oPtr->mixins.list = (Class **)
 		    ckalloc(sizeof(Class *) * numMixins);
+	    oPtr->flags &= ~USE_CLASS_CACHE;
 	}
 	oPtr->mixins.num = numMixins;
 	memcpy(oPtr->mixins.list, mixins, sizeof(Class *) * numMixins);
@@ -370,6 +397,9 @@ RenameDeleteMethod(
 	mPtr->namePtr = toPtr;
 	Tcl_SetHashValue(newHPtr, mPtr);
     } else {
+	if (!useClass) {
+	    RecomputeClassCacheFlag(oPtr);
+	}
 	TclOODelMethodRef(mPtr);
     }
     Tcl_DeleteHashEntry(hPtr);
@@ -1263,6 +1293,7 @@ TclOODefineExportObjCmd(
 		oPtr->methodsPtr = (Tcl_HashTable *)
 			ckalloc(sizeof(Tcl_HashTable));
 		Tcl_InitObjHashTable(oPtr->methodsPtr);
+		oPtr->flags &= ~USE_CLASS_CACHE;
 	    }
 	    hPtr = Tcl_CreateHashEntry(oPtr->methodsPtr, (char *) objv[i],
 		    &isNew);
@@ -1725,6 +1756,7 @@ TclOODefineUnexportObjCmd(
 		oPtr->methodsPtr = (Tcl_HashTable *)
 			ckalloc(sizeof(Tcl_HashTable));
 		Tcl_InitObjHashTable(oPtr->methodsPtr);
+		oPtr->flags &= ~USE_CLASS_CACHE;
 	    }
 	    hPtr = Tcl_CreateHashEntry(oPtr->methodsPtr, (char *) objv[i],
 		    &isNew);
