@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.31 2008/05/25 11:29:39 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.32 2008/05/26 22:11:38 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -257,6 +257,15 @@ typedef struct Class {
  * structure itself.
  */
 
+typedef struct ThreadLocalData {
+    int nsCount;		/* Master epoch counter is used for keeping
+				 * the values used in Tcl_Obj internal
+				 * representations sane. Must be thread-local
+				 * because Tcl_Objs can cross interpreter
+				 * boundaries within a thread (objects don't
+				 * generally cross threads). */
+} ThreadLocalData;
+
 typedef struct Foundation {
     Tcl_Interp *interp;
     Class *objectCls;		/* The root of the object system. */
@@ -275,7 +284,7 @@ typedef struct Foundation {
 				 * procedural method. */
     int epoch;			/* Used to invalidate method chains when the
 				 * class structure changes. */
-    int nsCount;		/* Counter so we can allocate a unique
+    ThreadLocalData *tsdPtr;	/* Counter so we can allocate a unique
 				 * namespace to each object. */
     Tcl_Obj *unknownMethodNameObj;
 				/* Shared object containing the name of the
