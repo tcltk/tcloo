@@ -1,3 +1,13 @@
+2008-05-26  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (InitFoundation): Make the counter that gives each
+	object a unique serial number be a thread-local so that if a method
+	chain reference in a Tcl_Obj internal representation crosses an
+	interpreter boundary, it won't cause problems if it happens to
+	coincide. Performance cost is almost nil (one extra pointer needs to
+	be dereferenced during object creation, plus a bit more per-interp
+	cost to initialize access to the thread-specific data).
+
 2008-05-25  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOCall.c (TclOOGetCallContext): Cache call chains at the

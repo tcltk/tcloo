@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.52 2008/05/25 11:29:39 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.53 2008/05/26 22:11:38 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -210,6 +210,9 @@ static void
 InitFoundation(
     Tcl_Interp *interp)
 {
+    static Tcl_ThreadDataKey tsdKey;
+    ThreadLocalData *tsdPtr =
+	    Tcl_GetThreadData(&tsdKey, sizeof(ThreadLocalData));
     Foundation *fPtr = (Foundation *) ckalloc(sizeof(Foundation));
     Tcl_Obj *namePtr, *argsPtr, *bodyPtr;
     Tcl_DString buffer;
@@ -232,7 +235,7 @@ InitFoundation(
     fPtr->helpersNs = Tcl_CreateNamespace(interp, "::oo::Helpers", NULL,
 	    NULL);
     fPtr->epoch = 0;
-    fPtr->nsCount = 0;
+    fPtr->tsdPtr = tsdPtr;
     fPtr->unknownMethodNameObj = Tcl_NewStringObj("unknown", -1);
     fPtr->constructorName = Tcl_NewStringObj("<constructor>", -1);
     fPtr->destructorName = Tcl_NewStringObj("<destructor>", -1);
@@ -416,7 +419,7 @@ AllocObject(
 	oPtr->namespacePtr = Tcl_CreateNamespace(interp, nsNameStr, oPtr,
 		ObjectNamespaceDeleted);
 	if (oPtr->namespacePtr != NULL) {
-	    creationEpoch = ++fPtr->nsCount;
+	    creationEpoch = ++fPtr->tsdPtr->nsCount;
 	    goto configNamespace;
 	}
 	Tcl_ResetResult(interp);
@@ -425,11 +428,11 @@ AllocObject(
     while (1) {
 	char objName[10 + TCL_INTEGER_SPACE];
 
-	sprintf(objName, "::oo::Obj%d", ++fPtr->nsCount);
+	sprintf(objName, "::oo::Obj%d", ++fPtr->tsdPtr->nsCount);
 	oPtr->namespacePtr = Tcl_CreateNamespace(interp, objName, oPtr,
 		ObjectNamespaceDeleted);
 	if (oPtr->namespacePtr != NULL) {
-	    creationEpoch = fPtr->nsCount;
+	    creationEpoch = fPtr->tsdPtr->nsCount;
 	    break;
 	}
 
