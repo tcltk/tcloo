@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.24 2008/05/25 11:29:40 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.25 2008/05/28 10:55:40 dkf Exp $
 
 package require TclOO 0.4a0 ;# Must match value in configure.in
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -1094,18 +1094,32 @@ test oo-16.3 {OO: object introspection} -body {
 } -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be class, definition, filters, forward, isa, methods, mixins, or vars}
 test oo-16.4 {OO: object introspection} -setup {
     oo::class create meta { superclass oo::class }
+    [meta create instance1] create instance2
 } -body {
-    list [info object class oo::object] \
-	[info object class oo::class] \
-	[info object isa class     oo::object] \
-	[info object isa metaclass oo::object] \
-	[info object isa metaclass meta] \
-	[info object isa object    oo::object] \
-	[info object isa object    oo::define] \
-	[info object isa object    NOTANOBJECT]
+    list [list [info object class oo::object] \
+	      [info object class oo::class] \
+	      [info object class meta] \
+	      [info object class instance1] \
+	      [info object class instance2]] \
+	[list [info object isa class oo::object] \
+	     [info object isa class meta] \
+	     [info object isa class instance1] \
+	     [info object isa class instance2]] \
+	[list [info object isa metaclass oo::object] \
+	     [info object isa metaclass oo::class] \
+	     [info object isa metaclass meta] \
+	     [info object isa metaclass instance1] \
+	     [info object isa metaclass instance2]] \
+	[list [info object isa object oo::object] \
+	     [info object isa object oo::class] \
+	     [info object isa object meta] \
+	     [info object isa object instance1] \
+	     [info object isa object instance2] \
+	     [info object isa object oo::define] \
+	     [info object isa object NOTANOBJECT]]
 } -cleanup {
     meta destroy
-} -result {::oo::class ::oo::class 1 0 1 1 0 0}
+} -result {{::oo::class ::oo::class ::oo::class ::meta ::instance1} {1 1 1 0} {0 1 1 0 0} {1 1 1 1 1 0 0}}
 test oo-16.5 {OO: object introspection} {info object methods oo::object} {}
 test oo-16.6 {OO: object introspection} {
     oo::object create foo
