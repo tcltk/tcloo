@@ -2,6 +2,9 @@
 
 	* tests/oo.test (oo-16.4): Deepen this test to make it clearer what
 	the difference between a class and a metaclass is.
+	(initInterpreter): Factor out the code to set up a sub-interpreter for
+	loading TclOO, so that the tests work when run with TclOO not loaded
+	from the current directory.
 
 2008-05-26  Donal K. Fellows  <dkf@users.sf.net>
 

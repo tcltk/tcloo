@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.25 2008/05/28 10:55:40 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.26 2008/05/28 15:24:57 dkf Exp $
 
 package require TclOO 0.4a0 ;# Must match value in configure.in
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -32,17 +32,23 @@ if {[testConstraint memory]} {
     }
 }
 
+proc initInterpreter name {
+    $name eval [list package ifneeded TclOO [package provide TclOO] \
+		    [package ifneeded TclOO [package provide TclOO]]]
+}
+
 test oo-0.1 {basic test of OO's ability to clean up its initial state} {
     interp create t
+    initInterpreter t
     t eval {
-	lappend auto_path .
 	package require TclOO
     }
     interp delete t
 } {}
 test oo-0.2 {basic test of OO's ability to clean up its initial state} {
-    interp eval [interp create] {
-	lappend auto_path .
+    set i [interp create]
+    initInterpreter $i
+    interp eval $i {
 	package require TclOO
 	namespace delete ::
     }
@@ -196,8 +202,8 @@ test oo-2.1 {basic test of OO functionality: constructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as
     # we're modifying the root object class's constructor
     interp create subinterp
+    initInterpreter subinterp
     subinterp eval {
-	lappend auto_path .
 	package require TclOO
     }
 } -body {
@@ -232,8 +238,8 @@ test oo-3.1 {basic test of OO functionality: destructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as
     # we're modifying the root object class's constructor
     interp create subinterp
+    initInterpreter subinterp
     subinterp eval {
-	lappend auto_path .
 	package require TclOO
     }
 } -body {
@@ -253,8 +259,8 @@ test oo-3.2 {basic test of OO functionality: destructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as
     # we're modifying the root object class's constructor
     interp create subinterp
+    initInterpreter subinterp
     subinterp eval {
-	lappend auto_path .
 	package require TclOO
     }
 } -body {
