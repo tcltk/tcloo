@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.21 2008/05/25 11:29:39 dkf Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.22 2008/05/29 09:33:19 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -310,9 +310,9 @@ TclOOInvokeContext(
 /*
  * ----------------------------------------------------------------------
  *
- * TclOOGetSortedMethodList --
+ * TclOOGetSortedMethodList, TclOOGetSortedClassMethodList --
  *
- *	Discovers the list of method names supported by an object.
+ *	Discovers the list of method names supported by an object or class.
  *
  * ----------------------------------------------------------------------
  */
@@ -400,6 +400,67 @@ TclOOGetSortedMethodList(
     FOREACH(mixinPtr, oPtr->mixins) {
 	AddClassMethodNames(mixinPtr, flags, &names);
     }
+
+    /*
+     * See how many (visible) method names there are. If none, we do not (and
+     * should not) try to sort the list of them.
+     */
+
+    i = 0;
+    if (names.numEntries != 0) {
+	const char **strings;
+
+	/*
+	 * We need to build the list of methods to sort. We will be using
+	 * qsort() for this, because it is very unlikely that the list will be
+	 * heavily sorted when it is long enough to matter.
+	 */
+
+	strings = (const char **) ckalloc(sizeof(char *) * names.numEntries);
+	FOREACH_HASH(namePtr, isWanted, &names) {
+	    if (!(flags & PUBLIC_METHOD) || (((int)isWanted) & IN_LIST)) {
+		if (((int)isWanted) & NO_IMPLEMENTATION) {
+		    continue;
+		}
+		strings[i++] = TclGetString(namePtr);
+	    }
+	}
+
+	/*
+	 * Note that 'i' may well be less than names.numEntries when we are
+	 * dealing with public method names.
+	 */
+
+	qsort((void *) strings, (unsigned) i, sizeof(char *), CmpStr);
+	*stringsPtr = strings;
+    }
+
+    Tcl_DeleteHashTable(&names);
+    return i;
+}
+
+int
+TclOOGetSortedClassMethodList(
+    Class *clsPtr,		/* The class to get the method names for. */
+    int flags,			/* Whether we just want the public method
+				 * names. */
+    const char ***stringsPtr)	/* Where to write a pointer to the array of
+				 * strings to. */
+{
+    Tcl_HashTable names;	/* Tcl_Obj* method name to "wanted in list"
+				 * mapping. */
+    FOREACH_HASH_DECLS;
+    int i;
+    Tcl_Obj *namePtr;
+    void *isWanted;
+
+    Tcl_InitObjHashTable(&names);
+
+    /*
+     * Process method names from the class hierarchy and the mixin hierarchy.
+     */
+
+    AddClassMethodNames(clsPtr, flags, &names);
 
     /*
      * See how many (visible) method names there are. If none, we do not (and
