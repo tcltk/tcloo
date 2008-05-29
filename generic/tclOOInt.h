@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.32 2008/05/26 22:11:38 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.33 2008/05/29 09:33:19 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -485,6 +485,8 @@ MODULE_SCOPE CallContext *TclOOGetCallContext(Object *oPtr,
 MODULE_SCOPE Foundation	*TclOOGetFoundation(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclOOGetFwdFromMethod(Method *mPtr);
 MODULE_SCOPE Proc *	TclOOGetProcFromMethod(Method *mPtr);
+MODULE_SCOPE int	TclOOGetSortedClassMethodList(Class *clsPtr,
+			    int flags, const char ***stringsPtr);
 MODULE_SCOPE int	TclOOGetSortedMethodList(Object *oPtr, int flags,
 			    const char ***stringsPtr);
 MODULE_SCOPE void	TclOOInitInfo(Tcl_Interp *interp);

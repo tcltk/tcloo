@@ -1,3 +1,12 @@
+2008-05-29  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOCall.c (TclOOGetSortedClassMethodList): 
+	* generic/tclOOInfo.c (InfoObjectMethodsCmd, InfoClassMethodsCmd): 
+	* tests/oo.test, doc/ooInfo.n: Corrected, simplified and systematized
+	the code to introspect the list of methods supported by an object or
+	class. Now, -all checks (super)classes and -private gets what is
+	accepted by [my].
+
 2008-05-28  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tests/oo.test (oo-16.4): Deepen this test to make it clearer what
