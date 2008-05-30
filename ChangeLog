@@ -1,3 +1,11 @@
+2008-05-30  Donal K. Fellows  <dkf@users.sf.net>
+
+	=== RELEASE OF TCLOO VERSION 0.4 ===
+
+	* configure.in, generic/tclOO.h, tests/oo.test, win/TclOO.rc: Update
+	version numbers for 0.4 release. This version constitutes the point
+	where a merge to Tcl 8.6a0 (after TIP#257) was carried out.
+
 2008-05-29  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOCall.c (TclOOGetSortedClassMethodList): 
