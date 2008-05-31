@@ -1,3 +1,12 @@
+2008-05-31  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (InitFoundation): Correct reference counting for
+	strings used when creating the constructor for classes.
+	* generic/tclOOMethod.c (TclOODelMethodRef): Correct fencepost error
+	in reference counting of method implementation structures.
+	* tests/oo.test (oo-0.5): Added a test to detect a memory leak problem
+	relating to disposal of the core object system.
+
 2008-05-30  Donal K. Fellows  <dkf@users.sf.net>
 
 	=== RELEASE OF TCLOO VERSION 0.4 ===
@@ -8,8 +17,8 @@
 
 2008-05-29  Donal K. Fellows  <dkf@users.sf.net>
 
-	* generic/tclOOCall.c (TclOOGetSortedClassMethodList): 
-	* generic/tclOOInfo.c (InfoObjectMethodsCmd, InfoClassMethodsCmd): 
+	* generic/tclOOCall.c (TclOOGetSortedClassMethodList):
+	* generic/tclOOInfo.c (InfoObjectMethodsCmd, InfoClassMethodsCmd):
 	* tests/oo.test, doc/ooInfo.n: Corrected, simplified and systematized
 	the code to introspect the list of methods supported by an object or
 	class. Now, -all checks (super)classes and -private gets what is
