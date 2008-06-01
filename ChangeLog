@@ -1,3 +1,9 @@
+2008-06-01  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOMethod.c (Tcl_NewMethod): Fix wrong initialization of
+	reference counts when changing a method that is currently in use.
+	Thanks to Kevin Kenny for spotting. [Bug 1981001]
+
 2008-05-31  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c (InitFoundation): Correct reference counting for
