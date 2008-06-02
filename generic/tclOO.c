@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.55 2008/06/02 06:38:02 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.56 2008/06/02 13:59:57 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -618,9 +618,8 @@ ReleaseClassContents(
     Tcl_Interp *interp,		/* The interpreter containing the class. */
     Object *oPtr)		/* The object representing the class. */
 {
-    int i, n;
-    Class *clsPtr = oPtr->classPtr, **list;
-    Object **insts;
+    int i;
+    Class *clsPtr = oPtr->classPtr;
 
     /*
      * Must empty list before processing the members of the list so that
@@ -628,65 +627,66 @@ ReleaseClassContents(
      * fast-and-loose.
      */
 
-    list = clsPtr->mixinSubs.list;
-    n = clsPtr->mixinSubs.num;
-    clsPtr->mixinSubs.list = NULL;
-    clsPtr->mixinSubs.num = 0;
-    clsPtr->mixinSubs.size = 0;
-    for (i=0 ; i<n ; i++) {
-	AddRef(list[i]);
-	AddRef(list[i]->thisPtr);
-    }
-    for (i=0 ; i<n ; i++) {
-	if (!(list[i]->thisPtr->flags & OBJECT_DELETED)) {
-	    list[i]->thisPtr->flags |= OBJECT_DELETED;
-	    Tcl_DeleteCommandFromToken(interp, list[i]->thisPtr->command);
+    if (clsPtr->mixinSubs.size > 0) {
+	LIST_DYNAMIC(struct Class *) subclasses;
+	Class *subclassPtr;
+
+	TEMP_AND_CLEAR(subclasses, clsPtr->mixinSubs);
+	FOREACH(subclassPtr, subclasses) {
+	    AddRef(subclassPtr);
+	    AddRef(subclassPtr->thisPtr);
 	}
-	DelRef(list[i]->thisPtr);
-	DelRef(list[i]);
-    }
-    if (list != NULL) {
-	ckfree((char *) list);
+	FOREACH(subclassPtr, subclasses) {
+	    register Object *subObj = subclassPtr->thisPtr;
+
+	    if (!(subObj->flags & OBJECT_DELETED)) {
+		subObj->flags |= OBJECT_DELETED;
+		Tcl_DeleteCommandFromToken(interp, subObj->command);
+	    }
+	    DelRef(subObj);
+	    DelRef(subclassPtr);
+	}
+	ckfree((char *) subclasses.list);
     }
 
-    list = clsPtr->subclasses.list;
-    n = clsPtr->subclasses.num;
-    clsPtr->subclasses.list = NULL;
-    clsPtr->subclasses.num = 0;
-    clsPtr->subclasses.size = 0;
-    for (i=0 ; i<n ; i++) {
-	AddRef(list[i]);
-	AddRef(list[i]->thisPtr);
-    }
-    for (i=0 ; i<n ; i++) {
-	if (!(list[i]->thisPtr->flags & OBJECT_DELETED)) {
-	    list[i]->thisPtr->flags |= OBJECT_DELETED;
-	    Tcl_DeleteCommandFromToken(interp, list[i]->thisPtr->command);
+    if (clsPtr->subclasses.size > 0) {
+	LIST_DYNAMIC(Class *) subclasses;
+	Class *subclassPtr;
+
+	TEMP_AND_CLEAR(subclasses, clsPtr->subclasses);
+	FOREACH(subclassPtr, subclasses) {
+	    AddRef(subclassPtr);
+	    AddRef(subclassPtr->thisPtr);
 	}
-	DelRef(list[i]->thisPtr);
-	DelRef(list[i]);
-    }
-    if (list != NULL) {
-	ckfree((char *) list);
+	FOREACH(subclassPtr, subclasses) {
+	    register Object *subObj = subclassPtr->thisPtr;
+
+	    if (!(subObj->flags & OBJECT_DELETED)) {
+		subObj->flags |= OBJECT_DELETED;
+		Tcl_DeleteCommandFromToken(interp, subObj->command);
+	    }
+	    DelRef(subObj);
+	    DelRef(subclassPtr);
+	}
+	ckfree((char *) subclasses.list);
     }
 
-    insts = clsPtr->instances.list;
-    n = clsPtr->instances.num;
-    clsPtr->instances.list = NULL;
-    clsPtr->instances.num = 0;
-    clsPtr->instances.size = 0;
-    for (i=0 ; i<n ; i++) {
-	AddRef(insts[i]);
-    }
-    for (i=0 ; i<n ; i++) {
-	if (!(insts[i]->flags & OBJECT_DELETED)) {
-	    insts[i]->flags |= OBJECT_DELETED;
-	    Tcl_DeleteCommandFromToken(interp, insts[i]->command);
+    if (clsPtr->instances.size > 0) {
+	LIST_DYNAMIC(Object *) instances;
+	Object *instancePtr;
+
+	TEMP_AND_CLEAR(instances, clsPtr->instances);
+	FOREACH(instancePtr, instances) {
+	    AddRef(instancePtr);
 	}
-	DelRef(insts[i]);
-    }
-    if (insts != NULL) {
-	ckfree((char *) insts);
+	FOREACH(instancePtr, instances) {
+	    if (!(instancePtr->flags & OBJECT_DELETED)) {
+		instancePtr->flags |= OBJECT_DELETED;
+		Tcl_DeleteCommandFromToken(interp, instancePtr->command);
+	    }
+	    DelRef(instancePtr);
+	}
+	ckfree((char *) instances.list);
     }
 
     if (clsPtr->constructorChainPtr) {

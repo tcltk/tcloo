@@ -1,5 +1,9 @@
 2008-06-02  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclOO.c (ReleaseClassContents): Tidy up a bit by hiding more
+	of the details of how lists work; they're not interesting, but they
+	were verbose. No longer...
+
 	* generic/tclOO.c (ReleaseClassContents): Fix reference counting
 	problem identified by Keven Kenny through use of valgrind, which was
 	caused by failing to protect the Object as well as the Class (attached
