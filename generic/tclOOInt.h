@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.33 2008/05/29 09:33:19 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.34 2008/06/02 13:59:58 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -554,6 +554,17 @@ MODULE_SCOPE void	TclOOStashContext(Tcl_Obj *objPtr,
 	} else { \
 	    (target).list = NULL; \
 	} \
+    } while(0)
+
+/*
+ * Convenience macro for directing a list into temporary storage and clearing
+ * the original list. Used when disposing the list.
+ */
+
+#define TEMP_AND_CLEAR(temporary,main) \
+    do {						\
+	memcpy(&(temporary), &(main), sizeof(main));	\
+	memset(&(main), 0, sizeof(main));		\
     } while(0)
 
 /*
