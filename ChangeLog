@@ -1,3 +1,8 @@
+2008-06-09  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOCall.c (TclOOGetSortedMethodList): Plug memory leak
+	that occurred when all methods were hidden. [Bug 1987817]
+
 2008-06-02  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c (ReleaseClassContents): Tidy up a bit by hiding more
