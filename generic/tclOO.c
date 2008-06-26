@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.57 2008/06/19 21:32:48 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.58 2008/06/26 14:54:25 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -119,7 +119,7 @@ static char initScript[] =
 /*     "tcl_findLibrary tcloo $oo::version $oo::version" */
 /*     " tcloo.tcl OO_LIBRARY oo::library;"; */
 
-extern struct TclOOStubAPI tclOOStubAPI;
+extern const TclStubs *const tclOOConstStubsPtr;
 
 /*
  * Key into the interpreter assocData table for the foundation structure ref.
@@ -167,7 +167,8 @@ Tcloo_Init(
 	return TCL_ERROR;
     }
 
-    return Tcl_PkgProvideEx(interp, "TclOO", TCLOO_VERSION, &tclOOStubAPI);
+    return Tcl_PkgProvideEx(interp, "TclOO", TCLOO_VERSION,
+	    (ClientData) tclOOConstStubsPtr);
 }
 
 int DLLEXPORT
@@ -523,6 +524,27 @@ AllocObject(
 /*
  * ----------------------------------------------------------------------
  *
+ * SquelchCachedName --
+ *
+ *	Encapsulates how to throw away a cached object name. Called from
+ *	object rename traces and at object destruction.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static inline void
+SquelchCachedName(
+    Object *oPtr)
+{
+    if (oPtr->cachedNameObj) {
+	Tcl_DecrRefCount(oPtr->cachedNameObj);
+	oPtr->cachedNameObj = NULL;
+    }
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * ObjectRenamedTrace --
  *
  *	This callback is triggered when the object is deleted by any
@@ -550,10 +572,7 @@ ObjectRenamedTrace(
      */
 
     if (flags & TCL_TRACE_RENAME) {
-	if (oPtr->cachedNameObj) {
-	    Tcl_DecrRefCount(oPtr->cachedNameObj);
-	    oPtr->cachedNameObj = NULL;
-	}
+	SquelchCachedName(oPtr);
 	return;
     }
 
@@ -807,10 +826,7 @@ ObjectNamespaceDeleted(
 	TclOODeleteChainCache(oPtr->chainCache);
     }
 
-    if (oPtr->cachedNameObj) {
-	Tcl_DecrRefCount(oPtr->cachedNameObj);
-	oPtr->cachedNameObj = NULL;
-    }
+    SquelchCachedName(oPtr);
 
     if (oPtr->metadataPtr != NULL) {
 	Tcl_ObjectMetadataType *metadataTypePtr;

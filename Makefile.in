@@ -94,6 +94,7 @@ VPATH=$(SRC_DIR)/generic:$(SRC_DIR)/unix:$(SRC_DIR)/win:$(SRC_DIR)/macosx:$(SRC_
 TESTFLAGS=
 KIT_PKG_ROOT=$(PKG_KIT_ROOT).vfs/lib/$(PACKAGE_NAME)
 ITERATIONS=1000
+TCL_TOOLS_DIR=$(TCL_SRC_DIR)/tools
 
 #========================================================================
 # This is something that is found by executing a Tcl script
@@ -251,9 +252,9 @@ Makefile: $(SRC_DIR)/Makefile.in $(top_builddir)/config.status
 # How to rebuild the package's stub table.
 #========================================================================
 
-genstubs: $(SRC_DIR)/tools/genStubs.tcl $(SRC_DIR)/generic/tclOO.decls
-	@echo $(TCLSH_PROGRAM) $(SRC_DIR)/tools/genStubs.tcl $(SRC_DIR)/generic $(SRC_DIR)/generic/tclOO.decls
-	@$(TCLSH) `$(CYGPATH) $(SRC_DIR)/tools/genStubs.tcl` `$(CYGPATH) $(SRC_DIR)/generic` `$(CYGPATH) $(SRC_DIR)/generic/tclOO.decls`
+genstubs: $(TCL_TOOLS_DIR)/genStubs.tcl $(SRC_DIR)/generic/tclOO.decls
+	@echo $(TCLSH_PROGRAM) $(TCL_TOOLS_DIR)/genStubs.tcl $(SRC_DIR)/generic $(SRC_DIR)/generic/tclOO.decls
+	@$(TCLSH) `$(CYGPATH) $(TCL_TOOLS_DIR)/genStubs.tcl` `$(CYGPATH) $(SRC_DIR)/generic` `$(CYGPATH) $(SRC_DIR)/generic/tclOO.decls`
 
 #========================================================================
 # Build a starkit - this is experimental!

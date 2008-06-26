@@ -1,3 +1,15 @@
+2008-06-26  Donal K. Fellows  <dkf@users.sf.net>
+
+	* Makefile.in (genstubs):			 Change the stub table
+	* generic/tclOOStubLib.c (TclOOInitializeStubs): generation to use the
+	* generic/tclOO.c (Tcloo_Init):			 Tcl system, not the
+	* generic/tclOO.decls:				 Tile system.
+	* tools/genStubs.tcl: Removed no-longer-needed file.
+
+	*** POTENTIAL INCOMPATABILITY ***
+	If you use the TclOO C API, you *must* recompile against this new
+	version. The layout of the stubs table is different. Many apologies.
+
 2008-06-19  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c (Tcl_ObjectContextInvokeNext): Corrected 'next' (at
