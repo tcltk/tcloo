@@ -1,5 +1,13 @@
 2008-06-26  Donal K. Fellows  <dkf@users.sf.net>
 
+	=== RELEASE OF TCLOO VERSION 0.5 ===
+
+	* configure.in, generic/tclOO.h, tests/oo.test, win/TclOO.rc: Update
+	version numbers for 0.5 release. This version constitutes the point
+	where the merge to Tcl 8.6a0 (after TIP#257) was finalized;
+	intermediate changes from 0.4 are corrected issues discovered during
+	the merge and immediate wider-scale testing.
+
 	* Makefile.in (genstubs):			 Change the stub table
 	* generic/tclOOStubLib.c (TclOOInitializeStubs): generation to use the
 	* generic/tclOO.c (Tcloo_Init):			 Tcl system, not the
