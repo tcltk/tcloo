@@ -24,7 +24,7 @@ BEGIN
 	    VALUE "Author", "Donal K. Fellows"
 	    VALUE "CompanyName", "Tcl Core Team"
 	    VALUE "FileVersion", PACKAGE_VERSION
-	    VALUE "LegalCopyright", "Copyright \251 2007,2008 by Donal K. Fellows"
+	    VALUE "LegalCopyright", "Copyright \251 2005-2008 by Donal K. Fellows"
 	    VALUE "ProductName", "Object Orientation Extension Package for Tcl"
 	    VALUE "ProductVersion", PACKAGE_VERSION
 	END

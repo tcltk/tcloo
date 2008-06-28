@@ -4,12 +4,12 @@
  *	This file contains the public API definitions and some of the function
  *	declarations for the object-system (NB: not Tcl_Obj, but ::oo).
  *
- * Copyright (c) 2006 by Donal K. Fellows
+ * Copyright (c) 2006-2008 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.13 2008/06/26 15:10:50 dkf Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.14 2008/06/28 23:59:54 dkf Exp $
  */
 
 #ifndef TCLOO_H_INCLUDED

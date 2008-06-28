@@ -4,12 +4,12 @@
  *	This file contains the implementation of the ::oo-related [info]
  *	subcommands.
  *
- * Copyright (c) 2006 by Donal K. Fellows
+ * Copyright (c) 2006-2008 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.14 2008/05/29 09:33:19 dkf Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.15 2008/06/28 23:59:54 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
