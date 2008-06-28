@@ -1,3 +1,8 @@
+2008-06-29  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/object.n (EXAMPLES): Fix incorrect usage of oo::define to be
+	done with oo::objdefine instead. [Bug 2004480]
+
 2008-06-26  Donal K. Fellows  <dkf@users.sf.net>
 
 	=== RELEASE OF TCLOO VERSION 0.5 ===
