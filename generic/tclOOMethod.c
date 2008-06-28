@@ -3,12 +3,12 @@
  *
  *	This file contains code to create and manage methods.
  *
- * Copyright (c) 2005-2006 by Donal K. Fellows
+ * Copyright (c) 2005-2008 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.25 2008/06/01 08:05:46 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.26 2008/06/28 23:59:54 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H

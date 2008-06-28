@@ -1,5 +1,8 @@
 2008-06-29  Donal K. Fellows  <dkf@users.sf.net>
 
+	* README.txt: Update to be more relevant to this distribution.
+	* many files: Fix copyrights.
+
 	* doc/object.n (EXAMPLES): Fix incorrect usage of oo::define to be
 	done with oo::objdefine instead. [Bug 2004480]
 

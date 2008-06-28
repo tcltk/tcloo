@@ -4,12 +4,12 @@
  *	This file contains the structure definitions and some of the function
  *	declarations for the object-system (NB: not Tcl_Obj, but ::oo).
  *
- * Copyright (c) 2006 by Donal K. Fellows
+ * Copyright (c) 2006-2008 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.34 2008/06/02 13:59:58 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.35 2008/06/28 23:59:54 dkf Exp $
  */
 
 #include <tclInt.h>

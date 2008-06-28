@@ -3,12 +3,12 @@
  *
  *	This file contains the object-system core (NB: not Tcl_Obj, but ::oo)
  *
- * Copyright (c) 2005-2006 by Donal K. Fellows
+ * Copyright (c) 2005-2008 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.58 2008/06/26 14:54:25 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.59 2008/06/28 23:59:54 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
