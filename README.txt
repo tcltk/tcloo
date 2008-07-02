@@ -1,4 +1,4 @@
-Object Oriented Programming Package for Tcl (TclOO) Version 0.5
+Object Oriented Programming Package for Tcl (TclOO) Version 0.5.1
 
 Copyright 2005-2008 Donal K. Fellows
 

@@ -1,5 +1,7 @@
 2008-07-02  Donal K. Fellows  <dkf@users.sf.net>
 
+	* configure.in: Bump version number to 0.5.1.
+
 	* aclocal.m4 (TEAX_SUBST_RESOURCE): Stop trying to build the resource
 	descriptor in when using the VC toolchain for now; it seems to be
 	causing problems with the versions built for the teapot.
