@@ -1,3 +1,14 @@
+dnl: aclocal.m4 --
+dnl:
+dnl:	Macros used for controlling output of autoconf. Some are general
+dnl:	library macros, others are things that are probably eventually going
+dnl:	to end up in TEA. All have the prefix of TEAX (TEA eXtension).
+dnl:
+dnl: Copyright (c) 2007-2008 by Donal K. Fellows
+dnl:
+dnl: See the file "license.terms" for information on usage and redistribution
+dnl: of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
 AC_PREREQ(2.50)
 builtin(include, tclconfig/tcl.m4)
 
@@ -27,11 +38,13 @@ AC_DEFUN([TEAX_SUBST_RESOURCE], [
 		AC_SUBST(RES_SUFFIX, [res.o])
 		TEAX_LAPPEND(PKG_OBJECTS, ${PACKAGE_NAME}.res.o)],
 	    rc*, [
-		rcdef_inc="-i "
-		rcdef_start="-d "
-		rcdef_q='"'
-		AC_SUBST(RES_SUFFIX, [res])
-		TEAX_LAPPEND(PKG_OBJECTS, ${PACKAGE_NAME}.res)],
+dnl		rcdef_inc="-i "
+dnl		rcdef_start="-d "
+dnl		rcdef_q='"'
+dnl		AC_SUBST(RES_SUFFIX, [res])
+dnl		TEAX_LAPPEND(PKG_OBJECTS, ${PACKAGE_NAME}.res)
+		AC_MSG_WARN([resource compiler problems; skipping...])
+		RC_=: ],
 	    *, [
 		AC_MSG_WARN([could not find resource compiler])
 		RC_=: ])])
