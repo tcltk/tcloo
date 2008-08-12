@@ -1,3 +1,8 @@
+2008-08-12  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclOOInfo.c (InfoObjectDefnCmd, InfoObjectMixinsCmd):
+	fix # args displayed. [Bug 2048676]
+
 2008-07-02  Donal K. Fellows  <dkf@users.sf.net>
 
 	* configure.in: Bump version number to 0.5.1.
