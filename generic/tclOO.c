@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.59 2008/06/28 23:59:54 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.60 2008/08/29 10:00:32 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -584,7 +584,7 @@ ObjectRenamedTrace(
 
     AddRef(oPtr);
     oPtr->flags |= OBJECT_DELETED;
-    if (!(flags & TCL_INTERP_DESTROYED)) {
+    if (!Tcl_InterpDeleted(interp)) {
 	CallContext *contextPtr = TclOOGetCallContext(oPtr, NULL, DESTRUCTOR);
 
 	if (contextPtr != NULL) {
