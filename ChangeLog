@@ -1,3 +1,8 @@
+2008-08-29  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (ObjectRenamedTrace): Backport of corrected handling
+	of detection of when it is appropriate to run destructors.
+
 2008-08-12  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclOOInfo.c (InfoObjectDefnCmd, InfoObjectMixinsCmd):
