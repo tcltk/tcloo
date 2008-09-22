@@ -1,3 +1,24 @@
+2008-09-22  Donal K. Fellows  <dkf@users.sf.net>
+
+	* configure.in, README.txt, generic/tclOO.h, win/TclOO.rc: Bump
+	version to 0.6a1.
+
+	IMPLEMENTATION OF TIP#240.
+
+	* generic/tclOODefineCmds.c (TclOODefineVariablesObjCmd):
+	* generic/tclOOInfo.c (InfoObjectVariablesCmd, InfoClassVariablesCmd):
+	* generic/tclOOMethod.c (TclOOSetupVariableResolver, etc):
+	* doc/define.n, doc/ooInfo.n, benchmarks/cps.tcl:
+	* tests/oo.test (oo-26.*): Allow the declaration of the common
+	variables used in methods of a class or object. These are then mapped
+	in using a variable resolver. This makes many class declarations much
+	simpler overall, encourages good usage of variable names, and also
+	boosts speed a bit.
+
+	* generic/tclOOMethod.c (TclOOGetMethodBody): Factor out the code to
+	get the body of a procedure-like method. Reduces the amount of "poking
+	inside the abstraction" that is done by the introspection code.
+
 2008-08-29  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c (ObjectRenamedTrace): Backport of corrected handling
