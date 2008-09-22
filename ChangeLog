@@ -3,7 +3,7 @@
 	* configure.in, README.txt, generic/tclOO.h, win/TclOO.rc: Bump
 	version to 0.6a1.
 
-	IMPLEMENTATION OF TIP#240.
+	IMPLEMENTATION OF TIP#320.
 
 	* generic/tclOODefineCmds.c (TclOODefineVariablesObjCmd):
 	* generic/tclOOInfo.c (InfoObjectVariablesCmd, InfoClassVariablesCmd):
