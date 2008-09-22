@@ -1,4 +1,4 @@
-Object Oriented Programming Package for Tcl (TclOO) Version 0.5.1
+Object Oriented Programming Package for Tcl (TclOO) Version 0.6a1
 
 Copyright 2005-2008 Donal K. Fellows
 
@@ -45,19 +45,17 @@ Simple Example
 ==============
 
 oo::class create summation {
+    variable v
     constructor {} {
-        variable v 0
+        set v 0
     }
     method add x {
-        variable v
         incr v $x
     }
     method value {} {
-        variable v
         return $v
     }
     destructor {
-        variable v
         puts "Ended with value $v"
     }
 }

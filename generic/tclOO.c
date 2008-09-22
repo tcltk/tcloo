@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.60 2008/08/29 10:00:32 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.61 2008/09/22 10:47:26 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -38,6 +38,7 @@ static const struct {
     {"self", TclOODefineSelfObjCmd, 0},
     {"superclass", TclOODefineSuperclassObjCmd, 0},
     {"unexport", TclOODefineUnexportObjCmd, 0},
+    {"variable", TclOODefineVariablesObjCmd, 0},
     {NULL, NULL, 0}
 }, objdefCmds[] = {
     {"class", TclOODefineClassObjCmd, 1},
@@ -49,6 +50,7 @@ static const struct {
     {"mixin", TclOODefineMixinObjCmd, 1},
     {"renamemethod", TclOODefineRenameMethodObjCmd, 1},
     {"unexport", TclOODefineUnexportObjCmd, 1},
+    {"variable", TclOODefineVariablesObjCmd, 1},
     {NULL, NULL, 0}
 };
 
@@ -459,6 +461,7 @@ AllocObject(
 
   configNamespace:
     TclSetNsPath((Namespace *) oPtr->namespacePtr, 1, &fPtr->helpersNs);
+    TclOOSetupVariableResolver(oPtr->namespacePtr);
 
     /*
      * Fill in the rest of the non-zero/NULL parts of the structure.
@@ -775,7 +778,7 @@ ObjectNamespaceDeleted(
     FOREACH_HASH_DECLS;
     Class *clsPtr = oPtr->classPtr, *mixinPtr;
     Method *mPtr;
-    Tcl_Obj *filterObj;
+    Tcl_Obj *filterObj, *variableObj;
     int i, preserved = !(oPtr->flags & OBJECT_DELETED);
 
     /*
@@ -820,6 +823,13 @@ ObjectNamespaceDeleted(
 	}
 	Tcl_DeleteHashTable(oPtr->methodsPtr);
 	ckfree((char *) oPtr->methodsPtr);
+    }
+
+    FOREACH(variableObj, oPtr->variables) {
+	Tcl_DecrRefCount(variableObj);
+    }
+    if (i) {
+	ckfree((char *) oPtr->variables.list);
     }
 
     if (oPtr->chainCache) {
@@ -900,6 +910,14 @@ ObjectNamespaceDeleted(
 	Tcl_DeleteHashTable(&clsPtr->classMethods);
 	TclOODelMethodRef(clsPtr->constructorPtr);
 	TclOODelMethodRef(clsPtr->destructorPtr);
+
+	FOREACH(variableObj, clsPtr->variables) {
+	    Tcl_DecrRefCount(variableObj);
+	}
+	if (i) {
+	    ckfree((char *) clsPtr->variables.list);
+	}
+
 	DelRef(clsPtr);
     }
 

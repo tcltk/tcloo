@@ -1,77 +1,115 @@
-package require TclOO
+set auto_path "[list [pwd]] $auto_path"
+package require TclOO 0.6a1
 puts "cps benchmark using TclOO [package provide TclOO]"
 # See http://wiki.tcl.tk/18152 for table of comparison
 
+# ----------------------------------------------------------------------
+# cps --
+#	A wrapper round [time] to make it better for performance analysis of
+#	very fast code. It works by tuning the number of iterations used until
+#	the run-time of the code is around a second.
+#
 proc cps {script} {
     # Eat the script compilation costs
     uplevel 1 [list time $script]
+
     # Have a guess at how many iterations to run for around a second
     set s [uplevel 1 [list time $script 5]]
-    set iters [expr {round(1/([lindex $s 0]/1e6))}]
+    set iters [expr {round(1.1/([lindex $s 0]/1e6))}]
     if {$iters < 50} {
 	puts "WARNING: number of iterations low"
     }
+
     # The main timing run
-    set s [uplevel 1 [list time $script $iters]]
+    while 1 {
+	set s [uplevel 1 [list time $script $iters]]
+	# Only use the run if it was for at least a second, otherwise increase
+	# the number of iterations and try again.
+	if {[lindex $s 0]*$iters >= 1e6} {
+	    break
+	}
+	incr iters $iters
+    }
+
+    # Produce the results
     set cps [expr {round(1/([lindex $s 0]/1e6))}]
-    puts "$cps calls per second of: $script"
+    puts "$cps calls per second of: [string trim $script]"
 }
 
 # ----------------------------------------------------------------------
-namespace path oo
-class create foo {
+#namespace path oo
+oo::class create base {
+    variable x
     constructor {} {
-	variable x 1
+	set x 1
     }
     method emptyMethod {} { }
-    method bar {} {
-	variable x
+    method stateful {} {
 	set x [expr {!$x}]
+    }
+    method stateless {} {
+	set local 1
+	expr {!$local}
     }
 }
 
-class create boo {
-    superclass foo
+oo::class create subCls {
+    superclass base
+    variable y
     constructor {} {
 	next
-	variable y 0
+	set y 0
     }
-    method bar {} {
-	variable y
+    method stateful {} {
 	incr y
 	next
     }
+    method stateless {} {
+	expr {![next]}
+    }
 }
 
+# This code provides a baseline speed so that we can see how well Tcl itself
+# is performing independently of TclOO...
+set ::baselinex 1
+proc baselineProc {} {
+    global baselinex
+    set baselinex [expr {!$baselinex}]
+}
 # ----------------------------------------------------------------------
+puts "Baseline..."
+cps {baselineProc }
 puts "Method invokation microbenchmark"
-foo create f
-f bar
-cps {f bar}
-cps {f emptyMethod}
-f destroy
+base create baseObj
+cps {baseObj stateless}
+cps {baseObj stateful}
+cps {baseObj emptyMethod}
+base create base2
+cps {baseObj stateless;base2 stateless}
+base2 destroy
+baseObj destroy
 
 puts "Object creation/deletion microbenchmarks"
-cps {[foo new] destroy}
-cps {[foo create f] destroy}
-cps {[foo create ::f] destroy}
+cps {[base new] destroy}
+cps {[base create obj] destroy}
+cps {[base create ::obj] destroy}
 
 puts "Combined microbenchmark"
-cps {foo create ::f;f bar;f destroy}
+cps {base create ::obj;obj stateless;obj destroy}
 
 puts "Method inherited invokation microbenchmark"
-boo create f
-f bar
-cps {f bar}
-cps {f emptyMethod}
-f destroy
+subCls create subObj
+cps {subObj stateless}
+cps {subObj stateful}
+cps {subObj emptyMethod}
+subObj destroy
 
 puts "Object inherited creation/deletion microbenchmark"
-cps {[boo new] destroy}
-cps {[boo create f] destroy}
-cps {[boo create ::f] destroy}
+cps {[subCls new] destroy}
+cps {[subCls create obj] destroy}
+cps {[subCls create ::obj] destroy}
 
 puts "Combined inherited microbenchmark"
-cps {boo create ::f;f bar;f destroy}
+cps {subCls create ::obj;obj stateless;obj destroy}
 
-foo destroy
+base destroy
