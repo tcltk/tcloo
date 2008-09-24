@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.27 2008/09/22 10:47:28 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.28 2008/09/24 09:52:51 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -16,12 +16,6 @@
 #endif
 #include "tclInt.h"
 #include "tclOOInt.h"
-
-#if 0
-#define DBPRINT(format, ...) (fprintf(stderr, "DEBUG:" format "\n", __VA_ARGS__))
-#else
-#define DBPRINT(format, ...) ((void) 0)
-#endif
 
 /*
  * Structure used to help delay computing names of objects or classes for
