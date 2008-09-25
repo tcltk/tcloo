@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.34 2008/09/22 10:47:28 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.35 2008/09/25 10:18:34 dkf Exp $
 
 package require TclOO 0.6a1 ;# Must match value in configure.in
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -1786,6 +1786,19 @@ test oo-25.1 {call chain caching} -setup {
     oo::objdefine foo method ab {} {return good}
     lappend result [foo $m1] [bar $m2]
 } -result {ok ok ok ok ok ok good ok}
+test oo-25.2 {call chain caching - Bug #2120903} -setup {
+    set c [oo::class create MyClass]
+    set o [$c new]
+} -body {
+    oo::define MyClass {
+	method name {} {return ok}
+	method isa o {MyClass name $o}
+	self method name o {$o name}
+    }
+    list [$o name] [$c name $o] [$o isa $o]
+} -cleanup {
+    $c destroy
+} -result {ok ok ok}
 
 test oo-26.1 {variables declaration - class introspection} -setup {
     oo::class create foo

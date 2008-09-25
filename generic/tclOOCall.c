@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.25 2008/06/28 23:59:54 dkf Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.26 2008/09/25 10:18:23 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -796,14 +796,15 @@ InitCallChain(
     Object *oPtr,
     int flags)
 {
+    callPtr->flags = flags &
+	    (PUBLIC_METHOD | PRIVATE_METHOD | SPECIAL | FILTER_HANDLING);
     if (oPtr->flags & USE_CLASS_CACHE) {
 	oPtr = oPtr->selfCls->thisPtr;
+	callPtr->flags |= USE_CLASS_CACHE;
     }
     callPtr->epoch = oPtr->fPtr->epoch;
     callPtr->objectCreationEpoch = oPtr->creationEpoch;
     callPtr->objectEpoch = oPtr->epoch;
-    callPtr->flags = flags &
-	    (PUBLIC_METHOD | PRIVATE_METHOD | SPECIAL | FILTER_HANDLING);
     callPtr->refCount = 1;
     callPtr->numChain = 0;
     callPtr->chain = callPtr->staticChain;
@@ -833,12 +834,8 @@ IsStillValid(
     int mask)
 {
     if ((oPtr->flags & USE_CLASS_CACHE)) {
-	register Object *coPtr = oPtr->selfCls->thisPtr;
-
-	return ((callPtr->objectCreationEpoch == coPtr->creationEpoch)
-		&& (callPtr->epoch == coPtr->fPtr->epoch)
-		&& (callPtr->objectEpoch == coPtr->epoch)
-		&& ((callPtr->flags & mask) == (flags & mask)));
+	oPtr = oPtr->selfCls->thisPtr;
+	flags |= USE_CLASS_CACHE;
     }
     return ((callPtr->objectCreationEpoch == oPtr->creationEpoch)
 	    && (callPtr->epoch == oPtr->fPtr->epoch)
