@@ -1,3 +1,9 @@
+2008-10-10  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOODefineCmds.c (TclOODefineUnexportObjCmd)
+	(TclOODefineExportObjCmd): Corrected export/unexport record synthesis.
+	[Bug 2155658]
+
 2008-09-25  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOCall.c (InitCallChain, IsStillValid):
