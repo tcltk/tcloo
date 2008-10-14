@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.61 2008/09/22 10:47:26 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.62 2008/10/14 08:10:59 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -260,14 +260,14 @@ InitFoundation(
 	Tcl_DStringAppend(&buffer, "::oo::define::", 14);
 	Tcl_DStringAppend(&buffer, defineCmds[i].name, -1);
 	Tcl_CreateObjCommand(interp, Tcl_DStringValue(&buffer),
-		defineCmds[i].objProc, (void *) defineCmds[i].flag, NULL);
+		defineCmds[i].objProc, INT2PTR(defineCmds[i].flag), NULL);
 	Tcl_DStringFree(&buffer);
     }
     for (i=0 ; objdefCmds[i].name ; i++) {
 	Tcl_DStringAppend(&buffer, "::oo::objdefine::", 17);
 	Tcl_DStringAppend(&buffer, objdefCmds[i].name, -1);
 	Tcl_CreateObjCommand(interp, Tcl_DStringValue(&buffer),
-		objdefCmds[i].objProc, (void *) objdefCmds[i].flag, NULL);
+		objdefCmds[i].objProc, INT2PTR(objdefCmds[i].flag), NULL);
 	Tcl_DStringFree(&buffer);
     }
 
@@ -2009,6 +2009,10 @@ Tcl_ObjectContextInvokeNext(
 	 */
 
 	const char *methodType;
+
+	if (Tcl_InterpDeleted(interp)) {
+	    return TCL_OK;
+	}
 
 	if (contextPtr->callPtr->flags & CONSTRUCTOR) {
 	    methodType = "constructor";

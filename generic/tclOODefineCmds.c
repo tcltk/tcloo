@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.21 2008/10/10 13:07:30 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.22 2008/10/14 08:10:59 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1138,7 +1138,7 @@ TclOODefineDeleteMethodObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    int isInstanceDeleteMethod = (clientData != NULL);
+    int isInstanceDeleteMethod = PTR2INT(clientData);
     Object *oPtr;
     int i;
 
@@ -1256,7 +1256,7 @@ TclOODefineExportObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    int isInstanceExport = (clientData != NULL);
+    int isInstanceExport = PTR2INT(clientData);
     Object *oPtr;
     Method *mPtr;
     Tcl_HashEntry *hPtr;
@@ -1349,7 +1349,7 @@ TclOODefineFilterObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    int isInstanceFilter = (clientData != NULL);
+    int isInstanceFilter = PTR2INT(clientData);
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
 
     if (oPtr == NULL) {
@@ -1385,7 +1385,7 @@ TclOODefineForwardObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    int isInstanceForward = (clientData != NULL);
+    int isInstanceForward = PTR2INT(clientData);
     Object *oPtr;
     Method *mPtr;
     int isPublic;
@@ -1443,7 +1443,7 @@ TclOODefineMethodObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    int isInstanceMethod = (clientData != NULL);
+    int isInstanceMethod = PTR2INT(clientData);
     Object *oPtr;
     int isPublic;
 
@@ -1498,7 +1498,7 @@ TclOODefineMixinObjCmd(
     const int objc,
     Tcl_Obj *const *objv)
 {
-    int isInstanceMixin = (clientData != NULL);
+    int isInstanceMixin = PTR2INT(clientData);
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     Class **mixins;
     int i;
@@ -1563,7 +1563,7 @@ TclOODefineRenameMethodObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    int isInstanceRenameMethod = (clientData != NULL);
+    int isInstanceRenameMethod = PTR2INT(clientData);
     Object *oPtr;
 
     if (objc != 3) {
@@ -1722,7 +1722,7 @@ TclOODefineUnexportObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    int isInstanceUnexport = (clientData != NULL);
+    int isInstanceUnexport = PTR2INT(clientData);
     Object *oPtr;
     Method *mPtr;
     Tcl_HashEntry *hPtr;
@@ -1815,7 +1815,7 @@ TclOODefineVariablesObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    int isInstanceVars = (clientData != NULL);
+    int isInstanceVars = PTR2INT(clientData);
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     Tcl_Obj *variableObj;
     int i;
