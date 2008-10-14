@@ -1,4 +1,19 @@
-2008-10-13  Donal K. Fellows  <dkf@users.sf.net>
+2008-10-14  Donal K. Fellows  <dkf@users.sf.net>
+
+	Various minor fixes (ported from Tcl HEAD) to prepare for 0.6 release.
+	* generic/tclOO.c (Tcl_ObjectContextInvokeNext): Added gracefulness in
+	the face of interpreters being deleted.
+	* generic/tclOO.c (InitFoundation):	Use INT2PTR/PTR2INT macros
+	* generic/tclOODefineCmds.c (many):	instead of somewhat dodgy
+	* generic/tclOOCall.c (TclOOGetSortedMethodList): casts.
+	(TclOOGetSortedClassMethodList):
+	* generic/tclOOBasic.c (TclOOSelfObjCmd): Clean up of code of [self]
+	command to use names from Foundation. Don't write directly to the
+	interpreter result object.
+	(TclOO_Object_LinkVar): Application of the "do nothing gracefully"
+	principle.
+	* generic/tclOOInfo.c (various): Don't write directly to the
+	interpreter result object.
 
 	* generic/tclOOInt.h: Added macro magic to make things work with
 	Objective C. [Bug 2163447]
