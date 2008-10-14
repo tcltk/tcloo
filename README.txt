@@ -1,4 +1,4 @@
-Object Oriented Programming Package for Tcl (TclOO) Version 0.6a1
+Object Oriented Programming Package for Tcl (TclOO) Version 0.6
 
 Copyright 2005-2008 Donal K. Fellows
 
@@ -12,8 +12,8 @@ which you received this file.
 Building
 ========
 
-TclOO 0.5 uses the TEA3 build system. These instructions are known to work
-on both Linux and Windows (with msys installed).
+TclOO 0.6 uses the TEA3 build system. These instructions are known to work
+on Linux, OSX and Windows (with msys installed).
 
 1) Make sure you have a source distribution of Tcl 8.5 somewhere; you will
    need it to build TclOO.
