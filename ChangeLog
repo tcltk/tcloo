@@ -1,5 +1,7 @@
 2008-10-14  Donal K. Fellows  <dkf@users.sf.net>
 
+	=== RELEASE OF TCLOO VERSION 0.6 ===
+
 	* configure.in, README.txt, win/TclOO.rc: Bump version.
 	* generic/tclOO.h (TCLOO_VERSION):
 
