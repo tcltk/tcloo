@@ -1,6 +1,6 @@
-# $Id: configure.in,v 1.39 2008/10/14 08:15:45 dkf Exp $
+# $Id: configure.in,v 1.40 2008/11/01 08:01:08 dkf Exp $
 
-AC_REVISION($Revision: 1.39 $)
+AC_REVISION($Revision: 1.40 $)
 dnl#
 dnl# When changing the version number, you *must* change the following:
 dnl#	generic/tclOO.h, tests/oo.test
@@ -8,7 +8,7 @@ dnl#
 dnl# You should also change the following:
 dnl#	README.txt, win/TclOO.rc
 dnl#
-AC_INIT([TclOO],[0.6])
+AC_INIT([TclOO],[0.6.1])
 AC_CONFIG_AUX_DIR(tclconfig)
 AC_CONFIG_HEADERS(config.h)
 
