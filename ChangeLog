@@ -1,3 +1,20 @@
+2008-11-01  Donal K. Fellows  <dkf@donal-k-fellowss-macbook-pro.local>
+
+	* generic/tclOOBasic.c (TclOONRUpcatch): Reworked the code that does
+	* generic/tclOO.c (InitFoundation):	 class constructor handling so
+	that it is more robust and runs the constructor call in the context of
+	the caller of the class's constructor method. Needed because the
+	previously used code did not work at all after applying the fix below;
+	no Tcl existing command could reliably do what was needed any more.
+
+	* generic/tclOODefineCmds.c (GetClassInOuterContext): Rework and
+	factor out the code to resolve class names in definitions so that
+	classes are resolved from the perspective of the caller of the
+	[oo::define] command, rather than from the oo::define namespace! This
+	makes much code simpler by reducing how often fully-qualified names
+	are required (previously always in practice, so no back-compat issues
+	exist). [Bug 2200824]
+
 2008-10-14  Donal K. Fellows  <dkf@users.sf.net>
 
 	=== RELEASE OF TCLOO VERSION 0.6 ===
