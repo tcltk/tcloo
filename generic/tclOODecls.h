@@ -1,19 +1,17 @@
 /*
- * $Id: tclOODecls.h,v 1.18 2008/06/26 14:54:25 dkf Exp $
+ * $Id: tclOODecls.h,v 1.19 2009/01/29 14:56:44 dkf Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  */
-
 
 #if defined(USE_TCLOO_STUBS)
 extern const char *TclOOInitializeStubs(
 	Tcl_Interp *, const char *version, int exact);
 #define Tcl_OOInitStubs(interp) TclOOInitializeStubs(interp, TCLOO_VERSION, 0)
 #else
-#define Tcl_OOInitStubs(interp) Tcl_PkgRequire(interp, "TclOO", TCLOO_VERSION)
+#define Tcl_OOInitStubs(interp) Tcl_PkgRequire(interp, "TclOO", TCLOO_VERSION, 0)
 #endif
-
-
+
 /* !BEGIN!: Do not edit below this line. */
 
 /*
