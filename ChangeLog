@@ -1,3 +1,8 @@
+2009-03-24  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOBasic.c (TclOOSelfObjCmd): [Bug 2704302]: Make 'self
+	class' better defined in the context of objects that change class.
+
 2009-02-12  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOODefineCmds.c (TclOOGetDefineCmdContext): Use the
