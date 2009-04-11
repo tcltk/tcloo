@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.29 2008/10/14 08:10:59 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.30 2009/04/11 11:48:51 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1283,6 +1283,7 @@ TclOONewForwardInstanceMethod(
 {
     int prefixLen;
     register ForwardMethod *fmPtr;
+    Tcl_Obj *cmdObj;
 
     if (Tcl_ListObjLength(interp, prefixObj, &prefixLen) != TCL_OK) {
 	return NULL;
@@ -1295,6 +1296,8 @@ TclOONewForwardInstanceMethod(
 
     fmPtr = (ForwardMethod *) ckalloc(sizeof(ForwardMethod));
     fmPtr->prefixObj = prefixObj;
+    Tcl_ListObjIndex(interp, prefixObj, 0, &cmdObj);
+    fmPtr->fullyQualified = (strncmp(TclGetString(cmdObj), "::", 2) == 0);
     Tcl_IncrRefCount(prefixObj);
     return (Method *) Tcl_NewInstanceMethod(interp, (Tcl_Object) oPtr,
 	    nameObj, flags, &fwdMethodType, fmPtr);
@@ -1321,6 +1324,7 @@ TclOONewForwardMethod(
 {
     int prefixLen;
     register ForwardMethod *fmPtr;
+    Tcl_Obj *cmdObj;
 
     if (Tcl_ListObjLength(interp, prefixObj, &prefixLen) != TCL_OK) {
 	return NULL;
@@ -1333,6 +1337,8 @@ TclOONewForwardMethod(
 
     fmPtr = (ForwardMethod *) ckalloc(sizeof(ForwardMethod));
     fmPtr->prefixObj = prefixObj;
+    Tcl_ListObjIndex(interp, prefixObj, 0, &cmdObj);
+    fmPtr->fullyQualified = (strncmp(TclGetString(cmdObj), "::", 2) == 0);
     Tcl_IncrRefCount(prefixObj);
     return (Method *) Tcl_NewMethod(interp, (Tcl_Class) clsPtr, nameObj,
 	    flags, &fwdMethodType, fmPtr);
@@ -1373,7 +1379,22 @@ InvokeForwardMethod(
     argObjs = InitEnsembleRewrite(interp, objc, objv, skip,
 	    numPrefixes, prefixObjs, &len);
 
+    /*
+     * In 8.6 we do this much more efficiently. But 8.5 simply doesn't have
+     * the API we use there, so we do this nasty hack here.
+     */
+
+    if (!fmPtr->fullyQualified) {
+	Tcl_Command cmd = Tcl_FindCommand(interp, Tcl_GetString(argObjs[0]),
+		contextPtr->oPtr->namespacePtr, 0);
+
+	argObjs[0] = Tcl_NewObj();
+	Tcl_GetCommandFullName(interp, cmd, argObjs[0]);
+    }
+
+    Tcl_IncrRefCount(argObjs[0]);
     result = Tcl_EvalObjv(interp, len, argObjs, TCL_EVAL_INVOKE);
+    Tcl_DecrRefCount(argObjs[0]);
     TclStackFree(interp, argObjs);
     return result;
 }
@@ -1408,6 +1429,7 @@ CloneForwardMethod(
     ForwardMethod *fm2Ptr = (ForwardMethod *) ckalloc(sizeof(ForwardMethod));
 
     fm2Ptr->prefixObj = fmPtr->prefixObj;
+    fm2Ptr->fullyQualified = fmPtr->fullyQualified;
     Tcl_IncrRefCount(fm2Ptr->prefixObj);
     *newClientData = fm2Ptr;
     return TCL_OK;
