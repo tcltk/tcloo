@@ -1,3 +1,13 @@
+2009-04-11  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOMethod.c (InvokeForwardMethod): Clarify the resolution
+	behaviour of the name of the command that is forwarded to: it's now
+	resolved using the object's namespace as context, which is much more
+	useful than the previous (somewhat random) behaviour of using the
+	caller's current namespace. Alas, this takes a substantive performance
+	hit for forwards to commands that are not fully qualified, but that is
+	unavoidable due to the lack of certain internal APIs in Tcl 8.5.
+
 2009-03-24  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOBasic.c (TclOOSelfObjCmd): [Bug 2704302]: Make 'self
