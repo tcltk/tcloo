@@ -1,3 +1,10 @@
+2009-05-05  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (InitFoundation, AllocObject, AllocClass):
+	* generic/tclOODefineCmds.c (InitDefineContext): Make sure that when
+	support namespaces are deleted, nothing bad can subsequently happen.
+	Issue spotted by Don Porter.
+
 2009-04-11  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOMethod.c (InvokeForwardMethod): Clarify the resolution

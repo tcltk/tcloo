@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.25 2009/02/12 09:30:06 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.26 2009/05/05 15:54:10 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -563,6 +563,13 @@ InitDefineContext(
 {
     CallFrame *framePtr, **framePtrPtr = &framePtr;
     int result;
+
+    if (namespacePtr == NULL) {
+	Tcl_AppendResult(interp,
+		"cannot process definitions; support namespace deleted",
+		NULL);
+	return TCL_ERROR;
+    }
 
     /* framePtrPtr is needed to satisfy GCC 3.3's strict aliasing rules */
 
