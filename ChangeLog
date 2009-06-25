@@ -1,3 +1,7 @@
+2009-06-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/oo.test: [Bug 2811598]: Improve fragile tests.
+
 2009-06-08  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/copy.n: Fix error in example spotted by Venkat Iyer.
