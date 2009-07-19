@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.65 2009/05/05 15:54:10 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.66 2009/07/19 11:56:44 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -2192,9 +2192,9 @@ TclOOIsReachable(
 /*
  * ----------------------------------------------------------------------
  *
- * TclOOObjectName --
+ * TclOOObjectName, Tcl_GetObjectName --
  *
- *	Utility function that returns the name of the object. Note that this
+ *	Utility functions that return the name of the object. Note that this
  *	simplifies cache management by keeping the code to do it in one place
  *	and not sprayed all over. The value returned always has a reference
  *	count of at least one.
@@ -2217,6 +2217,14 @@ TclOOObjectName(
     Tcl_IncrRefCount(namePtr);
     oPtr->cachedNameObj = namePtr;
     return namePtr;
+}
+
+Tcl_Obj *
+Tcl_GetObjectName(
+    Tcl_Interp *interp,
+    Tcl_Object object)
+{
+    return TclOOObjectName(interp, (Object *) object);
 }
 
 /*
