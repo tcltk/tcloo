@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.66 2009/07/19 11:56:44 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.67 2009/11/24 11:54:18 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1344,7 +1344,7 @@ Tcl_NewObjectInstance(
 	CallContext *contextPtr = TclOOGetCallContext(oPtr,NULL,CONSTRUCTOR);
 
 	if (contextPtr != NULL) {
-	    int result;
+	    int result, flags;
 	    Tcl_InterpState state;
 
 	    AddRef(oPtr);
@@ -1352,11 +1352,32 @@ Tcl_NewObjectInstance(
 	    contextPtr->callPtr->flags |= CONSTRUCTOR;
 	    contextPtr->skip = skip;
 	    result = TclOOInvokeContext(interp, contextPtr, objc, objv);
+	    flags = oPtr->flags;
+
+	    /*
+	     * It's an error if the object was whacked in the constructor.
+	     * Force this if it isn't already an error (don't want to lose
+	     * errors by accident...)  [Bug 2903011]
+	     */
+
+	    if (result != TCL_ERROR && (flags & OBJECT_DELETED)) {
+		Tcl_SetResult(interp, "object deleted in constructor",
+			TCL_STATIC);
+		result = TCL_ERROR;
+	    }
 	    TclOODeleteContext(contextPtr);
 	    DelRef(oPtr);
 	    if (result != TCL_OK) {
 		Tcl_DiscardInterpState(state);
-		Tcl_DeleteCommandFromToken(interp, oPtr->command);
+
+		/*
+		 * Take care to not delete a deleted object; that would be
+		 * bad. [Bug 2903011]
+		 */
+
+		if (!(flags & OBJECT_DELETED)) {
+		    Tcl_DeleteCommandFromToken(interp, oPtr->command);
+		}
 		return NULL;
 	    }
 	    Tcl_RestoreInterpState(interp, state);

@@ -1,3 +1,9 @@
+2009-11-24  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (Tcl_NewObjectInstance): [Bug 2903011]: Make it an
+	error to destroy an object in a constructor, and also make sure that
+	an object is not deleted twice in the error case.
+
 2009-11-02  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/object.n (DESCRIPTION): Substantive revision to make it clearer
