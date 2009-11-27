@@ -1,5 +1,8 @@
 2009-11-27  Donal K. Fellows  <dkf@users.sf.net>
 
+	* doc/Class.3, doc/Method.3: [Patch 2903921]: Small spelling fixes
+	from Larry Virden.
+
 	BUMP VERSION TO 0.6.2. Too many people need accumulated small versions
 	and bugfixes, so the version-bump removes confusion.
 
