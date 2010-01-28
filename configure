@@ -1836,7 +1836,7 @@ echo "${ECHO_T}warning: requested TEA version \"3.6\", have \"${TEA_VERSION}\"" 
 echo "${ECHO_T}ok (TEA ${TEA_VERSION})" >&6; }
     fi
     case "`uname -s`" in
-	*win32*|*WIN32*|*CYGWIN_NT*|*CYGWIN_9*|*CYGWIN_ME*|*MINGW32_*)
+	*win32*|*WIN32*|*MINGW32_*)
 	    # Extract the first word of "cygpath", so it can be a program name with args.
 set dummy cygpath; ac_word=$2
 { echo "$as_me:$LINENO: checking for $ac_word" >&5
@@ -1877,6 +1877,10 @@ fi
 
 	    EXEEXT=".exe"
 	    TEA_PLATFORM="windows"
+	    ;;
+	*CYGWIN_*)
+	    # CYGPATH and TEA_PLATFORM are determined later
+	    EXEEXT=".exe"
 	    ;;
 	*)
 	    CYGPATH=echo
@@ -2127,6 +2131,66 @@ echo "${ECHO_T}could not find ${TCL_BIN_DIR}/tclConfig.sh" >&6; }
 
 
 
+
+    case "`uname -s`" in
+	*CYGWIN_*)
+	    { echo "$as_me:$LINENO: checking for cygwin variant" >&5
+echo $ECHO_N "checking for cygwin variant... $ECHO_C" >&6; }
+	    case ${TCL_EXTRA_CFLAGS} in
+		*-mwin32*|*-mno-cygwin*)
+		    TEA_PLATFORM="windows"
+		    { echo "$as_me:$LINENO: result: win32" >&5
+echo "${ECHO_T}win32" >&6; }
+		    # Extract the first word of "cygpath", so it can be a program name with args.
+set dummy cygpath; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_prog_CYGPATH+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -n "$CYGPATH"; then
+  ac_cv_prog_CYGPATH="$CYGPATH" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_CYGPATH="cygpath -w"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_prog_CYGPATH" && ac_cv_prog_CYGPATH="echo"
+fi
+fi
+CYGPATH=$ac_cv_prog_CYGPATH
+if test -n "$CYGPATH"; then
+  { echo "$as_me:$LINENO: result: $CYGPATH" >&5
+echo "${ECHO_T}$CYGPATH" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+		    ;;
+		*)
+		    TEA_PLATFORM="unix"
+		    { echo "$as_me:$LINENO: result: unix" >&5
+echo "${ECHO_T}unix" >&6; }
+		    ;;
+	    esac
+	    EXEEXT=".exe"
+	    ;;
+	*)
+	    ;;
+    esac
 
     # TEA specific:
 
@@ -8939,7 +9003,7 @@ fi
 	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
 	    TCL_LIB_VERSIONS_OK=nodots
 	    ;;
-	NetBSD-*|FreeBSD-*)
+	NetBSD-*|FreeBSD-[3-4].*)
 	    # FreeBSD 3.* and greater have ELF.
 	    # NetBSD 2.* has ELF and can use 'cc -shared' to build shared libs
 	    SHLIB_CFLAGS="-fPIC"
@@ -8972,6 +9036,36 @@ fi
 	    	TCL_LIB_VERSIONS_OK=nodots
 		;;
 	    esac
+	    ;;
+	FreeBSD-*)
+	    # This configuration from FreeBSD Ports.
+	    SHLIB_CFLAGS="-fPIC"
+	    SHLIB_LD="${CC} -shared"
+	    TCL_SHLIB_LD_EXTRAS="-soname \$@"
+	    SHLIB_LD_LIBS='${LIBS}'
+	    SHLIB_SUFFIX=".so"
+	    DL_OBJS="tclLoadDl.o"
+	    DL_LIBS=""
+	    LDFLAGS=""
+	    if test $doRpath = yes; then
+
+		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+		LD_SEARCH_FLAGS='-rpath ${LIB_RUNTIME_DIR}'
+fi
+
+	    if test "${TCL_THREADS}" = "1"; then
+
+		# The -pthread needs to go in the LDFLAGS, not LIBS
+		LIBS=`echo $LIBS | sed s/-pthread//`
+		CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+		LDFLAGS="$LDFLAGS $PTHREAD_LIBS"
+fi
+
+	    # Version numbers are dot-stripped by system policy.
+	    TCL_TRIM_DOTS=`echo ${VERSION} | tr -d .`
+	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
+	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.so.1'
+	    TCL_LIB_VERSIONS_OK=nodots
 	    ;;
 	Darwin-*)
 	    CFLAGS_OPTIMIZE="-Os"
