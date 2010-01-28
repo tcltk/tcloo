@@ -1,3 +1,16 @@
+2010-01-28  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOBasic.c (TclOO_Object_Destroy): Move the execution of
+	destructors to a point where they can produce an error. This will not
+	work for all destructors, but it does mean that more failing calls of
+	them will be caught.
+	* generic/tclOO.c (AllocObject, MyDeletedTrace, ObjectRenamedTrace):
+	(ObjectNamespaceDeleted): Stop various ways of getting at commands
+	with dangling pointers to the object. Also increases the reliability
+	of calling of destructors (though most destructors won't benefit; when
+	an object is deleted namespace-first, its destructors are not run in a
+	nice state as the namespace is partially gone).
+
 2009-11-27  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/Class.3, doc/Method.3: [Patch 2903921]: Small spelling fixes
