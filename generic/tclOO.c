@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.68 2010/01/28 08:09:26 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.69 2010/02/02 09:27:33 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -79,9 +79,7 @@ static void		DeletedHelpersNamespace(ClientData clientData);
 static void		InitFoundation(Tcl_Interp *interp);
 static void		KillFoundation(ClientData clientData,
 			    Tcl_Interp *interp);
-static void		MyDeletedTrace(ClientData clientData,
-			    Tcl_Interp *interp, const char *oldName,
-			    const char *newName, int flags);
+static void		MyDeleted(ClientData clientData);
 static void		ObjectNamespaceDeleted(ClientData clientData);
 static void		ObjectRenamedTrace(ClientData clientData,
 			    Tcl_Interp *interp, const char *oldName,
@@ -550,36 +548,35 @@ AllocObject(
     }
 
     /*
+     * We use a trace because we need to know about renames as well as
+     * deletes.
+     */
+
+    Tcl_TraceCommand(interp, TclGetString(TclOOObjectName(interp, oPtr)),
+	    TCL_TRACE_RENAME|TCL_TRACE_DELETE, ObjectRenamedTrace, oPtr);
+
+    /*
      * Access the namespace command table directly when creating "my" to avoid
      * a bottleneck in string manipulation.
      */
 
     {
 	register Command *cmdPtr = (Command *) ckalloc(sizeof(Command));
-	register CommandTrace *tracePtr;
+	int ignored;
 
 	memset(cmdPtr, 0, sizeof(Command));
 	cmdPtr->nsPtr = (Namespace *) oPtr->namespacePtr;
 	cmdPtr->hPtr = Tcl_CreateHashEntry(&cmdPtr->nsPtr->cmdTable, "my",
-		&creationEpoch /*ignored*/ );
+		&ignored);
 	cmdPtr->refCount = 1;
 	cmdPtr->objProc = PrivateObjectCmd;
-	cmdPtr->objClientData = oPtr;
+	cmdPtr->deleteProc = MyDeleted;
+	cmdPtr->objClientData = cmdPtr->deleteData = oPtr;
 	cmdPtr->proc = TclInvokeObjectCommand;
 	cmdPtr->clientData = cmdPtr;
 	Tcl_SetHashValue(cmdPtr->hPtr, cmdPtr);
 	oPtr->myCommand = (Tcl_Command) cmdPtr;
-	cmdPtr->tracePtr = tracePtr = (CommandTrace *)
-		ckalloc(sizeof(CommandTrace));
-	tracePtr->traceProc = MyDeletedTrace;
-	tracePtr->clientData = oPtr;
-	tracePtr->flags = TCL_TRACE_DELETE;
-	tracePtr->nextPtr = NULL;
-	tracePtr->refCount = 1;
     }
-
-    Tcl_TraceCommand(interp, TclGetString(TclOOObjectName(interp, oPtr)),
-	    TCL_TRACE_RENAME|TCL_TRACE_DELETE, ObjectRenamedTrace, oPtr);
 
     return oPtr;
 }
@@ -608,7 +605,7 @@ SquelchCachedName(
 /*
  * ----------------------------------------------------------------------
  *
- * MyDeletedTrace --
+ * MyDeleted --
  *
  *	This callback is triggered when the object's [my] command is deleted
  *	by any mechanism. It just marks the object as not having a [my]
@@ -619,13 +616,9 @@ SquelchCachedName(
  */
 
 static void
-MyDeletedTrace(
-    ClientData clientData,	/* Reference to the object whose [my] has been
+MyDeleted(
+    ClientData clientData)	/* Reference to the object whose [my] has been
 				 * squelched. */
-    Tcl_Interp *interp,		/* ignored */
-    const char *oldName,	/* ignored */
-    const char *newName,	/* ignored */
-    int flags)			/* ignored */
 {
     register Object *oPtr = clientData;
 
