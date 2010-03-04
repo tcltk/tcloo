@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.69 2010/02/02 09:27:33 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.70 2010/03/04 23:51:16 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -297,6 +297,7 @@ InitFoundation(
     ckfree((char *) fPtr->objectCls->superclasses.list);
     fPtr->objectCls->superclasses.list = NULL;
     fPtr->classCls->thisPtr->selfCls = fPtr->classCls;
+    fPtr->classCls->thisPtr->flags |= ROOT_CLASS;
     TclOOAddToInstances(fPtr->objectCls->thisPtr, fPtr->classCls);
     TclOOAddToInstances(fPtr->classCls->thisPtr, fPtr->classCls);
     AddRef(fPtr->objectCls->thisPtr);
@@ -697,7 +698,22 @@ ObjectRenamedTrace(
      * OK, the destructor's been run. Time to splat the class data (if any)
      * and nuke the namespace (which triggers the final crushing of the object
      * structure itself).
+     *
+     * The class of classes needs some special care; if it is deleted (and
+     * we're not killing the whole interpreter) we force the delete of the
+     * class of objects now as well. Due to the incestuous nature of those two
+     * classes, if one goes the other must too and yet the tangle can
+     * sometimes not go away automatically; we force it here. [Bug 2962664]
      */
+
+    if (!Tcl_InterpDeleted(interp)) {
+	if ((oPtr->flags & ROOT_OBJECT) && oPtr->fPtr->classCls != NULL) {
+	    Tcl_DeleteCommandFromToken(interp,
+		    oPtr->fPtr->classCls->thisPtr->command);
+	} else if (oPtr->flags & ROOT_CLASS) {
+	    oPtr->fPtr->classCls = NULL;
+	}
+    }
 
     clsPtr = oPtr->classPtr;
     if (clsPtr != NULL) {
@@ -1470,7 +1486,7 @@ Tcl_CopyObjectInstance(
 		NULL);
 	return NULL;
     }
-    if (oPtr->classPtr == oPtr->fPtr->classCls) {
+    if (oPtr->flags & ROOT_CLASS) {
 	Tcl_AppendResult(interp, "may not clone the class of classes", NULL);
 	return NULL;
     }
