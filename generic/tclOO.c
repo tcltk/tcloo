@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.70 2010/03/04 23:51:16 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.71 2010/03/05 15:39:33 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -2385,7 +2385,7 @@ Tcl_GetClassAsObject(
     return (Tcl_Object) ((Class *)clazz)->thisPtr;
 }
 
-Tcl_ObjectMapMethodNameProc
+Tcl_ObjectMapMethodNameProc *
 Tcl_ObjectGetMethodNameMapper(
     Tcl_Object object)
 {
@@ -2395,7 +2395,7 @@ Tcl_ObjectGetMethodNameMapper(
 void
 Tcl_ObjectSetMethodNameMapper(
     Tcl_Object object,
-    Tcl_ObjectMapMethodNameProc mapMethodNameProc)
+    Tcl_ObjectMapMethodNameProc *mapMethodNameProc)
 {
     ((Object *) object)->mapMethodNameProc = mapMethodNameProc;
 }
