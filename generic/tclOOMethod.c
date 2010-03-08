@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.30 2009/04/11 11:48:51 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.31 2010/03/08 09:38:40 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1619,8 +1619,8 @@ Tcl_Method
 TclOONewProcInstanceMethodEx(
     Tcl_Interp *interp,		/* The interpreter containing the object. */
     Tcl_Object oPtr,		/* The object to modify. */
-    TclOO_PreCallProc preCallPtr,
-    TclOO_PostCallProc postCallPtr,
+    TclOO_PreCallProc *preCallPtr,
+    TclOO_PostCallProc *postCallPtr,
     ProcErrorProc errProc,
     ClientData clientData,
     Tcl_Obj *nameObj,		/* The name of the method, which must not be
@@ -1656,8 +1656,8 @@ Tcl_Method
 TclOONewProcMethodEx(
     Tcl_Interp *interp,		/* The interpreter containing the class. */
     Tcl_Class clsPtr,		/* The class to modify. */
-    TclOO_PreCallProc preCallPtr,
-    TclOO_PostCallProc postCallPtr,
+    TclOO_PreCallProc *preCallPtr,
+    TclOO_PostCallProc *postCallPtr,
     ProcErrorProc errProc,
     ClientData clientData,
     Tcl_Obj *nameObj,		/* The name of the method, which may be NULL;
