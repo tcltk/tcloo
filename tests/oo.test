@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.56 2010/03/24 11:51:50 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.57 2010/10/08 14:02:05 dkf Exp $
 
 package require -exact TclOO 0.6.2 ;# Must match value in configure.in
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -1227,10 +1227,12 @@ test oo-13.4 {OO: changing an object's class} -body {
 } -result {::foo ::foo ::foo ::bar}
 # todo: changing a class subtype (metaclass) to another class subtype
 
-test oo-14.1 {OO: mixins} {
-    oo::class create Aclass
+test oo-14.1 {OO: mixins} -setup {
+    oo::class create ooclass {superclass oo::class}
+} -body {
+    ooclass create Aclass
     oo::define Aclass method bar {} {lappend ::result "[self object] in bar"}
-    oo::class create Bclass
+    ooclass create Bclass
     oo::define Bclass method boo {} {lappend ::result "[self object] in boo"}
     oo::objdefine [Aclass create fooTest] mixin Bclass
     oo::objdefine [Aclass create fooTest2] mixin Bclass
@@ -1241,12 +1243,16 @@ test oo-14.1 {OO: mixins} {
     fooTest2 boo
     oo::objdefine fooTest2 mixin
     lappend result [Bclass destroy] [info command fooTest*] [Aclass destroy]
-} {1 {unknown method "?": must be bar, boo or destroy} {::fooTest in bar} {::fooTest in boo} {::fooTest2 in bar} {::fooTest2 in boo} {} fooTest2 {}}
-test oo-14.2 {OO: mixins} {
-    oo::class create Aclass {
+} -cleanup {
+    ooclass destroy
+} -result {1 {unknown method "?": must be bar, boo or destroy} {::fooTest in bar} {::fooTest in boo} {::fooTest2 in bar} {::fooTest2 in boo} {} fooTest2 {}}
+test oo-14.2 {OO: mixins} -setup {
+    oo::class create ooclass {superclass oo::class}
+} -body {
+    ooclass create Aclass {
 	method bar {} {return "[self object] in bar"}
     }
-    oo::class create Bclass {
+    ooclass create Bclass {
 	method boo {} {return "[self object] in boo"}
     }
     oo::define Aclass mixin Bclass
@@ -1255,7 +1261,9 @@ test oo-14.2 {OO: mixins} {
     lappend result [catch {fooTest bar} msg] $msg
     lappend result [catch {fooTest boo} msg] $msg
     lappend result [Bclass destroy] [info commands Aclass]
-} {1 {unknown method "?": must be bar, boo or destroy} 0 {::fooTest in bar} 0 {::fooTest in boo} {} {}}
+} -cleanup {
+    ooclass destroy
+} -result {1 {unknown method "?": must be bar, boo or destroy} 0 {::fooTest in bar} 0 {::fooTest in boo} {} {}}
 test oo-14.3 {OO and mixins and filters - advanced case} -setup {
     oo::class create mix
     oo::class create c {
