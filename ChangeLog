@@ -1,3 +1,8 @@
+2010-11-09  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/oo.test: [Bug 3105999]: Backport of memory tests (issue itself
+	did not exist in this branch of the code).
+
 2010-03-24  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOInfo.c (InfoObjectMethodTypeCmd)
