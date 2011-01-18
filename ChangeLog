@@ -1,3 +1,11 @@
+2011-01-18  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOMethod.c (PushMethodCallFrame): [Bug 3001438]: Make
+	sure that the cmdPtr field of the procPtr is correct and relevant at
+	all times so that [info frame] can report sensible information about a
+	frame after a return to it from a recursive call, instead of probably
+	crashing (depending on what else has overwritten the Tcl stack!)
+
 2010-11-09  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tests/oo.test: [Bug 3105999]: Backport of memory tests (issue itself
