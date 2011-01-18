@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.32 2010/03/24 11:51:50 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.33 2011/01/18 16:10:48 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -40,6 +40,8 @@ typedef struct {
     Tcl_Obj *nameObj;		/* The "name" of the command. */
     Command cmd;		/* The command structure. Mostly bogus. */
     ExtraFrameInfo efi;		/* Extra information used for [info frame]. */
+    Command *oldCmdPtr;		/* Saved cmdPtr so that we can be safe after a
+				 * recursive call returns. */
     struct PNI pni;		/* Specialist information used in the efi
 				 * field for this type of call. */
 } PMFrameData;
@@ -724,12 +726,16 @@ InvokeProcedureMethod(
     }
 
     /*
-     * Scrap the special frame data now that we're done with it. Note that we
-     * are inlining DeleteProcedureMethod() here; this location is highly
-     * sensitive when it comes to performance!
+     * First we restore the old cmdPtr so that a subsequent use of [info
+     * frame] won't crash on us. [Bug 3001438]
+     *
+     * Then we scrap the special frame data now that we're done with it. Note
+     * that we are inlining DeleteProcedureMethod() here; this location is
+     * highly sensitive when it comes to performance!
      */
 
   done:
+    pmPtr->procPtr->cmdPtr = fdPtr->oldCmdPtr;
     if (--pmPtr->refCount < 1) {
 	DeleteProcedureMethodRecord(pmPtr);
     }
@@ -791,6 +797,14 @@ PushMethodCallFrame(
 	    nsPtr = mPtr->declaringObjectPtr->namespacePtr;
 	}
     }
+
+    /*
+     * Save the old cmdPtr so that when this recursive call returns, we can
+     * restore it. To do otherwise causes crashes in [info frame] after we
+     * return from a recursive call. [Bug 3001438]
+     */
+
+    fdPtr->oldCmdPtr = pmPtr->procPtr->cmdPtr;
 
     /*
      * Compile the body. This operation may fail.
