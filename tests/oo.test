@@ -137,6 +137,13 @@ test oo-1.4 {basic test of OO functionality} -body {
 test oo-1.5 {basic test of OO functionality} -body {
     oo::object doesnotexist
 } -returnCodes 1 -result {unknown method "doesnotexist": must be create, destroy or new}
+test oo-1.5.1 {basic test of OO functionality} -setup {
+    oo::object create aninstance
+} -returnCodes error -body {
+    aninstance
+} -cleanup {
+    rename aninstance {}
+} -result {wrong # args: should be "aninstance method ?arg ...?"}
 test oo-1.6 {basic test of OO functionality} -setup {
     oo::object create aninstance
 } -body {
@@ -2485,6 +2492,87 @@ test oo-27.13 {variables declaration: Bug 3185009: require refcount management} 
 } -cleanup {
     foo destroy
 } -result {0 7 1 7 {} 0 1 {can't read "x": no such variable}}
+test oo-27.14 {variables declaration - multiple use} -setup {
+    oo::class create master
+} -cleanup {
+    master destroy
+} -body {
+    oo::class create foo {
+	superclass master
+	variable x
+	variable y
+	method boo {} {
+	    return [incr x],[incr y]
+	}
+    }
+    foo create bar
+    list [bar boo] [bar boo]
+} -result {1,1 2,2}
+test oo-27.15 {variables declaration - multiple use} -setup {
+    oo::class create master
+} -cleanup {
+    master destroy
+} -body {
+    oo::class create foo {
+	superclass master
+	variable
+	variable x y
+	method boo {} {
+	    return [incr x],[incr y]
+	}
+    }
+    foo create bar
+    list [bar boo] [bar boo]
+} -result {1,1 2,2}
+test oo-27.16 {variables declaration - multiple use} -setup {
+    oo::class create master
+} -cleanup {
+    master destroy
+} -body {
+    oo::class create foo {
+	superclass master
+	variable x
+	variable -clear
+	variable y
+	method boo {} {
+	    return [incr x],[incr y]
+	}
+    }
+    foo create bar
+    list [bar boo] [bar boo]
+} -result {1,1 1,2}
+test oo-27.17 {variables declaration - multiple use} -setup {
+    oo::class create master
+} -cleanup {
+    master destroy
+} -body {
+    oo::class create foo {
+	superclass master
+	variable x
+	variable -set y
+	method boo {} {
+	    return [incr x],[incr y]
+	}
+    }
+    foo create bar
+    list [bar boo] [bar boo]
+} -result {1,1 1,2}
+test oo-27.18 {variables declaration - multiple use} -setup {
+    oo::class create master
+} -cleanup {
+    master destroy
+} -body {
+    oo::class create foo {
+	superclass master
+	variable x
+	variable -? y
+	method boo {} {
+	    return [incr x],[incr y]
+	}
+    }
+    foo create bar
+    list [bar boo] [bar boo]
+} -returnCodes error -match glob -result {unknown method "-?": must be *}
 
 # A feature that's not supported because the mechanism may change without
 # warning, but is supposed to work...
