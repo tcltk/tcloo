@@ -99,6 +99,12 @@ static int		ProcedureMethodCompiledVarResolver(Tcl_Interp *interp,
 			    const char *varName, int length,
 			    Tcl_Namespace *contextNs,
 			    Tcl_ResolvedVarInfo **rPtrPtr);
+static int		InvokeCompositeMethod(ClientData clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+static void		DeleteCompositeMethod(ClientData clientData);
+static int		CloneCompositeMethod(Tcl_Interp *interp,
+			    ClientData clientData, ClientData *newClientData);
 
 /*
  * The types of methods defined by the core OO system.
@@ -111,6 +117,10 @@ static const Tcl_MethodType procMethodType = {
 static const Tcl_MethodType fwdMethodType = {
     TCL_OO_METHOD_VERSION_CURRENT, "forward",
     InvokeForwardMethod, DeleteForwardMethod, CloneForwardMethod
+};
+static const Tcl_MethodType compositeMethodType = {
+    TCL_OO_METHOD_VERSION_CURRENT, "composite method",
+    InvokeCompositeMethod, DeleteCompositeMethod, CloneCompositeMethod
 };
 
 /*
@@ -188,6 +198,22 @@ Tcl_NewInstanceMethod(
 	mPtr->flags |= flags & (PUBLIC_METHOD | PRIVATE_METHOD);
     }
     oPtr->epoch++;
+
+    /*
+     * Handle parent names.
+     */
+
+    if (nameObj != NULL && Tcl_ListObjLength(NULL, nameObj, &isNew) == TCL_OK && isNew > 1) {
+	Tcl_Obj **objv, *containerName;
+
+	Tcl_ListObjGetElements(NULL, nameObj, &isNew, &objv);
+	containerName = Tcl_NewListObj(isNew-1, objv);
+	Tcl_IncrRefCount(containerName);
+	Tcl_NewInstanceMethod(interp, object, containerName, flags,
+		&compositeMethodType, NULL);
+	Tcl_DecrRefCount(containerName);
+    }
+
     return (Tcl_Method) mPtr;
 }
 
@@ -250,6 +276,21 @@ Tcl_NewMethod(
     mPtr->declaringClassPtr = clsPtr;
     if (flags) {
 	mPtr->flags |= flags & (PUBLIC_METHOD | PRIVATE_METHOD);
+    }
+
+    /*
+     * Handle parent names.
+     */
+
+    if (nameObj != NULL && Tcl_ListObjLength(NULL, nameObj, &isNew) == TCL_OK && isNew > 1) {
+	Tcl_Obj **objv, *containerName;
+
+	Tcl_ListObjGetElements(NULL, nameObj, &isNew, &objv);
+	containerName = Tcl_NewListObj(isNew-1, objv);
+	Tcl_IncrRefCount(containerName);
+	Tcl_NewMethod(interp, cls, containerName, flags,
+		&compositeMethodType, NULL);
+	Tcl_DecrRefCount(containerName);
     }
 
     return (Tcl_Method) mPtr;
@@ -1462,6 +1503,68 @@ CloneForwardMethod(
     fm2Ptr->fullyQualified = fmPtr->fullyQualified;
     Tcl_IncrRefCount(fm2Ptr->prefixObj);
     *newClientData = fm2Ptr;
+    return TCL_OK;
+}
+
+static int
+InvokeCompositeMethod(
+    ClientData clientData,	/* Pointer to some per-method context. */
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,	/* The method calling context. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Arguments as actually seen. */
+{
+    CallContext *contextPtr = (CallContext *) context;
+    Tcl_Obj **argObjs, *prefixObjs[2];
+    Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
+    int result, len;
+
+    if (objc <= contextPtr->skip) {
+	Tcl_WrongNumArgs(interp, contextPtr->skip, objv, "subcommand ...");
+	return TCL_ERROR;
+    }
+
+    /*
+     * Build the real list of arguments to use by appending the following
+     * argument to the name of the method.
+     */
+
+    prefixObjs[0] = TclOOObjectName(interp, contextPtr->oPtr);
+    if (Tcl_ListObjLength(NULL, mPtr->namePtr, &len) == TCL_OK) {
+	prefixObjs[1] = Tcl_DuplicateObj(mPtr->namePtr);
+    } else {
+	prefixObjs[1] = Tcl_NewListObj(1, &mPtr->namePtr);
+    }
+    Tcl_ListObjAppendElement(NULL, prefixObjs[1], objv[contextPtr->skip]);
+    Tcl_IncrRefCount(prefixObjs[1]);
+    argObjs = InitEnsembleRewrite(interp, objc, objv, contextPtr->skip+1, 2,
+	    prefixObjs, &len);
+
+    /*
+     * Do the recursive invokation of the submethod. 
+     */
+
+    result = Tcl_EvalObjv(interp, len, argObjs, TCL_EVAL_INVOKE);
+    Tcl_DecrRefCount(prefixObjs[1]);
+    TclStackFree(interp, argObjs);
+    return result;
+}
+
+static void
+DeleteCompositeMethod(
+    ClientData clientData)
+{
+    /* do nothing for now */
+}
+
+static int
+CloneCompositeMethod(
+    Tcl_Interp *interp,
+    ClientData clientData,
+    ClientData *newClientData)
+{
+    /* do nothing real for now */
+    *newClientData = clientData;
     return TCL_OK;
 }
 
