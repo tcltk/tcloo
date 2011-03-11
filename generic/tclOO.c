@@ -1411,7 +1411,6 @@ Tcl_NewObjectInstance(
 	    int result, flags;
 	    Tcl_InterpState state;
 
-	    AddRef(oPtr);
 	    state = Tcl_SaveInterpState(interp, TCL_OK);
 	    contextPtr->callPtr->flags |= CONSTRUCTOR;
 	    contextPtr->skip = skip;
@@ -1430,7 +1429,6 @@ Tcl_NewObjectInstance(
 		result = TCL_ERROR;
 	    }
 	    TclOODeleteContext(contextPtr);
-	    DelRef(oPtr);
 	    if (result != TCL_OK) {
 		Tcl_DiscardInterpState(state);
 
@@ -2095,7 +2093,6 @@ TclOOObjectCmdCore(
 	    result = TCL_ERROR;
 	    Tcl_SetResult(interp, "no valid method implementation",
 		    TCL_STATIC);
-	    AddRef(oPtr);		/* Just to balance. */
 	    goto disposeChain;
 	}
     }
@@ -2105,7 +2102,6 @@ TclOOObjectCmdCore(
      * for the duration.
      */
 
-    AddRef(oPtr);
     result = TclOOInvokeContext(interp, contextPtr, objc, objv);
 
     /*
@@ -2114,7 +2110,6 @@ TclOOObjectCmdCore(
 
   disposeChain:
     TclOODeleteContext(contextPtr);
-    DelRef(oPtr);
     return result;
 }
 

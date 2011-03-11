@@ -1,4 +1,11 @@
-2011-03-04  Donal K. Fellows  <dkf@users.sf.net>
+2011-03-11  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (Tcl_NewObjectInstance, TclNRNewObjectInstance)
+	(TclOOObjectCmdCore, FinalizeObjectCall):
+	* generic/tclOOBasic.c (TclOO_Object_Destroy, AfterNRDestructor):
+	* generic/tclOOCall.c (TclOODeleteContext, TclOOGetCallContext):
+	Reorganization of call context reference count management so that code
+	is (mostly) simpler.
 
 	* generic/tclOOMethod.c (ProcedureMethodCompiledVarConnect)
 	(ProcedureMethodCompiledVarDelete): [Bug 3185009]: Keep references to
