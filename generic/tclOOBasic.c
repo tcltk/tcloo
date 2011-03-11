@@ -364,7 +364,7 @@ TclOO_Object_Unknown(
     int numMethodNames, i, skip = Tcl_ObjectContextSkippedArgs(context);
 
     if (objc < skip+1) {
-	Tcl_WrongNumArgs(interp, skip, objv, "methodName ?arg ...?");
+	Tcl_WrongNumArgs(interp, skip, objv, "method ?arg ...?");
 	return TCL_ERROR;
     }
 
