@@ -2535,6 +2535,86 @@ test oo-30.2 {Bug 2903011: deleting an object in a constructor} -setup {
 } -returnCodes error -cleanup {
     cls destroy
 } -result {object deleted in constructor}
+
+test oo-31.1 {submethods: basic API} -setup {
+    oo::class create cls
+} -body {
+    oo::define cls {
+	method {math mul} {x y} {expr {$x * $y}}
+    }
+    [cls new] math mul 2 3
+} -cleanup {
+    cls destroy
+} -result 6
+test oo-31.2 {submethods: basic API} -setup {
+    oo::class create cls
+} -body {
+    oo::define cls {
+	method {math mul} {x y} {expr {$x * $y}}
+	method {math add} {x y} {expr {$x + $y}}
+    }
+    set o [cls new]
+    list [$o math mul 2 3] [$o math add 2 3]
+} -cleanup {
+    cls destroy
+} -result {6 5}
+test oo-31.3 {submethods: basic API} -setup {
+    oo::class create cls
+} -body {
+    oo::define cls {
+	method {math mul} {x y} {expr {$x * $y}}
+	method {math add} {x y} {expr {$x + $y}}
+    }
+    [cls new] foo
+} -returnCodes error -cleanup {
+    cls destroy
+} -result {unknown method "foo": must be destroy or math}
+test oo-31.4 {submethods: basic API} -setup {
+    oo::class create cls
+} -body {
+    oo::define cls {
+	method {math mul} {x y} {expr {$x * $y}}
+	method {math add} {x y} {expr {$x + $y}}
+    }
+    [cls new] math err 2 3
+} -returnCodes error -cleanup {
+    cls destroy
+} -match glob -result {unknown * "err": must be add or mul}
+test oo-31.5 {submethods: basic API} -setup {
+    oo::class create cls
+} -body {
+    oo::define cls {
+	method {math mul} {x y} {expr {$x * $y}}
+	method {math add} {x y} {expr {$x + $y}}
+    }
+    [cls new] math mul
+} -returnCodes error -cleanup {
+    cls destroy
+} -match glob -result {wrong # args: should be "* math mul x y"}
+test oo-31.6 {submethods: basic API} -setup {
+    oo::class create cls
+} -body {
+    oo::define cls {
+	method {math mul} {x y} {expr {$x * $y}}
+	method {math add} {x y} {expr {$x + $y}}
+	unexport {math add}
+    }
+    [cls new] math add
+} -returnCodes error -cleanup {
+    cls destroy
+} -match glob -result {unknown * "add": must be mul}
+
+test oo-32.1 {submethods: basic API} -setup {
+    oo::class create cls
+} -body {
+    oo::define cls {
+	method {math mul} {x y} {expr {$x * $y}}
+	method {math add} {x y} {expr {$x + $y}}
+    }
+    info class methods cls
+} -cleanup {
+    cls destroy
+} -result {math}
 
 cleanupTests
 return
