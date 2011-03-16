@@ -195,6 +195,7 @@ typedef struct Object {
 				/* Function to allow remapping of method
 				 * names. For itcl-ng. */
     LIST_STATIC(Tcl_Obj *) variables;
+    int gcRefs;
 } Object;
 
 #define OBJECT_DELETED	1	/* Flag to say that an object has been
@@ -216,6 +217,8 @@ typedef struct Object {
 				 * class of classes, and should be treated
 				 * specially during teardown (and in a few
 				 * other spots). */
+#define GARBAGE_COLLECT 0x10000	/* Marks an object that is currently subject
+				 * to garbage collection rules. */
 
 /*
  * And the definition of a class. Note that every class also has an associated

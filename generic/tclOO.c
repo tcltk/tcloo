@@ -16,6 +16,7 @@
 #endif
 #include "tclInt.h"
 #include "tclOOInt.h"
+#include <assert.h>
 
 /*
  * Commands in oo::define.
@@ -85,6 +86,7 @@ static void		ObjectRenamedTrace(ClientData clientData,
 			    Tcl_Interp *interp, const char *oldName,
 			    const char *newName, int flags);
 static void		ReleaseClassContents(Tcl_Interp *interp,Object *oPtr);
+static inline void	SquelchCachedName(Object *oPtr);
 
 static int		PublicObjectCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
@@ -126,6 +128,20 @@ static char initScript[] =
 /*     " tcloo.tcl OO_LIBRARY oo::library;"; */
 
 extern const TclStubs *const tclOOConstStubsPtr;
+
+static Tcl_FreeInternalRepProc GarbageCollect;
+static Tcl_DupInternalRepProc DupGCRef;
+static Tcl_UpdateStringProc StringValue;
+static Tcl_ObjType refCountedType = {
+    "garbage-collected commmand",
+    GarbageCollect, DupGCRef, StringValue, NULL
+};
+#ifndef DEBUG
+#define DEBUG_GC(token,oPtr) /* nothing */
+#else
+#define DEBUG_GC(token,oPtr) \
+    fprintf(stderr,#token "(%p:%d)\n",oPtr,oPtr->gcRefs)
+#endif
 
 /*
  * Key into the interpreter assocData table for the foundation structure ref.
@@ -556,6 +572,11 @@ AllocObject(
     Tcl_TraceCommand(interp, TclGetString(TclOOObjectName(interp, oPtr)),
 	    TCL_TRACE_RENAME|TCL_TRACE_DELETE, ObjectRenamedTrace, oPtr);
 
+    if (!nameStr) {
+	SquelchCachedName(oPtr);
+	oPtr->flags |= GARBAGE_COLLECT;
+    }
+
     /*
      * Access the namespace command table directly when creating "my" to avoid
      * a bottleneck in string manipulation.
@@ -598,7 +619,9 @@ SquelchCachedName(
     Object *oPtr)
 {
     if (oPtr->cachedNameObj) {
-	Tcl_DecrRefCount(oPtr->cachedNameObj);
+	if (!(oPtr->flags & GARBAGE_COLLECT)) {
+	    Tcl_DecrRefCount(oPtr->cachedNameObj);
+	}
 	oPtr->cachedNameObj = NULL;
     }
 }
@@ -657,6 +680,7 @@ ObjectRenamedTrace(
 
     if (flags & TCL_TRACE_RENAME) {
 	SquelchCachedName(oPtr);
+	oPtr->flags &= ~GARBAGE_COLLECT;
 	return;
     }
 
@@ -2293,8 +2317,17 @@ TclOOObjectName(
 	return oPtr->cachedNameObj;
     }
     namePtr = Tcl_NewObj();
-    Tcl_GetCommandFullName(interp, oPtr->command, namePtr);
-    Tcl_IncrRefCount(namePtr);
+    if (oPtr->flags & GARBAGE_COLLECT) {
+	Tcl_InvalidateStringRep(namePtr);
+	namePtr->internalRep.otherValuePtr = oPtr;
+	namePtr->typePtr = &refCountedType;
+	oPtr->gcRefs++;
+	AddRef(oPtr);
+	DEBUG_GC(MkRef, oPtr);
+    } else {
+	Tcl_GetCommandFullName(interp, oPtr->command, namePtr);
+	Tcl_IncrRefCount(namePtr);
+    }
     oPtr->cachedNameObj = namePtr;
     return namePtr;
 }
@@ -2393,6 +2426,67 @@ Tcl_ObjectSetMethodNameMapper(
     Tcl_ObjectMapMethodNameProc *mapMethodNameProc)
 {
     ((Object *) object)->mapMethodNameProc = mapMethodNameProc;
+}
+
+static void
+StringValue(
+    Tcl_Obj *objPtr)
+{
+    Object *oPtr = objPtr->internalRep.otherValuePtr;
+
+    if (oPtr->command == NULL) {
+	objPtr->bytes = ckalloc(1);
+	objPtr->bytes[0] = 0;
+	objPtr->length = 0;
+	return;
+    }
+    Tcl_DString buf;
+    Command *cmdPtr = (Command *) oPtr->command;
+    Tcl_DStringInit(&buf);
+    Tcl_DStringAppend(&buf, cmdPtr->nsPtr->fullName, -1);
+    if (cmdPtr->nsPtr->parentPtr) {
+	Tcl_DStringAppend(&buf, "::", 2);
+    }
+    if (cmdPtr->hPtr) {
+	Tcl_DStringAppend(&buf,
+		Tcl_GetHashKey(cmdPtr->hPtr->tablePtr, cmdPtr->hPtr), -1);
+    }
+    if (buf.string != buf.staticSpace) {
+	objPtr->bytes = buf.string;
+    } else {
+	objPtr->bytes = ckalloc(buf.length + 1);
+	memcpy(objPtr->bytes, buf.string, buf.length+1);
+    }
+    objPtr->length = buf.length;
+    // NB! Not freeing the DString! Deliberate!
+    DEBUG_GC(Stringify, oPtr);
+}
+
+static void
+GarbageCollect(
+    Tcl_Obj *objPtr)
+{
+    Object *oPtr = objPtr->internalRep.otherValuePtr;
+
+    DEBUG_GC(GC, oPtr);
+    if (--oPtr->gcRefs < 1 && oPtr->command) {
+	Tcl_DeleteCommandFromToken(oPtr->fPtr->interp, oPtr->command);
+	DelRef(oPtr);
+    }
+}
+
+static void
+DupGCRef(
+    Tcl_Obj *srcPtr,
+    Tcl_Obj *dstPtr)
+{
+    Object *oPtr = srcPtr->internalRep.otherValuePtr;
+
+    dstPtr->internalRep.otherValuePtr = oPtr;
+    dstPtr->typePtr = &refCountedType;
+    oPtr->gcRefs++;
+    AddRef(oPtr);
+    DEBUG_GC(DupRef, oPtr);
 }
 
 /*
