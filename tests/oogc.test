@@ -1,0 +1,126 @@
+# This file contains a collection of tests for Tcl's built-in object system's
+# garbage collector. Sourcing this file into Tcl runs the tests and generates
+# output for errors. No output means no errors were found.
+#
+# Copyright (c) 2011 Donal K. Fellows
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require -exact TclOO 0.6.2 ;# Must match value in configure.in
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+testConstraint memory [llength [info commands memory]]
+if {[testConstraint memory]} {
+    proc getbytes {} {
+	set lines [split [memory info] \n]
+	return [lindex $lines 3 3]
+    }
+    proc leaktest {script {iterations 3}} {
+	set end [getbytes]
+	for {set i 0} {$i < $iterations} {incr i} {
+	    uplevel 1 $script
+	    set tmp $end
+	    set end [getbytes]
+	}
+	return [expr {$end - $tmp}]
+    }
+}
+
+test oo-gc-1 {basic garbage collection} -setup {
+    oo::class create cls
+    unset -nocomplain ::x
+} -body {
+    oo::define cls {constructor {} {incr ::x};destructor {incr ::y}}
+    set x [set y 0]
+    cls new
+    set o [cls new]
+    cls new
+    return $x,$y,[llength [info class instances cls]]
+} -cleanup {
+    cls destroy
+} -result 3,2,1
+
+test oo-gc-2 {basic garbage collection} -setup {
+    oo::class create cls
+    unset -nocomplain ::x
+} -body {
+    oo::define cls {
+	constructor {} {incr ::x}
+	destructor {incr ::y}
+	method abc {} {incr ::z}
+    }
+    set x [set y [set z 0]]
+    cls new
+    set o [cls new]
+    ::$o abc
+    return $x,$y,$z,[llength [info class instances cls]]
+} -cleanup {
+    cls destroy
+} -result 2,1,1,1
+
+test oo-gc-3 {basic garbage collection} -constraints crash -setup {
+    oo::class create cls
+    unset -nocomplain ::x
+} -body {
+    oo::define cls {
+	constructor {} {incr ::x}
+	destructor {incr ::y}
+	method abc {} {incr ::z}
+    }
+    set x [set y [set z 0]]
+    cls new
+    set o [cls new]
+    ::$o abc
+    [cls new] abc
+    return $x,$y,$z,[llength [info class instances cls]]
+} -cleanup {
+    cls destroy
+} -result 3,2,2,1
+
+test oo-gc-4 {basic garbage collection} -constraints crash -setup {
+    oo::class create cls
+    unset -nocomplain ::x
+} -body {
+    oo::define cls {
+	constructor {} {incr ::x}
+	destructor {incr ::y}
+	method abc {} {incr ::z}
+    }
+    set x [set y [set z 0]]
+    cls new
+    set o [cls new]
+    $o abc
+    return $x,$y,$z,[llength [info class instances cls]]
+} -cleanup {
+    cls destroy
+} -result 3,2,2,1
+
+test oo-gc-4 {basic garbage collection} -constraints knownBug -setup {
+    oo::class create cls
+    unset -nocomplain ::x
+} -body {
+    oo::define cls {
+	constructor {} {incr ::x}
+	destructor {incr ::y}
+	method abc {} {incr ::z}
+    }
+    set x [set y [set z 0]]
+    cls new
+    set o [cls new]
+    ::$o abc
+    ::[cls new] abc
+    return $x,$y,$z,[llength [info class instances cls]]
+} -cleanup {
+    cls destroy
+} -result 3,2,2,1
+
+cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:
