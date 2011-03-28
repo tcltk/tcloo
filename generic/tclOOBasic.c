@@ -648,6 +648,111 @@ TclOONextObjCmd(
 /*
  * ----------------------------------------------------------------------
  *
+ * TclOONext2ObjCmd --
+ *
+ *	Implementation of the [next2] command. Note that this command is only
+ *	ever to be used inside the body of a procedure-like method.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+int
+TclOONext2ObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Interp *iPtr = (Interp *) interp;
+    CallFrame *framePtr = iPtr->varFramePtr;
+    Class *classPtr;
+    CallContext *contextPtr;
+    int i;
+    Tcl_Object object;
+
+    /*
+     * Start with sanity checks on the calling context to make sure that we
+     * are invoked from a suitable method context. If so, we can safely
+     * retrieve the handle to the object call context.
+     */
+
+    if (framePtr == NULL || !(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
+	Tcl_AppendResult(interp, TclGetString(objv[0]),
+		" may only be called from inside a method", NULL);
+	return TCL_ERROR;
+    }
+    contextPtr = framePtr->clientData;
+
+    /*
+     * Sanity check the arguments; we need the first one to refer to a class.
+     */
+
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "class ?arg...?");
+	return TCL_ERROR;
+    }
+    object = Tcl_GetObjectFromObj(interp, objv[1]);
+    if (object == NULL) {
+	return TCL_ERROR;
+    }
+    classPtr = ((Object *)object)->classPtr;
+    if (classPtr == NULL) {
+	Tcl_AppendResult(interp, "\"", TclGetString(objv[1]),
+		"\" is not a class", NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Search for an implementation of a method associated with the current
+     * call on the call chain past the point where we currently are. Do not
+     * allow jumping backwards!
+     */
+
+    for (i=contextPtr->index+1 ; i<contextPtr->callPtr->numChain ; i++) {
+	struct MInvoke *miPtr = contextPtr->callPtr->chain + i;
+
+	if (!miPtr->isFilter && miPtr->mPtr->declaringClassPtr == classPtr) {
+	    /*
+	     * Invoke the (advanced) method call context in the caller
+	     * context. Note that this is like [uplevel 1] and not [eval].
+	     */
+
+	    int savedDepth = contextPtr->index;
+	    int result;
+
+	    contextPtr->index = i - 1;
+	    iPtr->varFramePtr = framePtr->callerVarPtr;
+	    result = Tcl_ObjectContextInvokeNext(interp,
+		    (Tcl_ObjectContext) contextPtr, objc, objv, 2);
+	    iPtr->varFramePtr = framePtr;
+	    contextPtr->index = savedDepth;
+	    return result;
+	}
+    }
+
+    /*
+     * Generate an appropriate error message, depending on whether the value
+     * is on the chain but unreachable, or not on the chain at all.
+     */
+
+    for (i=contextPtr->index ; i>=0 ; i--) {
+	struct MInvoke *miPtr = contextPtr->callPtr->chain + i;
+
+	if (!miPtr->isFilter && miPtr->mPtr->declaringClassPtr == classPtr) {
+	    Tcl_AppendResult(interp, "method implementation by \"",
+		    TclGetString(objv[1]), "\" not reachable from here",
+		    NULL);
+	    return TCL_ERROR;
+	}
+    }
+    Tcl_AppendResult(interp, "method has no non-filter implementation by \"",
+	    TclGetString(objv[1]), "\"", NULL);
+    return TCL_ERROR;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * TclOOSelfObjCmd --
  *
  *	Implementation of the [self] command, which provides introspection of
