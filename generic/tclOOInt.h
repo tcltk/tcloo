@@ -465,6 +465,9 @@ MODULE_SCOPE int	TclOOCopyObjectCmd(ClientData clientData,
 MODULE_SCOPE int	TclOONextObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOONext2ObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
 MODULE_SCOPE int	TclOOSelfObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
