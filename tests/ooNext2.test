@@ -1,0 +1,226 @@
+# This file contains a collection of tests for Tcl's built-in object system.
+# Sourcing this file into Tcl runs the tests and generates output for errors.
+# No output means no errors were found.
+#
+# Copyright (c) 2006-2008 Donal K. Fellows
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# RCS: @(#) $Id: oo.test,v 1.59 2011/01/18 16:10:48 dkf Exp $
+
+package require -exact TclOO 0.6.2 ;# Must match value in configure.in
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+testConstraint memory [llength [info commands memory]]
+if {[testConstraint memory]} {
+    proc getbytes {} {
+	set lines [split [memory info] \n]
+	return [lindex $lines 3 3]
+    }
+    proc leaktest {script {iterations 3}} {
+	set end [getbytes]
+	for {set i 0} {$i < $iterations} {incr i} {
+	    uplevel 1 $script
+	    set tmp $end
+	    set end [getbytes]
+	}
+	return [expr {$end - $tmp}]
+    }
+}
+
+test oo-next2-1.1 {basic next2 functionality} -setup {
+    oo::class create root
+} -body {
+    oo::class create A {
+	superclass root
+	method x args {
+	    lappend ::result ==A== $args
+	}
+    }
+    oo::class create B {
+	superclass A
+	method x args {
+	    lappend ::result ==B== $args
+	    next2 A B -> A {*}$args
+	}
+    }
+    oo::class create C {
+	superclass A
+	method x args {
+	    lappend ::result ==C== $args
+	    next2 A C -> A {*}$args
+	}
+    }
+    oo::class create D {
+	superclass B C
+	method x args {
+	    lappend ::result ==D== $args
+	    next foo
+	    next2 C bar
+	}
+    }
+    set ::result {}
+    [D new] x
+    return $::result
+} -cleanup {
+    root destroy
+} -result {==D== {} ==B== foo ==A== {B -> A foo} ==C== bar ==A== {C -> A bar}}
+test oo-next2-1.2 {basic next2 functionality} -setup {
+    oo::class create root
+} -body {
+    oo::class create A {
+	superclass root
+	method x args {
+	    lappend ::result ==A== $args
+	}
+    }
+    oo::class create B {
+	superclass A
+	method x args {
+	    lappend ::result ==B== $args
+	    next2 A B -> A {*}$args
+	}
+    }
+    oo::class create C {
+	superclass A
+	method x args {
+	    lappend ::result ==C== $args
+	    next2 A C -> A {*}$args
+	}
+    }
+    oo::class create D {
+	superclass B C
+	method x args {
+	    lappend ::result ==D== $args
+	    next2 B foo {*}$args
+	    next2 C bar {*}$args
+	}
+    }
+    set ::result {}
+    [D new] x 123
+    return $::result
+} -cleanup {
+    root destroy
+} -result {==D== 123 ==B== {foo 123} ==A== {B -> A foo 123} ==C== {bar 123} ==A== {C -> A bar 123}}
+
+test oo-next2-2.1 {errors in next2} -setup {
+    oo::class create root
+} -body {
+    oo::class create A {
+	superclass root
+	method x y {error $y}
+    }
+    oo::class create B {
+	superclass A
+	method x y {next2 A $y}
+    }
+    [B new] x boom
+} -cleanup {
+    root destroy
+} -result boom -returnCodes error
+test oo-next2-2.2 {errors in next2} -setup {
+    oo::class create root
+} -body {
+    oo::class create A {
+	superclass root
+	method x y {error $y}
+    }
+    oo::class create B {
+	superclass root
+	method x y {next2 A $y}
+    }
+    [B new] x boom
+} -cleanup {
+    root destroy
+} -result {method has no non-filter implementation by "A"} -returnCodes error
+test oo-next2-2.3 {errors in next2} -setup {
+    oo::class create root
+} -body {
+    oo::class create A {
+	superclass root
+	method x y {next2 $y}
+    }
+    oo::class create B {
+	superclass A
+	method x y {next2 A $y}
+    }
+    [B new] x B
+} -cleanup {
+    root destroy
+} -result {method implementation by "B" not reachable from here} -returnCodes error
+test oo-next2-2.4 {errors in next2} -setup {
+    oo::class create root
+} -body {
+    oo::class create A {
+	superclass root
+	method x y {next2 $y}
+    }
+    oo::class create B {
+	superclass A
+	method x y {next2}
+    }
+    [B new] x B
+} -cleanup {
+    root destroy
+} -result {wrong # args: should be "next2 class ?arg...?"} -returnCodes error
+test oo-next2-2.5 {errors in next2} -setup {
+    oo::class create root
+} -body {
+    oo::class create A {
+	superclass root
+	method x y {next2 $y}
+    }
+    oo::class create B {
+	superclass A
+	method x y {next2 $y $y $y}
+    }
+    [B new] x A
+} -cleanup {
+    root destroy
+} -result {wrong # args: should be "next2 A y"} -returnCodes error
+test oo-next2-2.6 {errors in next2} -setup {
+    oo::class create root
+} -body {
+    oo::class create A {
+	superclass root
+	method x y {next2 $y}
+    }
+    oo::class create B {
+	superclass A
+	method x y {next2 $y $y $y}
+    }
+    [B new] x [root create notAClass]
+} -cleanup {
+    root destroy
+} -result {"::notAClass" is not a class} -returnCodes error
+test oo-next2-2.7 {errors in next2} -setup {
+    oo::class create root
+} -body {
+    oo::class create A {
+	superclass root
+	method x y {next2 $y}
+    }
+    oo::class create B {
+	superclass A
+	filter Y
+	method Y args {next {*}$args}
+    }
+    oo::class create C {
+	superclass B
+	method x y {next2 $y $y $y}
+    }
+    [C new] x B
+} -cleanup {
+    root destroy
+} -result {method has no non-filter implementation by "B"} -returnCodes error
+
+cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:
