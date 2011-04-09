@@ -347,7 +347,7 @@ InitFoundation(
 
     Tcl_CreateObjCommand(interp, "::oo::Helpers::next", TclOONextObjCmd, NULL,
 	    NULL);
-    Tcl_CreateObjCommand(interp, "::oo::Helpers::next2", TclOONext2ObjCmd,
+    Tcl_CreateObjCommand(interp, "::oo::Helpers::nextto", TclOONextToObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "::oo::Helpers::self", TclOOSelfObjCmd, NULL,
 	    NULL);

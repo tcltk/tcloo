@@ -32,7 +32,7 @@ if {[testConstraint memory]} {
     }
 }
 
-test oo-next2-1.1 {basic next2 functionality} -setup {
+test oo-nextto-1.1 {basic nextto functionality} -setup {
     oo::class create root
 } -body {
     oo::class create A {
@@ -45,14 +45,14 @@ test oo-next2-1.1 {basic next2 functionality} -setup {
 	superclass A
 	method x args {
 	    lappend ::result ==B== $args
-	    next2 A B -> A {*}$args
+	    nextto A B -> A {*}$args
 	}
     }
     oo::class create C {
 	superclass A
 	method x args {
 	    lappend ::result ==C== $args
-	    next2 A C -> A {*}$args
+	    nextto A C -> A {*}$args
 	}
     }
     oo::class create D {
@@ -60,7 +60,7 @@ test oo-next2-1.1 {basic next2 functionality} -setup {
 	method x args {
 	    lappend ::result ==D== $args
 	    next foo
-	    next2 C bar
+	    nextto C bar
 	}
     }
     set ::result {}
@@ -69,7 +69,7 @@ test oo-next2-1.1 {basic next2 functionality} -setup {
 } -cleanup {
     root destroy
 } -result {==D== {} ==B== foo ==A== {B -> A foo} ==C== bar ==A== {C -> A bar}}
-test oo-next2-1.2 {basic next2 functionality} -setup {
+test oo-nextto-1.2 {basic nextto functionality} -setup {
     oo::class create root
 } -body {
     oo::class create A {
@@ -82,22 +82,22 @@ test oo-next2-1.2 {basic next2 functionality} -setup {
 	superclass A
 	method x args {
 	    lappend ::result ==B== $args
-	    next2 A B -> A {*}$args
+	    nextto A B -> A {*}$args
 	}
     }
     oo::class create C {
 	superclass A
 	method x args {
 	    lappend ::result ==C== $args
-	    next2 A C -> A {*}$args
+	    nextto A C -> A {*}$args
 	}
     }
     oo::class create D {
 	superclass B C
 	method x args {
 	    lappend ::result ==D== $args
-	    next2 B foo {*}$args
-	    next2 C bar {*}$args
+	    nextto B foo {*}$args
+	    nextto C bar {*}$args
 	}
     }
     set ::result {}
@@ -107,7 +107,7 @@ test oo-next2-1.2 {basic next2 functionality} -setup {
     root destroy
 } -result {==D== 123 ==B== {foo 123} ==A== {B -> A foo 123} ==C== {bar 123} ==A== {C -> A bar 123}}
 
-test oo-next2-2.1 {errors in next2} -setup {
+test oo-nextto-2.1 {errors in nextto} -setup {
     oo::class create root
 } -body {
     oo::class create A {
@@ -116,13 +116,13 @@ test oo-next2-2.1 {errors in next2} -setup {
     }
     oo::class create B {
 	superclass A
-	method x y {next2 A $y}
+	method x y {nextto A $y}
     }
     [B new] x boom
 } -cleanup {
     root destroy
 } -result boom -returnCodes error
-test oo-next2-2.2 {errors in next2} -setup {
+test oo-nextto-2.2 {errors in nextto} -setup {
     oo::class create root
 } -body {
     oo::class create A {
@@ -131,78 +131,78 @@ test oo-next2-2.2 {errors in next2} -setup {
     }
     oo::class create B {
 	superclass root
-	method x y {next2 A $y}
+	method x y {nextto A $y}
     }
     [B new] x boom
-} -cleanup {
+} -returnCodes error -cleanup {
     root destroy
-} -result {method has no non-filter implementation by "A"} -returnCodes error
-test oo-next2-2.3 {errors in next2} -setup {
+} -result {method has no non-filter implementation by "A"}
+test oo-nextto-2.3 {errors in nextto} -setup {
     oo::class create root
 } -body {
     oo::class create A {
 	superclass root
-	method x y {next2 $y}
+	method x y {nextto $y}
     }
     oo::class create B {
 	superclass A
-	method x y {next2 A $y}
+	method x y {nextto A $y}
     }
     [B new] x B
-} -cleanup {
+} -returnCodes error -cleanup {
     root destroy
-} -result {method implementation by "B" not reachable from here} -returnCodes error
-test oo-next2-2.4 {errors in next2} -setup {
+} -result {method implementation by "B" not reachable from here}
+test oo-nextto-2.4 {errors in nextto} -setup {
     oo::class create root
 } -body {
     oo::class create A {
 	superclass root
-	method x y {next2 $y}
+	method x y {nextto $y}
     }
     oo::class create B {
 	superclass A
-	method x y {next2}
+	method x y {nextto}
     }
     [B new] x B
-} -cleanup {
+} -returnCodes error -cleanup {
     root destroy
-} -result {wrong # args: should be "next2 class ?arg...?"} -returnCodes error
-test oo-next2-2.5 {errors in next2} -setup {
+} -result {wrong # args: should be "nextto class ?arg...?"}
+test oo-nextto-2.5 {errors in nextto} -setup {
     oo::class create root
 } -body {
     oo::class create A {
 	superclass root
-	method x y {next2 $y}
+	method x y {nextto $y}
     }
     oo::class create B {
 	superclass A
-	method x y {next2 $y $y $y}
+	method x y {nextto $y $y $y}
     }
     [B new] x A
 } -cleanup {
     root destroy
-} -result {wrong # args: should be "next2 A y"} -returnCodes error
-test oo-next2-2.6 {errors in next2} -setup {
+} -result {wrong # args: should be "nextto A y"} -returnCodes error
+test oo-nextto-2.6 {errors in nextto} -setup {
     oo::class create root
 } -body {
     oo::class create A {
 	superclass root
-	method x y {next2 $y}
+	method x y {nextto $y}
     }
     oo::class create B {
 	superclass A
-	method x y {next2 $y $y $y}
+	method x y {nextto $y $y $y}
     }
     [B new] x [root create notAClass]
 } -cleanup {
     root destroy
 } -result {"::notAClass" is not a class} -returnCodes error
-test oo-next2-2.7 {errors in next2} -setup {
+test oo-nextto-2.7 {errors in nextto} -setup {
     oo::class create root
 } -body {
     oo::class create A {
 	superclass root
-	method x y {next2 $y}
+	method x y {nextto $y}
     }
     oo::class create B {
 	superclass A
@@ -211,12 +211,12 @@ test oo-next2-2.7 {errors in next2} -setup {
     }
     oo::class create C {
 	superclass B
-	method x y {next2 $y $y $y}
+	method x y {nextto $y $y $y}
     }
     [C new] x B
-} -cleanup {
+} -returnCodes error -cleanup {
     root destroy
-} -result {method has no non-filter implementation by "B"} -returnCodes error
+} -result {method has no non-filter implementation by "B"}
 
 cleanupTests
 return

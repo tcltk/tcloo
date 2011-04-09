@@ -19,6 +19,7 @@
 #include "tclOOInt.h"
 
 static inline Class *  GetClassFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
+static Tcl_ObjCmdProc InfoObjectCallCmd;
 static Tcl_ObjCmdProc InfoObjectClassCmd;
 static Tcl_ObjCmdProc InfoObjectDefnCmd;
 static Tcl_ObjCmdProc InfoObjectFiltersCmd;
@@ -30,6 +31,7 @@ static Tcl_ObjCmdProc InfoObjectMixinsCmd;
 static Tcl_ObjCmdProc InfoObjectNsCmd;
 static Tcl_ObjCmdProc InfoObjectVarsCmd;
 static Tcl_ObjCmdProc InfoObjectVariablesCmd;
+static Tcl_ObjCmdProc InfoClassCallCmd;
 static Tcl_ObjCmdProc InfoClassConstrCmd;
 static Tcl_ObjCmdProc InfoClassDefnCmd;
 static Tcl_ObjCmdProc InfoClassDestrCmd;
@@ -50,6 +52,7 @@ struct NameProcMap { const char *name; Tcl_ObjCmdProc *proc; };
  */
 
 static const struct NameProcMap infoObjectCmds[] = {
+    {"::oo::InfoObject::call",	     InfoObjectCallCmd},
     {"::oo::InfoObject::class",	     InfoObjectClassCmd},
     {"::oo::InfoObject::definition", InfoObjectDefnCmd},
     {"::oo::InfoObject::filters",    InfoObjectFiltersCmd},
@@ -69,6 +72,7 @@ static const struct NameProcMap infoObjectCmds[] = {
  */
 
 static const struct NameProcMap infoClassCmds[] = {
+    {"::oo::InfoClass::call",	      InfoClassCallCmd},
     {"::oo::InfoClass::constructor",  InfoClassConstrCmd},
     {"::oo::InfoClass::definition",   InfoClassDefnCmd},
     {"::oo::InfoClass::destructor",   InfoClassDestrCmd},
@@ -1436,6 +1440,64 @@ InfoClassVariablesCmd(
 	Tcl_ListObjAppendElement(NULL, resultObj, variableObj);
     }
     Tcl_SetObjResult(interp, resultObj);
+    return TCL_OK;
+}
+
+static int
+InfoObjectCallCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Object *oPtr;
+    CallContext *contextPtr;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "objName methodName");
+	return TCL_ERROR;
+    }
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    contextPtr = TclOOGetCallContext(oPtr, objv[2], PUBLIC_METHOD);
+    if (contextPtr == NULL) {
+	Tcl_AppendResult(interp, "cannot construct any call chain", NULL);
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp,
+	    TclOORenderCallChain(interp, contextPtr->callPtr));
+    TclOODeleteContext(contextPtr);
+    return TCL_OK;
+}
+
+static int
+InfoClassCallCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Class *clsPtr;
+    CallChain *callPtr;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "className methodName");
+	return TCL_ERROR;
+    }
+    clsPtr = GetClassFromObj(interp, objv[1]);
+    if (clsPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    callPtr = TclOOGetStereotypeCallChain(clsPtr, objv[2], PUBLIC_METHOD);
+    if (callPtr == NULL) {
+	Tcl_AppendResult(interp, "cannot construct any call chain", NULL);
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, TclOORenderCallChain(interp, callPtr));
     return TCL_OK;
 }
 

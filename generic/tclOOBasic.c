@@ -648,16 +648,16 @@ TclOONextObjCmd(
 /*
  * ----------------------------------------------------------------------
  *
- * TclOONext2ObjCmd --
+ * TclOONextToObjCmd --
  *
- *	Implementation of the [next2] command. Note that this command is only
+ *	Implementation of the [nextto] command. Note that this command is only
  *	ever to be used inside the body of a procedure-like method.
  *
  * ----------------------------------------------------------------------
  */
 
 int
-TclOONext2ObjCmd(
+TclOONextToObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,
     int objc,
@@ -769,12 +769,12 @@ TclOOSelfObjCmd(
     Tcl_Obj *const *objv)
 {
     static const char *subcmds[] = {
-	"caller", "class", "filter", "method", "namespace", "next", "object",
-	"target", NULL
+	"call", "caller", "class", "filter", "method", "namespace", "next",
+	"object", "target", NULL
     };
     enum SelfCmds {
-	SELF_CALLER, SELF_CLASS, SELF_FILTER, SELF_METHOD, SELF_NS, SELF_NEXT,
-	SELF_OBJECT, SELF_TARGET
+	SELF_CALL, SELF_CALLER, SELF_CLASS, SELF_FILTER, SELF_METHOD, SELF_NS,
+	SELF_NEXT, SELF_OBJECT, SELF_TARGET
     };
     Interp *iPtr = (Interp *) interp;
     CallFrame *framePtr = iPtr->varFramePtr;
@@ -968,6 +968,11 @@ TclOOSelfObjCmd(
 	    Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
 	    return TCL_OK;
 	}
+    case SELF_CALL:
+	result[0] = TclOORenderCallChain(interp, contextPtr->callPtr);
+	result[1] = Tcl_NewIntObj(contextPtr->index);
+	Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
+	return TCL_OK;
     }
     return TCL_ERROR;
 }
