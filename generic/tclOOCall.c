@@ -1061,6 +1061,18 @@ TclOOGetCallContext(
     return contextPtr;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOGetStereotypeCallChain --
+ *
+ *	Construct a call-chain for a method that would be used by a
+ *	stereotypical instance of the given class (i.e., where the object has
+ *	no definitions special to itself).
+ *
+ * ----------------------------------------------------------------------
+ */
+
 CallChain *
 TclOOGetStereotypeCallChain(
     Class *clsPtr,		/* The object to get the context for. */
@@ -1339,39 +1351,81 @@ AddSimpleClassChainToCallContext(
     }
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOORenderCallChain --
+ *
+ *	Create a description of a call chain. Used in [info object call],
+ *	[info class call], and [self call].
+ *
+ * ----------------------------------------------------------------------
+ */
+
 Tcl_Obj *
 TclOORenderCallChain(
     Tcl_Interp *interp,
     CallChain *callPtr)
 {
-    Tcl_Obj *resultObj, *filterLiteral, *methodLiteral, *objectLiteral;
-    Tcl_Obj *descObjs[3];
-    Tcl_Obj **objv;
+    Tcl_Obj *filterLiteral, *methodLiteral, *objectLiteral;
+    Tcl_Obj *resultObj, *descObjs[3], **objv;
     int i;
 
-    objv = TclStackAlloc(interp, callPtr->numChain * sizeof(Tcl_Obj *));
+    /*
+     * Allocate the literals (potentially) used in our description.
+     */
+
     filterLiteral = Tcl_NewStringObj("filter", -1);
     Tcl_IncrRefCount(filterLiteral);
     methodLiteral = Tcl_NewStringObj("method", -1);
     Tcl_IncrRefCount(methodLiteral);
     objectLiteral = Tcl_NewStringObj("object", -1);
     Tcl_IncrRefCount(objectLiteral);
+
+    /*
+     * Do the actual construction of the descriptions. They consist of a list
+     * of triples that describe the details of how a method is understood. For
+     * each triple, the first word is the type of invokation ("method" is
+     * normal, "unknown" is special because it adds the method name as an
+     * extra argument when handled by some method types, and "filter" is
+     * special because it's a filter method). The second word is the name of
+     * the method in question (which differs for "unknown" and "filter" types)
+     * and the third word is the full name of the class that declares the
+     * method (or "object" if it is declared on the instance).
+     */
+
+    objv = TclStackAlloc(interp, callPtr->numChain * sizeof(Tcl_Obj *));
     for (i=0 ; i<callPtr->numChain ; i++) {
-	descObjs[0] = callPtr->chain[i].isFilter
-		? filterLiteral : methodLiteral;
-	descObjs[1] = callPtr->chain[i].mPtr->namePtr;
-	if (callPtr->chain[i].mPtr->declaringClassPtr) {
-	    descObjs[2] = Tcl_GetObjectName(interp, (Tcl_Object)
-		    callPtr->chain[i].mPtr->declaringClassPtr->thisPtr);
-	} else {
-	    descObjs[2] = objectLiteral;
-	}
+	struct MInvoke *miPtr = &callPtr->chain[i];
+
+	descObjs[0] = miPtr->isFilter
+		? filterLiteral
+		: callPtr->flags & OO_UNKNOWN_METHOD
+			? TclOOGetFoundation(interp)->unknownMethodNameObj
+			: methodLiteral;
+	descObjs[1] = miPtr->mPtr->namePtr;
+	descObjs[2] = miPtr->mPtr->declaringClassPtr
+		? Tcl_GetObjectName(interp,
+			(Tcl_Object) miPtr->mPtr->declaringClassPtr->thisPtr)
+		: objectLiteral;
+
 	objv[i] = Tcl_NewListObj(3, descObjs);
 	Tcl_IncrRefCount(objv[i]);
     }
+
+    /*
+     * Drop the local references to the literals; if they're actually used,
+     * they'll live on the description itself.
+     */
+
     Tcl_DecrRefCount(filterLiteral);
     Tcl_DecrRefCount(methodLiteral);
     Tcl_DecrRefCount(objectLiteral);
+
+    /*
+     * Finish building the description and return it.
+     */
+
     resultObj = Tcl_NewListObj(callPtr->numChain, objv);
     TclStackFree(interp, objv);
     return resultObj;
