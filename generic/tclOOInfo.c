@@ -1443,6 +1443,16 @@ InfoClassVariablesCmd(
     return TCL_OK;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InfoObjectCallCmd --
+ *
+ *	Implements [info object call $objName $methodName]
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static int
 InfoObjectCallCmd(
     ClientData clientData,
@@ -1462,6 +1472,10 @@ InfoObjectCallCmd(
 	return TCL_ERROR;
     }
 
+    /*
+     * Get the call context and render its call chain.
+     */
+
     contextPtr = TclOOGetCallContext(oPtr, objv[2], PUBLIC_METHOD);
     if (contextPtr == NULL) {
 	Tcl_AppendResult(interp, "cannot construct any call chain", NULL);
@@ -1472,6 +1486,16 @@ InfoObjectCallCmd(
     TclOODeleteContext(contextPtr);
     return TCL_OK;
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InfoClassCallCmd --
+ *
+ *	Implements [info class call $clsName $methodName]
+ *
+ * ----------------------------------------------------------------------
+ */
 
 static int
 InfoClassCallCmd(
@@ -1491,6 +1515,10 @@ InfoClassCallCmd(
     if (clsPtr == NULL) {
 	return TCL_ERROR;
     }
+
+    /*
+     * Get an render the stereotypical call chain.
+     */
 
     callPtr = TclOOGetStereotypeCallChain(clsPtr, objv[2], PUBLIC_METHOD);
     if (callPtr == NULL) {
