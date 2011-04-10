@@ -170,13 +170,14 @@ The following \fIsubcommand\fR values are supported by \fBinfo class\fR:
 .VS
 Returns a description of the method implementations that are used to provide a
 stereotypical instance of \fIclass\fR's implementation of \fImethod\fR
-(stereotypical instances being ones without object-specific definitions).
-This consists of a list of triples, where each triple consists of a word that
-describes the general type of method implementation (being one of \fBmethod\fR
-for an ordinary method, \fBfilter\fR for an applied filter, and \fBunknown\fR
-for a method that is invoked as part of unknown method handling), a word
-giving the name of the particular method invoked (which is always the same as
-\fImethod\fR for the \fBmethod\fR type, and
+(stereotypical instances being objects instantiated by a class without having
+any object-specific definitions added). This consists of a list of triples,
+where each triple consists of a word that describes the general type of method
+implementation (being one of \fBmethod\fR for an ordinary method, \fBfilter\fR
+for an applied filter, and \fBunknown\fR for a method that is invoked as part
+of unknown method handling), a word giving the name of the particular method
+invoked (which is always the same as \fImethod\fR for the \fBmethod\fR type,
+and
 .QW \fBunknown\fR
 for the \fBunknown\fR type) and a word giving the fully qualified name of the
 class that defined the method.
@@ -283,6 +284,7 @@ Note that these commands are likely to be renamed in the future.
 .PP
 Every object necessarily knows what its class is; this information is
 trivially extractable through introspection:
+.PP
 .CS
 oo::class create c
 c create o
@@ -294,6 +296,7 @@ puts [\fBinfo object class\fR c]
 .PP
 The introspection capabilities can be used to discover what class implements a
 method and get how it is defined. This procedure illustrates how:
+.PP
 .CS
 proc getDef {obj method} {
     if {$method in [\fBinfo object methods\fR $obj]} {
