@@ -28,6 +28,16 @@ takes an argument, \fIsubcommand\fR, that tells it what sort of information is
 actually desired; if omitted the result will be the same as if \fBself
 object\fR was invoked. The supported subcommands are:
 .TP
+\fBself call\fR
+.VS
+This returns a two-element list describing the method implementations used to
+implement the current call chain. The first element is the same as would be
+reported by \finfo object call\fR for the current method, and the second
+element is an index into the first element's list that indicates which actual
+implementation is currently executing (the first implementation to execute is
+always at index 0).
+.VE
+.TP
 \fBself caller\fR
 .
 When the method was invoked from inside another object method, this subcommand
