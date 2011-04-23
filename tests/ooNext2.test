@@ -655,6 +655,40 @@ test oo-call-3.2 {current call introspection} -setup {
 } -cleanup {
     root destroy
 } -result 0
+test oo-call-3.3 {current call introspection: in constructors} -setup {
+    oo::class create root
+} -body {
+    oo::class create A {
+	superclass root
+	constructor {} {lappend ::result [self call]}
+    }
+    oo::class create B {
+	superclass A
+	constructor {} {lappend ::result [self call]; next}
+    }
+    set ::result {}
+    [B new] destroy
+    return $::result
+} -cleanup {
+    root destroy
+} -result {{{{method <constructor> ::B} {method <constructor> ::A}} 0} {{{method <constructor> ::B} {method <constructor> ::A}} 1}}
+test oo-call-3.4 {current call introspection: in destructors} -setup {
+    oo::class create root
+} -body {
+    oo::class create A {
+	superclass root
+	destructor {lappend ::result [self call]}
+    }
+    oo::class create B {
+	superclass A
+	destructor {lappend ::result [self call]; next}
+    }
+    set ::result {}
+    [B new] destroy
+    return $::result
+} -cleanup {
+    root destroy
+} -result {{{{method <destructor> ::B} {method <destructor> ::A}} 0} {{{method <destructor> ::B} {method <destructor> ::A}} 1}}
 
 cleanupTests
 return

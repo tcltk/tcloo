@@ -1369,6 +1369,7 @@ TclOORenderCallChain(
 {
     Tcl_Obj *filterLiteral, *methodLiteral, *objectLiteral;
     Tcl_Obj *resultObj, *descObjs[3], **objv;
+    Foundation *fPtr = TclOOGetFoundation(interp);
     int i;
 
     /*
@@ -1401,9 +1402,13 @@ TclOORenderCallChain(
 	descObjs[0] = miPtr->isFilter
 		? filterLiteral
 		: callPtr->flags & OO_UNKNOWN_METHOD
-			? TclOOGetFoundation(interp)->unknownMethodNameObj
+			? fPtr->unknownMethodNameObj
 			: methodLiteral;
-	descObjs[1] = miPtr->mPtr->namePtr;
+	descObjs[1] = callPtr->flags & CONSTRUCTOR
+		? fPtr->constructorName
+		: callPtr->flags & DESTRUCTOR
+			? fPtr->destructorName
+			: miPtr->mPtr->namePtr;
 	descObjs[2] = miPtr->mPtr->declaringClassPtr
 		? Tcl_GetObjectName(interp,
 			(Tcl_Object) miPtr->mPtr->declaringClassPtr->thisPtr)
