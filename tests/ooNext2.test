@@ -296,7 +296,7 @@ test oo-call-1.1 {object call introspection} -setup {
     info object call y x
 } -cleanup {
     root destroy
-} -result {{method x ::A}}
+} -result {{method x ::A method}}
 test oo-call-1.2 {object call introspection} -setup {
     oo::class create root
 } -body {
@@ -312,7 +312,7 @@ test oo-call-1.2 {object call introspection} -setup {
     info object call y x
 } -cleanup {
     root destroy
-} -result {{method x ::B} {method x ::A}}
+} -result {{method x ::B method} {method x ::A method}}
 test oo-call-1.3 {object call introspection} -setup {
     oo::class create root
 } -body {
@@ -325,7 +325,7 @@ test oo-call-1.3 {object call introspection} -setup {
     info object call y x
 } -cleanup {
     root destroy
-} -result {{method x object} {method x ::A}}
+} -result {{method x object method} {method x ::A method}}
 test oo-call-1.4 {object object call introspection - unknown} -setup {
     oo::class create root
 } -body {
@@ -337,7 +337,7 @@ test oo-call-1.4 {object object call introspection - unknown} -setup {
     info object call y z
 } -cleanup {
     root destroy
-} -result {{unknown unknown ::oo::object}}
+} -result {{unknown unknown ::oo::object {core method: "unknown"}}}
 test oo-call-1.5 {object call introspection - filters} -setup {
     oo::class create root
 } -body {
@@ -351,7 +351,7 @@ test oo-call-1.5 {object call introspection - filters} -setup {
     info object call y x
 } -cleanup {
     root destroy
-} -result {{filter y ::A} {method x ::A}}
+} -result {{filter y ::A method} {method x ::A method}}
 test oo-call-1.6 {object call introspection - filters} -setup {
     oo::class create root
 } -body {
@@ -369,7 +369,7 @@ test oo-call-1.6 {object call introspection - filters} -setup {
     info object call y x
 } -cleanup {
     root destroy
-} -result {{filter y ::A} {method x ::B} {method x ::A}}
+} -result {{filter y ::A method} {method x ::B method} {method x ::A method}}
 test oo-call-1.7 {object call introspection - filters} -setup {
     oo::class create root
 } -body {
@@ -388,7 +388,7 @@ test oo-call-1.7 {object call introspection - filters} -setup {
     info object call y x
 } -cleanup {
     root destroy
-} -result {{filter y ::B} {filter y ::A} {method x ::B} {method x ::A}}
+} -result {{filter y ::B method} {filter y ::A method} {method x ::B method} {method x ::A method}}
 test oo-call-1.8 {object call introspection - filters} -setup {
     oo::class create root
 } -body {
@@ -409,7 +409,7 @@ test oo-call-1.8 {object call introspection - filters} -setup {
     info object call y x
 } -cleanup {
     root destroy
-} -result {{filter z ::B} {filter y ::B} {filter y ::A} {method x ::B} {method x ::A}}
+} -result {{filter z ::B method} {filter y ::B method} {filter y ::A method} {method x ::B method} {method x ::A method}}
 test oo-call-1.9 {object call introspection - filters} -setup {
     oo::class create root
 } -body {
@@ -430,7 +430,7 @@ test oo-call-1.9 {object call introspection - filters} -setup {
     info object call y y
 } -cleanup {
     root destroy
-} -result {{filter z ::B} {filter y ::B} {filter y ::A} {method y ::B} {method y ::A}}
+} -result {{filter z ::B method} {filter y ::B method} {filter y ::A method} {method y ::B method} {method y ::A method}}
 test oo-call-1.10 {object call introspection - filters + unknown} -setup {
     oo::class create root
 } -body {
@@ -448,7 +448,7 @@ test oo-call-1.10 {object call introspection - filters + unknown} -setup {
     info object call y x
 } -cleanup {
     root destroy
-} -result {{filter y ::B} {filter y ::A} {unknown unknown ::B} {unknown unknown ::oo::object}}
+} -result {{filter y ::B method} {filter y ::A method} {unknown unknown ::B method} {unknown unknown ::oo::object {core method: "unknown"}}}
 test oo-call-1.11 {object call introspection - filters + unknown} -setup {
     oo::class create root
 } -body {
@@ -462,7 +462,7 @@ test oo-call-1.11 {object call introspection - filters + unknown} -setup {
     info object call y x
 } -cleanup {
     root destroy
-} -result {{filter y ::A} {unknown unknown object} {unknown unknown ::oo::object}}
+} -result {{filter y ::A method} {unknown unknown object method} {unknown unknown ::oo::object {core method: "unknown"}}}
 test oo-call-1.12 {object call introspection - filters + unknown} -setup {
     oo::class create root
 } -body {
@@ -478,7 +478,7 @@ test oo-call-1.12 {object call introspection - filters + unknown} -setup {
     info object call y x
 } -cleanup {
     root destroy
-} -result {{filter y ::A} {unknown unknown object} {unknown unknown ::oo::object}}
+} -result {{filter y ::A method} {unknown unknown object method} {unknown unknown ::oo::object {core method: "unknown"}}}
 test oo-call-1.13 {object call introspection - filters + unknown} -setup {
     oo::class create root
 } -body {
@@ -495,7 +495,7 @@ test oo-call-1.13 {object call introspection - filters + unknown} -setup {
     info object call y x
 } -cleanup {
     root destroy
-} -result {{filter y ::A} {method x object}}
+} -result {{filter y ::A method} {method x object method}}
 test oo-call-1.14 {object call introspection - errors} -body {
     info object call
 } -returnCodes error -result {wrong # args: should be "info object call objName methodName"}
@@ -524,7 +524,7 @@ test oo-call-2.1 {class call introspection} -setup {
     info class call A x
 } -cleanup {
     root destroy
-} -result {{method x ::A}}
+} -result {{method x ::A method}}
 test oo-call-2.2 {class call introspection} -setup {
     oo::class create root
 } -body {
@@ -539,7 +539,7 @@ test oo-call-2.2 {class call introspection} -setup {
     list [info class call A x] [info class call B x]
 } -cleanup {
     root destroy
-} -result {{{method x ::A}} {{method x ::B} {method x ::A}}}
+} -result {{{method x ::A method}} {{method x ::B method} {method x ::A method}}}
 test oo-call-2.3 {class call introspection} -setup {
     oo::class create root
 } -body {
@@ -562,7 +562,7 @@ test oo-call-2.3 {class call introspection} -setup {
     info class call D x
 } -cleanup {
     root destroy
-} -result {{method x ::D} {method x ::C} {method x ::B} {method x ::A}}
+} -result {{method x ::D method} {method x ::C method} {method x ::B method} {method x ::A method}}
 test oo-call-2.4 {class call introspection - mixin} -setup {
     oo::class create root
 } -body {
@@ -586,7 +586,7 @@ test oo-call-2.4 {class call introspection - mixin} -setup {
     info class call D x
 } -cleanup {
     root destroy
-} -result {{method x ::B} {method x ::D} {method x ::C} {method x ::A}}
+} -result {{method x ::B method} {method x ::D method} {method x ::C method} {method x ::A method}}
 test oo-call-2.5 {class call introspection - mixin + filter} -setup {
     oo::class create root
 } -body {
@@ -613,7 +613,7 @@ test oo-call-2.5 {class call introspection - mixin + filter} -setup {
     info class call D x
 } -cleanup {
     root destroy
-} -result {{filter y ::B} {filter y ::C} {method x ::B} {method x ::D} {method x ::C} {method x ::A}}
+} -result {{filter y ::B method} {filter y ::C method} {method x ::B method} {method x ::D method} {method x ::C method} {method x ::A method}}
 test oo-call-2.6 {class call introspection - mixin + filter + unknown} -setup {
     oo::class create root
 } -body {
@@ -642,7 +642,7 @@ test oo-call-2.6 {class call introspection - mixin + filter + unknown} -setup {
     info class call D z
 } -cleanup {
     root destroy
-} -result {{filter y ::B} {filter y ::C} {unknown unknown ::D} {unknown unknown ::A} {unknown unknown ::oo::object}}
+} -result {{filter y ::B method} {filter y ::C method} {unknown unknown ::D method} {unknown unknown ::A method} {unknown unknown ::oo::object {core method: "unknown"}}}
 test oo-call-2.7 {class call introspection - mixin + filter + unknown} -setup {
     oo::class create root
 } -body {
@@ -658,7 +658,7 @@ test oo-call-2.7 {class call introspection - mixin + filter + unknown} -setup {
     info class call B x
 } -cleanup {
     root destroy
-} -result {{filter x ::B} {filter x ::A} {method x ::B} {method x ::A}}
+} -result {{filter x ::B method} {filter x ::A method} {method x ::B method} {method x ::A method}}
 test oo-call-2.8 {class call introspection - errors} -body {
     info class call
 } -returnCodes error -result {wrong # args: should be "info class call className methodName"}
@@ -702,7 +702,7 @@ test oo-call-3.1 {current call introspection} -setup {
     y x
 } -cleanup {
     root destroy
-} -result {{{{method x object} {method x ::B} {method x ::A}} 0} {{{method x object} {method x ::B} {method x ::A}} 1} {{{method x object} {method x ::B} {method x ::A}} 2}}
+} -result {{{{method x object method} {method x ::B method} {method x ::A method}} 0} {{{method x object method} {method x ::B method} {method x ::A method}} 1} {{{method x object method} {method x ::B method} {method x ::A method}} 2}}
 test oo-call-3.2 {current call introspection} -setup {
     oo::class create root
 } -constraints memory -body {
@@ -738,7 +738,7 @@ test oo-call-3.3 {current call introspection: in constructors} -setup {
     return $::result
 } -cleanup {
     root destroy
-} -result {{{{method <constructor> ::B} {method <constructor> ::A}} 0} {{{method <constructor> ::B} {method <constructor> ::A}} 1}}
+} -result {{{{method <constructor> ::B method} {method <constructor> ::A method}} 0} {{{method <constructor> ::B method} {method <constructor> ::A method}} 1}}
 test oo-call-3.4 {current call introspection: in destructors} -setup {
     oo::class create root
 } -body {
@@ -755,7 +755,7 @@ test oo-call-3.4 {current call introspection: in destructors} -setup {
     return $::result
 } -cleanup {
     root destroy
-} -result {{{{method <destructor> ::B} {method <destructor> ::A}} 0} {{{method <destructor> ::B} {method <destructor> ::A}} 1}}
+} -result {{{{method <destructor> ::B method} {method <destructor> ::A method}} 0} {{{method <destructor> ::B method} {method <destructor> ::A method}} 1}}
 
 cleanupTests
 return
