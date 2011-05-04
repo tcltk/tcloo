@@ -1368,7 +1368,7 @@ TclOORenderCallChain(
     CallChain *callPtr)
 {
     Tcl_Obj *filterLiteral, *methodLiteral, *objectLiteral;
-    Tcl_Obj *resultObj, *descObjs[3], **objv;
+    Tcl_Obj *resultObj, *descObjs[4], **objv;
     Foundation *fPtr = TclOOGetFoundation(interp);
     int i;
 
@@ -1413,8 +1413,9 @@ TclOORenderCallChain(
 		? Tcl_GetObjectName(interp,
 			(Tcl_Object) miPtr->mPtr->declaringClassPtr->thisPtr)
 		: objectLiteral;
+	descObjs[3] = Tcl_NewStringObj(miPtr->mPtr->typePtr->name, -1);
 
-	objv[i] = Tcl_NewListObj(3, descObjs);
+	objv[i] = Tcl_NewListObj(4, descObjs);
 	Tcl_IncrRefCount(objv[i]);
     }
 
