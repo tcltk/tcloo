@@ -49,10 +49,8 @@ implementation is on an instance), and a word describing the type of method
 implementation (see \fBinfo object methodtype\fR).
 .RS
 .PP
-Note that the object method type (as reported by \fBinfo object methodtype\fR
-and \fBinfo class methodtype\fR) is \fInot\fR reported by this, and there is
-no inspection of whether the method implementations actually use \fBnext\fR to
-transfer control along the call chain.
+Note that there is no inspection of whether the method implementations
+actually use \fBnext\fR to transfer control along the call chain.
 .RE
 .VE
 .TP
@@ -185,10 +183,8 @@ class that defined the method, and a word describing the type of method
 implementation (see \fBinfo class methodtype\fR).
 .RS
 .PP
-Note that the class method type (as reported by \fBinfo class methodtype\fR)
-is \fInot\fR reported by this, and there is no inspection of whether the
-method implementations actually use \fBnext\fR to transfer control along the
-call chain.
+Note that there is no inspection of whether the method implementations
+actually use \fBnext\fR to transfer control along the call chain.
 .RE
 .VE
 .TP
