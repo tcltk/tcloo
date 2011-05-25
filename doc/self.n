@@ -141,9 +141,9 @@ oo::objdefine a {
         puts "Obj: [\fBself call\fR]"
     }
 }
-a x           \fI\(-> prints "Obj: {{method x object} {method x ::c}} 0"\fR
-              \fI\(-> prints "Cls: {{method x object} {method x ::c}} 1"\fR
-              \fI\(-> prints "Obj: {{method x object} {method x ::c}} 0"\fR
+a x     \fI\(-> Obj: {{method x object method} {method x ::c method}} 0\fR
+        \fI\(-> Cls: {{method x object method} {method x ::c method}} 1\fR
+        \fI\(-> Obj: {{method x object method} {method x ::c method}} 0\fR
 .CE
 .SH "SEE ALSO"
 info(n), next(n)
