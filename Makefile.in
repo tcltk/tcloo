@@ -6,36 +6,53 @@
 # All these assignments are substituted by configure
 #========================================================================
 
-PKG_OBJECTS=@PKG_OBJECTS@
-PKG_STUB_OBJECTS=@PKG_STUB_OBJECTS@
-PKG_HEADERS=@PKG_HEADERS@
+PKG_SOURCES	= @PKG_SOURCES@
+PKG_OBJECTS	= @PKG_OBJECTS@
+
+PKG_STUB_SOURCES = @PKG_STUB_SOURCES@
+PKG_STUB_OBJECTS = @PKG_STUB_OBJECTS@
+
+PKG_TCL_SOURCES = @PKG_TCL_SOURCES@
+
+PKG_HEADERS	= @PKG_HEADERS@
 PKG_PRIVATE_HEADERS=@PKG_PRIVATE_HEADERS@
-PKG_LIB_FILE=@PKG_LIB_FILE@
-PKG_STUB_LIB_FILE=@PKG_STUB_LIB_FILE@
-SHELL=@SHELL@
-srcdir=@srcdir@
-datarootdir=@datarootdir@
-prefix=@prefix@
-exec_prefix=@exec_prefix@
-libdir=@libdir@
-includedir=@includedir@
-mandir=@mandir@
-INSTALL=@INSTALL@
-INSTALL_PROGRAM=@INSTALL_PROGRAM@
-INSTALL_DATA=@INSTALL_DATA@
-INSTALL_SCRIPT=@INSTALL_SCRIPT@
-PACKAGE_NAME=@PACKAGE_NAME@
-PACKAGE_VERSION=@PACKAGE_VERSION@
-CC=@CC@
-# Directly substituted, here to help when tracing errors
-#CC_OUT=@CC_OUT@
-CFLAGS_DEFAULT=@CFLAGS_DEFAULT@
-CFLAGS_WARNING=@CFLAGS_WARNING@
+
+PKG_LIB_FILE	= @PKG_LIB_FILE@
+PKG_STUB_LIB_FILE = @PKG_STUB_LIB_FILE@
+
+SHELL		= @SHELL@
+
+srcdir		= @srcdir@
+prefix		= @prefix@
+exec_prefix	= @exec_prefix@
+
+bindir		= @bindir@
+libdir		= @libdir@
+includedir	= @includedir@
+datarootdir     = @datarootdir@
+datadir		= @datadir@
+mandir		= @mandir@
+
+DESTDIR		=
+
+INSTALL_OPTIONS =
+INSTALL		= $(SHELL) $(srcdir)/tclconfig/install-sh -c ${INSTALL_OPTIONS}
+INSTALL_DATA_DIR = ${INSTALL} -d -m 755
+INSTALL_PROGRAM	= ${INSTALL} -m 555
+INSTALL_DATA	= ${INSTALL} -m 444
+INSTALL_SCRIPT	= ${INSTALL_PROGRAM}
+INSTALL_LIBRARY	= ${INSTALL_DATA}
+
+PACKAGE_NAME	= @PACKAGE_NAME@
+PACKAGE_VERSION	= @PACKAGE_VERSION@
+CC		= @CC@
+CFLAGS_DEFAULT	= @CFLAGS_DEFAULT@
+CFLAGS_WARNING	= @CFLAGS_WARNING@
+
 CLEANFILES=@CLEANFILES@
 EXEEXT=@EXEEXT@
 LDFLAGS_DEFAULT=@LDFLAGS_DEFAULT@
 MAKE_LIB=@MAKE_LIB@
-ADD_MANIFEST=@ADD_MANIFEST@
 MAKE_SHARED_LIB=@MAKE_SHARED_LIB@
 MAKE_STATIC_LIB=@MAKE_STATIC_LIB@
 MAKE_STUB_LIB=@MAKE_STUB_LIB@
@@ -61,13 +78,18 @@ AR=@AR@
 CFLAGS=@CFLAGS@
 CYGPATH=@CYGPATH@
 SDX=@SDX@
-TCLSH_ENV=TCL_LIBRARY="`$(CYGPATH) $(TCL_SRC_DIR)/library`" \
-	  @LD_LIBRARY_PATH_VAR@="$(EXTRA_PATH):$(@LD_LIBRARY_PATH_VAR@)" \
-	  PATH="$(EXTRA_PATH):$(PATH)" \
-	  TCLLIBPATH="$(TCLLIBPATH)"
-RC=@RC@
-RCFLAGS=@RES_DEFS@
-RES=@RES_SUFFIX@
+#RC=@RC@
+#RCFLAGS=@RES_DEFS@
+#RES=@RES_SUFFIX@
+#ADD_MANIFEST=@ADD_MANIFEST@
+
+EXTRA_PATH	= $(top_builddir):$(TCL_BIN_DIR)
+PKG_ENV		= TCL_LIBRARY=`@CYGPATH@ $(TCL_SRC_DIR)/library` \
+		  @LD_LIBRARY_PATH_VAR@="$(EXTRA_PATH):$(@LD_LIBRARY_PATH_VAR@)" \
+		  PATH="$(EXTRA_PATH):$(PATH)" \
+		  TCLLIBPATH="$(top_builddir)"
+TCLSH_PROG	= @TCLSH_PROG@
+TCLSH		= $(PKG_ENV) $(TCLSH_PROG)
 
 #========================================================================
 # None of these assignments are substituted by configure
@@ -75,17 +97,12 @@ RES=@RES_SUFFIX@
 
 SRC_DIR=$(srcdir)
 BINARIES=$(PKG_LIB_FILE) $(PKG_STUB_LIB_FILE)
-DESTDIR=
 PKG_DIR=$(PACKAGE_NAME)$(PACKAGE_VERSION)
 PKG_KIT_ROOT=$(PKG_DIR)-$(PLATFORM)
 PKG_KIT=$(PKG_KIT_ROOT).kit
 pkglibdir=$(libdir)/$(PKG_DIR)
 top_builddir=.
 TCL_VERSION_REQ=8.5b1
-EXTRA_PATH=$(top_builddir):$(TCL_BIN_DIR)
-TCLLIBPATH = $(top_builddir)
-TCLSH_PROGRAM="$(TCLSH_PROG)"
-TCLSH=$(TCLSH_ENV) $(TCLSH_PROGRAM)
 GDB=gdb
 VALGRIND=valgrind
 CONFIG_CLEAN_FILES="Makefile tclooConfig.sh"
@@ -177,7 +194,7 @@ doc:
 #========================================================================
 
 test: package libraries
-	@echo $(TCLSH_PROGRAM) $(SRC_DIR)/tests/all.tcl $(TESTLOAD) $(TESTFLAGS)
+	@echo $(TCLSH_PROG) $(SRC_DIR)/tests/all.tcl $(TESTLOAD) $(TESTFLAGS)
 	@$(TCLSH) `$(CYGPATH) $(SRC_DIR)/tests/all.tcl` $(TESTLOAD) $(TESTFLAGS)
 
 benchmarks: package libraries
@@ -188,15 +205,19 @@ benchmarks: package libraries
 	done
 
 shell: package libraries
-	@echo $(TCLSH_PROGRAM) $(SCRIPT)
+	@echo $(TCLSH_PROG) $(SCRIPT)
 	@$(TCLSH) $(SCRIPT)
 
 valgrind: package libraries
-	@echo $(VALGRIND) $(TCLSH_PROGRAM) $(SCRIPT)
-	@$(TCLSH_ENV) $(VALGRIND) $(TCLSH_PROGRAM) $(SCRIPT)
+	@echo $(VALGRIND) $(TCLSH_PROG) $(SCRIPT)
+	@$(PKG_ENV) $(VALGRIND) $(TCLSH_PROG) $(SCRIPT)
+
 valgrindtest: package libraries
-	@echo $(VALGRIND) $(TCLSH_PROGRAM) $(SRC_DIR)/tests/all.tcl $(TESTLOAD) $(TESTFLAGS)
-	@$(TCLSH_ENV) $(VALGRIND) $(TCLSH_PROGRAM) `$(CYGPATH) $(SRC_DIR)/tests/all.tcl` $(TESTLOAD) $(TESTFLAGS) -singleproc 1
+	@echo $(VALGRIND) $(TCLSH_PROG) $(SRC_DIR)/tests/all.tcl $(TESTLOAD) $(TESTFLAGS)
+	@$(PKG_ENV) $(VALGRIND) $(TCLSH_PROG) `$(CYGPATH) $(SRC_DIR)/tests/all.tcl` $(TESTLOAD) $(TESTFLAGS) -singleproc 1
+
+valgrindshell: binaries libraries
+	$(PKG_ENV) valgrind $(VALGRINDARGS) $(TCLSH_PROG) $(SCRIPT)
 
 #========================================================================
 # These rules say how to run tclsh in a hostile Windows environment, while
@@ -211,12 +232,12 @@ gdb.run:
 	@sh -c 'test x$${OSTYPE} = xmsys && echo "set new-console off" >> $@' || true
 
 gdb: package libraries gdb.run
-	@echo gdb $(TCLSH_PROGRAM) $(ARGS)
+	@echo gdb $(TCLSH_PROG) $(ARGS)
 	@gdb --command=gdb.run $(ARGS)
 	@rm gdb.run
 gdbtest: package libraries gdb.run
 	@echo "set args `$(CYGPATH) $(SRC_DIR)/tests/all.tcl` $(TESTLOAD) $(TESTFLAGS) -singleproc 1" >>gdb.run
-	@echo gdb $(TCLSH_PROGRAM) $(MANGLED)
+	@echo gdb $(TCLSH_PROG) $(MANGLED)
 	@gdb --command=gdb.run
 	@rm gdb.run
 
@@ -227,14 +248,13 @@ gdbtest: package libraries gdb.run
 $(PKG_LIB_FILE): $(PKG_OBJECTS)
 	-rm -f $(PKG_LIB_FILE)
 	${MAKE_LIB}
-	${ADD_MANIFEST}
 	$(RANLIB) $(PKG_LIB_FILE)
 $(PKG_STUB_LIB_FILE): $(PKG_STUB_OBJECTS)
 	-rm -f $(PKG_STUB_LIB_FILE)
 	${MAKE_STUB_LIB}
 	$(RANLIB_STUB) $(PKG_STUB_LIB_FILE)
 .c.@OBJEXT@:
-	$(COMPILE) -c `$(CYGPATH) $<` @CC_OUT@
+	$(COMPILE) -c `$(CYGPATH) $<` -o $@
 .rc.$(RES):
 	$(RC) $@ $(RCFLAGS) "$<"
 pkgIndex.tcl: Makefile
@@ -253,7 +273,7 @@ Makefile: $(SRC_DIR)/Makefile.in $(top_builddir)/config.status
 #========================================================================
 
 genstubs: $(TCL_TOOLS_DIR)/genStubs.tcl $(SRC_DIR)/generic/tclOO.decls
-	@echo $(TCLSH_PROGRAM) $(TCL_TOOLS_DIR)/genStubs.tcl $(SRC_DIR)/generic $(SRC_DIR)/generic/tclOO.decls
+	@echo $(TCLSH_PROG) $(TCL_TOOLS_DIR)/genStubs.tcl $(SRC_DIR)/generic $(SRC_DIR)/generic/tclOO.decls
 	@$(TCLSH) `$(CYGPATH) $(TCL_TOOLS_DIR)/genStubs.tcl` `$(CYGPATH) $(SRC_DIR)/generic` `$(CYGPATH) $(SRC_DIR)/generic/tclOO.decls`
 
 #========================================================================
