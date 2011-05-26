@@ -16,18 +16,25 @@
 #define TCLOO_H_INCLUDED
 #include "tcl.h"
 
-#if defined(BUILD_tcloo)
+#undef TCL_STORAGE_CLASS
+#ifdef BUILD_TclOO /* Match PACKAGE_NAME case sensitive */
+#   define TCL_STORAGE_CLASS DLLEXPORT
 #	define TCLOOAPI DLLEXPORT
 #	undef USE_TCLOO_STUBS
 #else
 #	define TCLOOAPI DLLIMPORT
+#   ifdef USE_TCLOO_STUBS
+#	define TCL_STORAGE_CLASS
+#   else
+#	define TCL_STORAGE_CLASS DLLIMPORT
+#   endif
 #endif
 
 /*
  * Must match version at top of ../configure.in
  */
 
-#define TCLOO_VERSION "0.6.2"
+#define TCLOO_VERSION "0.6.3"
 #define TCLOO_PATCHLEVEL TCLOO_VERSION
 
 /*
