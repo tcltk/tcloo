@@ -455,6 +455,9 @@ MODULE_SCOPE int	TclOOCopyObjectCmd(ClientData clientData,
 MODULE_SCOPE int	TclOONextObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOONextToObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
 MODULE_SCOPE int	TclOOSelfObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
@@ -503,6 +506,8 @@ MODULE_SCOPE void	TclOODeleteContext(CallContext *contextPtr);
 MODULE_SCOPE void	TclOODelMethodRef(Method *method);
 MODULE_SCOPE CallContext *TclOOGetCallContext(Object *oPtr,
 			    Tcl_Obj *methodNameObj, int flags);
+MODULE_SCOPE CallChain *TclOOGetStereotypeCallChain(Class *clsPtr,
+			    Tcl_Obj *methodNameObj, int flags);
 MODULE_SCOPE Foundation	*TclOOGetFoundation(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclOOGetFwdFromMethod(Method *mPtr);
 MODULE_SCOPE Proc *	TclOOGetProcFromMethod(Method *mPtr);
@@ -523,6 +528,8 @@ MODULE_SCOPE void	TclOORemoveFromMixinSubs(Class *subPtr,
 			    Class *mixinPtr);
 MODULE_SCOPE void	TclOORemoveFromSubclasses(Class *subPtr,
 			    Class *superPtr);
+MODULE_SCOPE Tcl_Obj *	TclOORenderCallChain(Tcl_Interp *interp,
+			    CallChain *callPtr);
 MODULE_SCOPE void	TclOOStashContext(Tcl_Obj *objPtr,
 			    CallContext *contextPtr);
 MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
