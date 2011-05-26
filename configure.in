@@ -8,38 +8,37 @@ dnl#
 dnl# You should also change the following:
 dnl#	README.txt, win/TclOO.rc
 dnl#
-AC_INIT([TclOO],[0.6.2])
+AC_INIT([TclOO],[0.6.3])
 AC_CONFIG_AUX_DIR(tclconfig)
 AC_CONFIG_HEADERS(config.h)
 
-TEA_INIT([3.6])
+TEA_INIT([3.9])
 TEA_PATH_TCLCONFIG
 TEA_LOAD_TCLCONFIG
 TEA_PREFIX
 TEA_SETUP_COMPILER
 AC_C_INLINE
-TEA_ADD_SOURCES(
+TEA_ADD_SOURCES([
 	tclOO.c tclOOBasic.c tclOOCall.c tclOODefineCmds.c tclOOInfo.c
-	tclOOMethod.c tclOOStubInit.c)
-TEA_ADD_STUB_SOURCES(tclOOStubLib.c)
-TEA_ADD_HEADERS(generic/tclOO.h generic/tclOODecls.h)
-TEAX_ADD_PRIVATE_HEADERS(generic/tclOOInt.h generic/tclOOIntDecls.h)
-TEAX_INCLUDE_DIR(.)
-TEAX_INCLUDE_DIR(${srcdir}/generic)
+	tclOOMethod.c tclOOStubInit.c])
+TEA_ADD_STUB_SOURCES([tclOOStubLib.c])
+TEA_ADD_HEADERS([generic/tclOO.h generic/tclOODecls.h])
+TEAX_ADD_PRIVATE_HEADERS([generic/tclOOInt.h generic/tclOOIntDecls.h])
+TEAX_INCLUDE_DIR([.])
+TEAX_INCLUDE_DIR([${srcdir}/generic])
 TEA_PRIVATE_TCL_HEADERS
 TEA_ENABLE_THREADS
 TEA_ENABLE_SHARED
 TEA_CONFIG_CFLAGS
-TEAX_SUBST_RESOURCE(PACKAGE_NAME PKG_LIB_FILE PACKAGE_VERSION)
+dnl TEAX_SUBST_RESOURCE(PACKAGE_NAME PKG_LIB_FILE PACKAGE_VERSION)
 TEA_ENABLE_SYMBOLS
 
 TEA_MAKE_LIB
-TEAX_VC_MANIFEST
+dnl TEAX_VC_MANIFEST
 
 TEAX_LAPPEND(CLEANFILES, pkgIndex.tcl)
 AC_SUBST(CLEANFILES)
 AC_DEFINE(USE_TCL_STUBS,[1],[Should always be 1])
-AC_DEFINE(BUILD_tcloo,[1],[Set to 1 when building package])
 
 TEA_PROG_TCLSH
 CONFIGURE_OUTPUTS="Makefile tclooConfig.sh config.cache config.log config.status"
