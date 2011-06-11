@@ -7,8 +7,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.33 2011/01/18 16:10:48 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
