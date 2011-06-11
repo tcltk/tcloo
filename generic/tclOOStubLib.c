@@ -1,5 +1,4 @@
 /*
- * $Id: tclOOStubLib.c,v 1.5 2008/06/26 14:54:25 dkf Exp $
  * ORIGINAL SOURCE: tk/generic/tkStubLib.c, version 1.9 2004/03/17
  */
 
