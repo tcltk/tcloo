@@ -7,8 +7,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclOO.c,v 1.71 2010/03/05 15:39:33 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
