@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.27 2010/03/04 23:51:16 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
