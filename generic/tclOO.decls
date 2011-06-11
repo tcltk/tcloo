@@ -1,5 +1,4 @@
 # -*- tcl -*-
-# $Id: tclOO.decls,v 1.17 2010/03/05 15:39:33 dkf Exp $
 
 # public API
 library tclOO
