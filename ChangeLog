@@ -1,3 +1,8 @@
+2011-07-14  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOCall.c (TclOORenderCallChain): [Bug 3365156]: Remove
+	stray refcount bump that caused a memory leak.
+
 2011-05-25  Donal K. Fellows  <dkf@users.sf.net>
 
 	IMPLEMENTATION OF TIP#381.
