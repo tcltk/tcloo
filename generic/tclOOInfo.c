@@ -1524,6 +1524,7 @@ InfoClassCallCmd(
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, TclOORenderCallChain(interp, callPtr));
+    TclOODeleteChain(callPtr);
     return TCL_OK;
 }
 
