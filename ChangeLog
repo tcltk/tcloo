@@ -1,9 +1,3 @@
-2011-09-10  Donal K. Fellows  <dkf@users.sf.net>
-
-	* generic/tclOOMethod.c (InitEnsembleRewrite): [Bug 3400658]: Set the
-	ensemble-like rewriting up correctly for forwarded methods so that
-	computed error messages are correct.
-
 2011-08-07  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOInfo.c (InfoClassCallCmd): [Bug 3387082]: Plug memory
