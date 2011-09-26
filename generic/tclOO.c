@@ -2059,6 +2059,21 @@ TclOOObjectCmdCore(
     Tcl_IncrRefCount(methodNamePtr);
 
     /*
+     * This is a possible way to do "friend" access. The problem is, it's very
+     * expensive to determine whether an object is a member of a subclass.
+     */
+    {
+	CallFrame *framePtr = ((Interp *) interp)->varFramePtr;
+	if (framePtr->isProcCallFrame & FRAME_IS_METHOD) {
+	    CallContext *callerPtr = framePtr->clientData;
+	    // NOT THE RIGHT CONDITION! (Cheap to calculate though...)
+	    if (callerPtr->oPtr->classPtr==oPtr->classPtr) {
+		flags &= ~PUBLIC_METHOD;
+	    }
+	}
+    }
+
+    /*
      * Get the call chain.
      */
 
