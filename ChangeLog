@@ -1,3 +1,9 @@
+2012-01-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (Tcl_CopyObjectInstance): [Bug 3474460]: When
+	copying an object, make sure that the configuration of the variable
+	resolver is also duplicated.
+
 2011-08-07  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOInfo.c (InfoClassCallCmd): [Bug 3387082]: Plug memory
