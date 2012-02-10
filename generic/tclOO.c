@@ -245,9 +245,11 @@ InitFoundation(
     fPtr->unknownMethodNameObj = Tcl_NewStringObj("unknown", -1);
     fPtr->constructorName = Tcl_NewStringObj("<constructor>", -1);
     fPtr->destructorName = Tcl_NewStringObj("<destructor>", -1);
+    fPtr->clonedName = Tcl_NewStringObj("<cloned>", -1);
     Tcl_IncrRefCount(fPtr->unknownMethodNameObj);
     Tcl_IncrRefCount(fPtr->constructorName);
     Tcl_IncrRefCount(fPtr->destructorName);
+    Tcl_IncrRefCount(fPtr->clonedName);
     Tcl_CreateObjCommand(interp, "::oo::UpCatch", TclOOUpcatchCmd, NULL,NULL);
     Tcl_CreateObjCommand(interp, "::oo::UnknownDefinition",
 	    TclOOUnknownDefinition, NULL, NULL);
@@ -424,6 +426,7 @@ KillFoundation(
     Tcl_DecrRefCount(fPtr->unknownMethodNameObj);
     Tcl_DecrRefCount(fPtr->constructorName);
     Tcl_DecrRefCount(fPtr->destructorName);
+    Tcl_DecrRefCount(fPtr->clonedName);
     ckfree((char *) fPtr);
 }
 
@@ -1476,14 +1479,9 @@ Tcl_CopyObjectInstance(
     int i;
 
     /*
-     * Sanity checks.
+     * Sanity check.
      */
 
-    if (targetName == NULL && oPtr->classPtr != NULL) {
-	Tcl_AppendResult(interp, "must supply a name when copying a class",
-		NULL);
-	return NULL;
-    }
     if (oPtr->flags & ROOT_CLASS) {
 	Tcl_AppendResult(interp, "may not clone the class of classes", NULL);
 	return NULL;
@@ -1704,6 +1702,33 @@ Tcl_CopyObjectInstance(
 			    duplicate);
 		}
 	    }
+	}
+    }
+
+    {
+	CallContext *contextPtr = TclOOGetCallContext(o2Ptr,
+		oPtr->fPtr->clonedName, 0);
+	Tcl_Obj *args[3];
+	int result = TCL_OK;
+
+	if (contextPtr) {
+	    if (!(contextPtr->callPtr->flags & OO_UNKNOWN_METHOD)) {
+		args[0] = TclOOObjectName(interp, o2Ptr);
+		args[1] = oPtr->fPtr->clonedName;
+		args[2] = TclOOObjectName(interp, oPtr);
+		Tcl_IncrRefCount(args[0]);
+		Tcl_IncrRefCount(args[1]);
+		Tcl_IncrRefCount(args[2]);
+		result = TclOOInvokeContext(interp, contextPtr, 3, args);
+		Tcl_DecrRefCount(args[0]);
+		Tcl_DecrRefCount(args[1]);
+		Tcl_DecrRefCount(args[2]);
+	    }
+	    TclOODeleteContext(contextPtr);
+	}
+	if (result != TCL_OK) {
+	    Tcl_DeleteCommandFromToken(interp, o2Ptr->command);
+	    return NULL;
 	}
     }
 
