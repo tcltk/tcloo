@@ -1,3 +1,9 @@
+2012-02-21  Donal K. Fellows  <dkf@users.sf.net>
+
+	* Makefile.in (install-package, install-libraries): [Bug 3490157]:
+	Don't use ranlib during installation process. It's already been done
+	during build.
+
 2012-01-25  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c (Tcl_CopyObjectInstance): [Bug 3474460]: When
