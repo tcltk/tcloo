@@ -136,7 +136,6 @@ kit: sdx_valid $(PKG_KIT)
 install-package: package
 	@mkdir -p $(DESTDIR)$(pkglibdir)
 	$(INSTALL_PROGRAM) $(PKG_LIB_FILE) $(DESTDIR)$(pkglibdir)/$(PKG_LIB_FILE)
-	$(RANLIB) $(DESTDIR)$(pkglibdir)/$(PKG_LIB_FILE)
 	$(INSTALL_DATA) pkgIndex.tcl $(DESTDIR)$(pkglibdir)/pkgIndex.tcl
 	$(INSTALL_DATA) tclooConfig.sh $(DESTDIR)$(pkglibdir)/tclooConfig.sh
 #	for p in $(SRC_DIR)/library/*.tcl ; do \
@@ -163,8 +162,7 @@ install-private-headers:
 install-libraries: libraries
 	@echo "Installing $(PKG_STUB_LIB_FILE) in $(DESTDIR)$(pkglibdir)"
 	@mkdir -p $(DESTDIR)$(pkglibdir)
-	$(INSTALL_PROGRAM) $(PKG_STUB_LIB_FILE) $(DESTDIR)$(pkglibdir)
-	$(RANLIB_STUB) $(DESTDIR)$(pkglibdir)/$(PKG_STUB_LIB_FILE)
+	$(INSTALL_DATA) $(PKG_STUB_LIB_FILE) $(DESTDIR)$(pkglibdir)
 
 #========================================================================
 # Install documentation. Unix manpages should go in the $(mandir) directory.
