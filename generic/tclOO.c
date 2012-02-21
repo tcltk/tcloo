@@ -1496,7 +1496,7 @@ Tcl_CopyObjectInstance(
     FOREACH_HASH_DECLS;
     Method *mPtr;
     Class *mixinPtr;
-    Tcl_Obj *keyPtr, *filterObj;
+    Tcl_Obj *keyPtr, *filterObj, *variableObj;
     int i;
 
     /*
@@ -1560,6 +1560,15 @@ Tcl_CopyObjectInstance(
     DUPLICATE(o2Ptr->filters, oPtr->filters, Tcl_Obj *);
     FOREACH(filterObj, o2Ptr->filters) {
 	Tcl_IncrRefCount(filterObj);
+    }
+
+    /*
+     * Copy the object's variable resolution list to the new object.
+     */
+
+    DUPLICATE(o2Ptr->variables, oPtr->variables, Tcl_Obj *);
+    FOREACH(variableObj, o2Ptr->variables) {
+	Tcl_IncrRefCount(variableObj);
     }
 
     /*
@@ -1643,6 +1652,15 @@ Tcl_CopyObjectInstance(
 	DUPLICATE(cls2Ptr->filters, clsPtr->filters, Tcl_Obj *);
 	FOREACH(filterObj, cls2Ptr->filters) {
 	    Tcl_IncrRefCount(filterObj);
+	}
+
+	/*
+	 * Copy the source class's variable resolution list.
+	 */
+
+	DUPLICATE(cls2Ptr->variables, clsPtr->variables, Tcl_Obj *);
+	FOREACH(variableObj, cls2Ptr->variables) {
+	    Tcl_IncrRefCount(variableObj);
 	}
 
 	/*
