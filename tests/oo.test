@@ -689,6 +689,129 @@ test oo-6.7 {OO: forward resolution scope is per-object} -setup {
 } -cleanup {
     fooClass destroy
 } -result 1
+test oo-6.8 {Bug 3400658: forwarding and wrongargs rewriting} -setup {
+    oo::class create fooClass
+} -constraints bug-3400658 -body {
+    oo::define fooClass {
+	forward test my handler
+	method handler {a b c} {}
+    }
+    fooClass create ::foo
+    foo test
+} -returnCodes error -cleanup {
+    fooClass destroy
+} -result {wrong # args: should be "foo test a b c"}
+test oo-6.9 {Bug 3400658: forwarding and wrongargs rewriting} -setup {
+    oo::class create fooClass
+} -body {
+    oo::define fooClass {
+	forward test my handler
+	method handler {a b c} {list $a,$b,$c}
+    }
+    fooClass create ::foo
+    foo test 1 2 3
+} -cleanup {
+    fooClass destroy
+} -result 1,2,3
+test oo-6.10 {Bug 3400658: forwarding and wrongargs rewriting} -setup {
+    oo::class create fooClass
+} -constraints bug-3400658 -body {
+    oo::define fooClass {
+	forward test my handler
+	method handler {a b c} {list $a,$b,$c}
+    }
+    fooClass create ::foo
+    foo test 1 2
+} -returnCodes error -cleanup {
+    fooClass destroy
+} -result {wrong # args: should be "foo test a b c"}
+test oo-6.11 {Bug 3400658: forwarding and wrongargs rewriting} -setup {
+    oo::object create foo
+} -constraints bug-3400658 -body {
+    oo::objdefine foo {
+	forward test my handler
+	method handler {a b c} {}
+    }
+    foo test
+} -returnCodes error -cleanup {
+    foo destroy
+} -result {wrong # args: should be "foo test a b c"}
+test oo-6.12 {Bug 3400658: forwarding and wrongargs rewriting} -setup {
+    oo::object create foo
+} -body {
+    oo::objdefine foo {
+	forward test my handler
+	method handler {a b c} {list $a,$b,$c}
+    }
+    foo test 1 2 3
+} -cleanup {
+    foo destroy
+} -result 1,2,3
+test oo-6.13 {Bug 3400658: forwarding and wrongargs rewriting} -setup {
+    oo::object create foo
+} -constraints bug-3400658 -body {
+    oo::objdefine foo {
+	forward test my handler
+	method handler {a b c} {list $a,$b,$c}
+    }
+    foo test 1 2
+} -returnCodes error -cleanup {
+    foo destroy
+} -result {wrong # args: should be "foo test a b c"}
+test oo-6.14 {Bug 3400658: forwarding and wrongargs rewriting - multistep} -setup {
+    oo::class create fooClass
+} -constraints bug-3400658 -body {
+    oo::define fooClass {
+	forward test my handler1 p
+	forward handler1 my handler q
+	method handler {a b c} {}
+    }
+    fooClass create ::foo
+    foo test
+} -returnCodes error -cleanup {
+    fooClass destroy
+} -result {wrong # args: should be "foo test c"}
+test oo-6.15 {Bug 3400658: forwarding and wrongargs rewriting - multistep} -setup {
+    oo::class create fooClass
+} -body {
+    oo::define fooClass {
+	forward test my handler1 p
+	forward handler1 my handler q
+	method handler {a b c} {list $a,$b,$c}
+    }
+    fooClass create ::foo
+    foo test 1
+} -cleanup {
+    fooClass destroy
+} -result q,p,1
+test oo-6.16 {Bug 3400658: forwarding and wrongargs rewriting - via alias} -setup {
+    oo::class create fooClass
+} -constraints bug-3400658 -body {
+    oo::define fooClass {
+	forward test handler1 foo bar
+	forward handler2 my handler x
+	method handler {a b c d} {list $a,$b,$c,$d}
+	export eval
+    }
+    fooClass create ::foo
+    foo eval {
+	interp alias {} [namespace current]::handler1 \
+	    {} [namespace current]::my handler2
+    }
+    foo test 1 2 3
+} -returnCodes error -cleanup {
+    fooClass destroy
+} -result {wrong # args: should be "foo test d"}
+test oo-6.18 {Bug 3408830: more forwarding cases} -setup {
+    oo::class create fooClass
+} -body {
+    oo::define fooClass {
+	forward len  string length
+    }
+    [fooClass create foo] len a b
+} -returnCodes error -cleanup {
+    fooClass destroy
+} -result {wrong # args: should be "::foo len string"}
 
 test oo-7.1 {OO: inheritance 101} -setup {
     oo::class create superClass
@@ -1458,6 +1581,28 @@ test oo-15.3 {OO: class cloning} {
     bar destroy
     return $result
 } {::foo->::baseline ::foo->::baseline ::bar->::tester ::bar->::tester}
+test oo-15.4 {OO: object cloning - Bug 3474460} -setup {
+    oo::class create ArbitraryClass
+} -body {
+    ArbitraryClass create foo
+    oo::objdefine foo variable a b c
+    oo::copy foo bar
+    info object variable bar
+} -cleanup {
+    ArbitraryClass destroy
+} -result {a b c}
+test oo-15.5 {OO: class cloning - Bug 3474460} -setup {
+    oo::class create ArbitraryClass
+} -body {
+    oo::class create Foo {
+	superclass ArbitraryClass
+	variable a b c
+    }
+    oo::copy Foo Bar
+    info class variable Bar
+} -cleanup {
+    ArbitraryClass destroy
+} -result {a b c}
 
 test oo-16.1 {OO: object introspection} -body {
     info object
