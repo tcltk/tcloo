@@ -116,6 +116,35 @@ static char initScript[] =
 /*     "tcl_findLibrary tcloo $oo::version $oo::version" */
 /*     " tcloo.tcl OO_LIBRARY oo::library;"; */
 
+static const char *slotScript =
+"::oo::define ::oo::Slot {\n"
+"    method Get {} {error unimplemented}\n"
+"    method Set list {error unimplemented}\n"
+"    method -set args {\n"
+"        uplevel 1 [list [namespace which my] Set $args]\n"
+"    }\n"
+"    method -append args {\n"
+"        uplevel 1 [list [namespace which my] Set [list"
+"                {*}[uplevel 1 [list [namespace which my] Get]] {*}$args]]\n"
+"    }\n"
+"    method -clear {} {uplevel 1 [list [namespace which my] Set {}]}\n"
+"    forward --default-operation my -append\n"
+"    method unknown {args} {\n"
+"        set def --default-operation\n"
+"        if {[llength $args] == 0} {\n"
+"            return [uplevel 1 [list [namespace which my] $def]]\n"
+"        } elseif {![string match -* [lindex $args 0]]} {\n"
+"            return [uplevel 1 [list [namespace which my] $def {*}$args]]\n"
+"        }\n"
+"        next {*}$args\n"
+"    }\n"
+"    export -set -append -clear\n"
+"    unexport unknown destroy\n"
+"}\n"
+"::oo::objdefine ::oo::define::superclass forward --default-operation my -set\n"
+"::oo::objdefine ::oo::define::mixin forward --default-operation my -set\n"
+"::oo::objdefine ::oo::objdefine::mixin forward --default-operation my -set\n";
+
 extern const TclStubs *const tclOOConstStubsPtr;
 
 /*
@@ -358,35 +387,7 @@ InitFoundation(
     if (TclOODefineSlots(fPtr) != TCL_OK) {
 	return TCL_ERROR;
     }
-    return Tcl_Eval(interp,
-"::oo::define ::oo::Slot {\n"
-"    method Get {} {error unimplemented}\n"
-"    method Set list {error unimplemented}\n"
-"    method -set args {\n"
-"        uplevel 1 [list [namespace which my] Set $args]\n"
-"    }\n"
-"    method -append args {\n"
-"        uplevel 1 [list [namespace which my] Set [list"
-"                {*}[uplevel 1 [list [namespace which my] Get]] {*}$args]]\n"
-"    }\n"
-"    method -clear {} {uplevel 1 [list [namespace which my] Set {}]}\n"
-"    forward --default-operation my -append\n"
-"    method unknown {args} {\n"
-"        set def --default-operation\n"
-"        if {[llength $args] == 0} {\n"
-"            return [uplevel 1 [list [namespace which my] $def]]\n"
-"        } elseif {![string match -* [lindex $args 0]]} {\n"
-"            return [uplevel 1 [list [namespace which my] $def {*}$args]]\n"
-"        }\n"
-"        next {*}$args\n"
-"    }\n"
-"    export -set -append -clear\n"
-"    unexport unknown destroy\n"
-"}\n"
-"::oo::objdefine ::oo::define::superclass forward --default-operation my -set\n"
-"::oo::objdefine ::oo::define::mixin forward --default-operation my -set\n"
-"::oo::objdefine ::oo::objdefine::mixin forward --default-operation my -set\n"
-);
+    return Tcl_Eval(interp, slotScript);
 }
 
 /*
