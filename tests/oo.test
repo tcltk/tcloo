@@ -2767,6 +2767,148 @@ test oo-30.2 {Bug 2903011: deleting an object in a constructor} -setup {
 } -returnCodes error -cleanup {
     cls destroy
 } -result {object deleted in constructor}
+
+oo::class create SampleSlot {
+    superclass oo::Slot
+    constructor {} {
+	variable contents {a b c} ops {}
+    }
+    method contents {} {variable contents; return $contents}
+    method ops {} {variable ops; return $ops}
+    method Get {} {
+	variable contents
+	variable ops
+	lappend ops [info level] Get
+	return $contents
+    }
+    method Set {lst} {
+	variable contents $lst
+	variable ops
+	lappend ops [info level] Set $lst
+	return
+    }
+}
+
+test oo-31.1 {TIP 380: slots - class test} -setup {
+    SampleSlot create sampleSlot
+} -body {
+    list [info level] [sampleSlot contents] [sampleSlot ops]
+} -cleanup {
+    rename sampleSlot {}
+} -result {0 {a b c} {}}
+test oo-31.2 {TIP 380: slots - class test} -setup {
+    SampleSlot create sampleSlot
+} -body {
+    list [info level] [sampleSlot -clear] \
+	[sampleSlot contents] [sampleSlot ops]
+} -cleanup {
+    rename sampleSlot {}
+} -result {0 {} {} {1 Set {}}}
+test oo-31.3 {TIP 380: slots - class test} -setup {
+    SampleSlot create sampleSlot
+} -body {
+    list [info level] [sampleSlot -append g h i] \
+	[sampleSlot contents] [sampleSlot ops]
+} -cleanup {
+    rename sampleSlot {}
+} -result {0 {} {a b c g h i} {1 Get 1 Set {a b c g h i}}}
+test oo-31.4 {TIP 380: slots - class test} -setup {
+    SampleSlot create sampleSlot
+} -body {
+    list [info level] [sampleSlot -set d e f] \
+	[sampleSlot contents] [sampleSlot ops]
+} -cleanup {
+    rename sampleSlot {}
+} -result {0 {} {d e f} {1 Set {d e f}}}
+test oo-31.5 {TIP 380: slots - class test} -setup {
+    SampleSlot create sampleSlot
+} -body {
+    list [info level] [sampleSlot -set d e f] [sampleSlot -append g h i] \
+	[sampleSlot contents] [sampleSlot ops]
+} -cleanup {
+    rename sampleSlot {}
+} -result {0 {} {} {d e f g h i} {1 Set {d e f} 1 Get 1 Set {d e f g h i}}}
+
+test oo-32.1 {TIP 380: slots - defaulting} -setup {
+    set s [SampleSlot new]
+} -body {
+    list [$s x y] [$s contents]
+} -cleanup {
+    rename $s {}
+} -result {{} {a b c x y}}
+test oo-32.2 {TIP 380: slots - defaulting} -setup {
+    set s [SampleSlot new]
+} -body {
+    list [$s destroy; $s unknown] [$s contents]
+} -cleanup {
+    rename $s {}
+} -result {{} {a b c destroy unknown}}
+test oo-32.3 {TIP 380: slots - defaulting} -setup {
+    set s [SampleSlot new]
+} -body {
+    oo::objdefine $s forward --default-operation  my -set
+    list [$s destroy; $s unknown] [$s contents] [$s ops]
+} -cleanup {
+    rename $s {}
+} -result {{} unknown {1 Set destroy 1 Set unknown}}
+test oo-32.4 {TIP 380: slots - errors} -setup {
+    set s [SampleSlot new]
+} -body {
+    # Method names beginning with "-" are special to slots
+    $s -grill q
+} -returnCodes error -cleanup {
+    rename $s {}
+} -result {unknown method "-grill": must be -append, -clear, -set, contents or ops}
+
+SampleSlot destroy
+
+test oo-33.1 {TIP 380: slots - presence} -setup {
+    set obj [oo::object new]
+    set result {}
+} -body {
+    oo::define oo::object {
+	::lappend ::result [::info object class filter]
+	::lappend ::result [::info object class mixin]
+	::lappend ::result [::info object class superclass]
+	::lappend ::result [::info object class variable]
+    }
+    oo::objdefine $obj {
+	::lappend ::result [::info object class filter]
+	::lappend ::result [::info object class mixin]
+	::lappend ::result [::info object class variable]
+    }
+    return $result
+} -cleanup {
+    $obj destroy
+} -result {::oo::Slot ::oo::Slot ::oo::Slot ::oo::Slot ::oo::Slot ::oo::Slot ::oo::Slot}
+test oo-33.2 {TIP 380: slots - presence} {
+    lsort [info class instances oo::Slot]
+} {::oo::define::filter ::oo::define::mixin ::oo::define::superclass ::oo::define::variable ::oo::objdefine::filter ::oo::objdefine::mixin ::oo::objdefine::variable}
+proc getMethods obj {
+    list [lsort [info object methods $obj -all]] \
+	[lsort [info object methods $obj -private]]
+}
+test oo-33.3 {TIP 380: slots - presence} {
+    getMethods oo::define::filter
+} {{-append -clear -set} {Get Set}}
+test oo-33.4 {TIP 380: slots - presence} {
+    getMethods oo::define::mixin
+} {{-append -clear -set} {--default-operation Get Set}}
+test oo-33.5 {TIP 380: slots - presence} {
+    getMethods oo::define::superclass
+} {{-append -clear -set} {--default-operation Get Set}}
+test oo-33.6 {TIP 380: slots - presence} {
+    getMethods oo::define::variable
+} {{-append -clear -set} {Get Set}}
+test oo-33.7 {TIP 380: slots - presence} {
+    getMethods oo::objdefine::filter
+} {{-append -clear -set} {Get Set}}
+test oo-33.8 {TIP 380: slots - presence} {
+    getMethods oo::objdefine::mixin
+} {{-append -clear -set} {--default-operation Get Set}}
+test oo-33.9 {TIP 380: slots - presence} {
+    getMethods oo::objdefine::variable
+} {{-append -clear -set} {Get Set}}
 
 cleanupTests
 return
