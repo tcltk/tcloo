@@ -1,3 +1,21 @@
+2012-03-23  Donal K. Fellows  <dkf@users.sf.net>
+
+	IMPLEMENTATION OF TIP#380.
+
+	* doc/define.n, doc/object.n, generic/tclOO.c, generic/tclOOBasic.c:
+	* generic/tclOOCall.c, generic/tclOODefineCmds.c, generic/tclOOInt.h:
+	* tests/oo.test: Switch definitions of lists of things in objects and
+	classes to a slot-based approach, which gives a lot more flexibility
+	and programmability at the script-level. Introduce new [::oo::Slot]
+	class which is the implementation of these things.
+
+	***POTENTIAL INCOMPATIBILITY***
+	The unknown method handler now may be asked to deal with the case
+	where no method name is provided at all. The default implementation
+	generates a compatible error message, and any override that forces the
+	presence of a first argument (i.e., a method name) will continue to
+	function as at present as well, so this is a pretty small change.
+
 2012-02-21  Donal K. Fellows  <dkf@users.sf.net>
 
 	* Makefile.in (install-package, install-libraries): [Bug 3490157]:
