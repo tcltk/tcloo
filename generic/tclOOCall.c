@@ -965,7 +965,7 @@ TclOOGetCallContext(
 		&cb, NULL, 0, NULL);
 	callPtr->flags |= OO_UNKNOWN_METHOD;
 	callPtr->epoch = -1;
-	if (count == callPtr->numChain) {
+	if (callPtr->numChain == 0) {
 	    TclOODeleteChain(callPtr);
 	    return NULL;
 	}
