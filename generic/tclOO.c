@@ -110,11 +110,45 @@ static const DeclaredClassMethod objMethods[] = {
     {NULL}
 };
 
-static char initScript[] =
-    "namespace eval ::oo { variable version " TCLOO_VERSION " };"
-    "namespace eval ::oo { variable patchlevel " TCLOO_PATCHLEVEL " };";
-/*     "tcl_findLibrary tcloo $oo::version $oo::version" */
-/*     " tcloo.tcl OO_LIBRARY oo::library;"; */
+/*
+ * Scripted parts of TclOO. Note that we embed the scripts for simpler
+ * deployment (i.e., no separate script to load).
+ */
+
+static const char *initScript =
+"namespace eval ::oo { variable version " TCLOO_VERSION " };"
+"namespace eval ::oo { variable patchlevel " TCLOO_PATCHLEVEL " };";
+/*"tcl_findLibrary tcloo $oo::version $oo::version" */
+/*"     tcloo.tcl OO_LIBRARY oo::library;"; */
+
+static const char *classConstructorBody =
+"lassign [::oo::UpCatch ::oo::define [self] $definitionScript] msg opts;"
+"if {[dict get $opts -code] == 1} {dict set opts -errorline 0xDeadBeef};"
+"return -options $opts $msg";
+
+static const char *clonedBody =
+"foreach p [info procs [info object namespace $originObject]::*] {"
+"    set args [info args $p];"
+"    set idx -1;"
+"    foreach a $args {"
+"        lset args [incr idx] "
+"            [if {[info default $p $a d]} {list $a $d} {list $a}]"
+"    };"
+"    set b [info body $p];"
+"    set p [namespace tail $p];"
+"    proc $p $args $b;"
+"};"
+"foreach v [info vars [info object namespace $originObject]::*] {"
+"    upvar 0 $v vOrigin;"
+"    namespace upvar [namespace current] [namespace tail $v] vNew;"
+"    if {[info exists vOrigin]} {"
+"        if {[array exists vOrigin]} {"
+"            array set vNew [array get vOrigin];"
+"        } else {"
+"            set vNew $vOrigin;"
+"        }"
+"    }"
+"}";
 
 static const char *slotScript =
 "::oo::define ::oo::Slot {\n"
@@ -269,9 +303,11 @@ InitFoundation(
     fPtr->unknownMethodNameObj = Tcl_NewStringObj("unknown", -1);
     fPtr->constructorName = Tcl_NewStringObj("<constructor>", -1);
     fPtr->destructorName = Tcl_NewStringObj("<destructor>", -1);
+    fPtr->clonedName = Tcl_NewStringObj("<cloned>", -1);
     Tcl_IncrRefCount(fPtr->unknownMethodNameObj);
     Tcl_IncrRefCount(fPtr->constructorName);
     Tcl_IncrRefCount(fPtr->destructorName);
+    Tcl_IncrRefCount(fPtr->clonedName);
     Tcl_CreateObjCommand(interp, "::oo::UpCatch", TclOOUpcatchCmd, NULL,NULL);
     Tcl_CreateObjCommand(interp, "::oo::UnknownDefinition",
 	    TclOOUnknownDefinition, NULL, NULL);
@@ -337,6 +373,18 @@ InitFoundation(
     }
 
     /*
+     * Create the default <cloned> method implementation, used when 'oo::copy'
+     * is called to finish the copying of one object to another.
+     */
+
+    argsPtr = Tcl_NewStringObj("originObject", -1);
+    Tcl_IncrRefCount(argsPtr);
+    bodyPtr = Tcl_NewStringObj(clonedBody, -1);
+    TclOONewProcMethod(interp, fPtr->objectCls, 0, fPtr->clonedName, argsPtr,
+	    bodyPtr, NULL);
+    Tcl_DecrRefCount(argsPtr);
+
+    /*
      * Finish setting up the class of classes by marking the 'new' method as
      * private; classes, unlike general objects, must have explicit names. We
      * also need to create the constructor for classes.
@@ -352,12 +400,7 @@ InitFoundation(
 
     argsPtr = Tcl_NewStringObj("{definitionScript {}}", -1);
     Tcl_IncrRefCount(argsPtr);
-    bodyPtr = Tcl_NewStringObj(
-	    "lassign [::oo::UpCatch ::oo::define [self] $definitionScript] msg opts\n"
-	    "if {[dict get $opts -code] == 1} {"
-	    "    dict set opts -errorline 0xDeadBeef\n"
-	    "}\n"
-	    "return -options $opts $msg", -1);
+    bodyPtr = Tcl_NewStringObj(classConstructorBody, -1);
     fPtr->classCls->constructorPtr = TclOONewProcMethod(interp,
 	    fPtr->classCls, 0, NULL, argsPtr, bodyPtr, NULL);
     Tcl_DecrRefCount(argsPtr);
@@ -457,6 +500,7 @@ KillFoundation(
     Tcl_DecrRefCount(fPtr->unknownMethodNameObj);
     Tcl_DecrRefCount(fPtr->constructorName);
     Tcl_DecrRefCount(fPtr->destructorName);
+    Tcl_DecrRefCount(fPtr->clonedName);
     ckfree((char *) fPtr);
 }
 
@@ -1511,18 +1555,14 @@ Tcl_CopyObjectInstance(
     FOREACH_HASH_DECLS;
     Method *mPtr;
     Class *mixinPtr;
-    Tcl_Obj *keyPtr, *filterObj, *variableObj;
-    int i;
+    CallContext *contextPtr;
+    Tcl_Obj *keyPtr, *filterObj, *variableObj, *args[3];
+    int i, result;
 
     /*
-     * Sanity checks.
+     * Sanity check.
      */
 
-    if (targetName == NULL && oPtr->classPtr != NULL) {
-	Tcl_AppendResult(interp, "must supply a name when copying a class",
-		NULL);
-	return NULL;
-    }
     if (oPtr->flags & ROOT_CLASS) {
 	Tcl_AppendResult(interp, "may not clone the class of classes", NULL);
 	return NULL;
@@ -1743,6 +1783,25 @@ Tcl_CopyObjectInstance(
 			    duplicate);
 		}
 	    }
+	}
+    }
+
+    contextPtr = TclOOGetCallContext(o2Ptr, oPtr->fPtr->clonedName, 0);
+    if (contextPtr) {
+	args[0] = TclOOObjectName(interp, o2Ptr);
+	args[1] = oPtr->fPtr->clonedName;
+	args[2] = TclOOObjectName(interp, oPtr);
+	Tcl_IncrRefCount(args[0]);
+	Tcl_IncrRefCount(args[1]);
+	Tcl_IncrRefCount(args[2]);
+	result = TclOOInvokeContext(interp, contextPtr, 3, args);
+	Tcl_DecrRefCount(args[0]);
+	Tcl_DecrRefCount(args[1]);
+	Tcl_DecrRefCount(args[2]);
+	TclOODeleteContext(contextPtr);
+	if (result != TCL_OK) {
+	    Tcl_DeleteCommandFromToken(interp, o2Ptr->command);
+	    return NULL;
 	}
     }
 

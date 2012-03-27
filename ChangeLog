@@ -1,3 +1,10 @@
+2012-02-10  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (Tcl_CopyObjectInstance): [Bug 3474460]: Make the
+	target object name optional when copying classes. [RFE 3485060]: Add
+	callback method ("<cloned>") so that scripted control over copying is
+	easier.
+
 2012-03-23  Donal K. Fellows  <dkf@users.sf.net>
 
 	IMPLEMENTATION OF TIP#380.
