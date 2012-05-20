@@ -111,6 +111,16 @@ static const DeclaredClassMethod objMethods[] = {
 };
 
 /*
+ * And for the oo::class constructor...
+ */
+
+static const Tcl_MethodType classConstructor = {
+    TCL_OO_METHOD_VERSION_CURRENT,
+    "oo::class constructor",
+    TclOO_Class_Constructor, NULL, NULL
+};
+
+/*
  * Scripted parts of TclOO. Note that we embed the scripts for simpler
  * deployment (i.e., no separate script to load).
  */
@@ -120,11 +130,6 @@ static const char *initScript =
 "namespace eval ::oo { variable patchlevel " TCLOO_PATCHLEVEL " };";
 /*"tcl_findLibrary tcloo $oo::version $oo::version" */
 /*"     tcloo.tcl OO_LIBRARY oo::library;"; */
-
-static const char *classConstructorBody =
-"lassign [::oo::UpCatch ::oo::define [self] $definitionScript] msg opts;"
-"if {[dict get $opts -code] == 1} {dict set opts -errorline 0xDeadBeef};"
-"return -options $opts $msg";
 
 static const char *clonedBody =
 "foreach p [info procs [info object namespace $originObject]::*] {"
@@ -304,11 +309,12 @@ InitFoundation(
     fPtr->constructorName = Tcl_NewStringObj("<constructor>", -1);
     fPtr->destructorName = Tcl_NewStringObj("<destructor>", -1);
     fPtr->clonedName = Tcl_NewStringObj("<cloned>", -1);
+    fPtr->defineName = Tcl_NewStringObj("::oo::define", -1);
     Tcl_IncrRefCount(fPtr->unknownMethodNameObj);
     Tcl_IncrRefCount(fPtr->constructorName);
     Tcl_IncrRefCount(fPtr->destructorName);
     Tcl_IncrRefCount(fPtr->clonedName);
-    Tcl_CreateObjCommand(interp, "::oo::UpCatch", TclOOUpcatchCmd, NULL,NULL);
+    Tcl_IncrRefCount(fPtr->defineName);
     Tcl_CreateObjCommand(interp, "::oo::UnknownDefinition",
 	    TclOOUnknownDefinition, NULL, NULL);
     namePtr = Tcl_NewStringObj("::oo::UnknownDefinition", -1);
@@ -388,22 +394,13 @@ InitFoundation(
      * Finish setting up the class of classes by marking the 'new' method as
      * private; classes, unlike general objects, must have explicit names. We
      * also need to create the constructor for classes.
-     *
-     * The 0xDeadBeef is a special signal to the errorInfo logger that is used
-     * by constructors that stops it from generating extra error information
-     * that is confusing.
      */
 
     namePtr = Tcl_NewStringObj("new", -1);
     Tcl_NewInstanceMethod(interp, (Tcl_Object) fPtr->classCls->thisPtr,
 	    namePtr /* keeps ref */, 0 /* ==private */, NULL, NULL);
-
-    argsPtr = Tcl_NewStringObj("{definitionScript {}}", -1);
-    Tcl_IncrRefCount(argsPtr);
-    bodyPtr = Tcl_NewStringObj(classConstructorBody, -1);
-    fPtr->classCls->constructorPtr = TclOONewProcMethod(interp,
-	    fPtr->classCls, 0, NULL, argsPtr, bodyPtr, NULL);
-    Tcl_DecrRefCount(argsPtr);
+    fPtr->classCls->constructorPtr = (Method *) Tcl_NewMethod(interp,
+	    (Tcl_Class) fPtr->classCls, NULL, 0, &classConstructor, NULL);
 
     /*
      * Create non-object commands and plug ourselves into the Tcl [info]
@@ -501,6 +498,7 @@ KillFoundation(
     Tcl_DecrRefCount(fPtr->constructorName);
     Tcl_DecrRefCount(fPtr->destructorName);
     Tcl_DecrRefCount(fPtr->clonedName);
+    Tcl_DecrRefCount(fPtr->defineName);
     ckfree((char *) fPtr);
 }
 
