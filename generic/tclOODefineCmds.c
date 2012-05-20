@@ -17,6 +17,13 @@
 #include "tclOOInt.h"
 
 /*
+ * The maximum length of fully-qualified object name to use in an errorinfo
+ * message. Longer than this will be curtailed.
+ */
+
+#define OBJNAME_LENGTH_IN_ERRORINFO_LIMIT 30
+
+/*
  * Some things that make it easier to declare a slot.
  */
 
@@ -40,6 +47,8 @@ struct DeclaredSlot {
 static inline void	BumpGlobalEpoch(Tcl_Interp *interp, Class *classPtr);
 static Tcl_Command	FindCommand(Tcl_Interp *interp, Tcl_Obj *stringObj,
 			    Tcl_Namespace *const namespacePtr);
+static void		GenerateErrorInfo(Tcl_Interp *interp, Object *oPtr,
+			    Tcl_Obj *savedNameObj, const char *typeOfSubject);
 static inline Class *	GetClassInOuterContext(Tcl_Interp *interp,
 			    Tcl_Obj *className, const char *errMsg);
 static inline int	InitDefineContext(Tcl_Interp *interp,
@@ -97,8 +106,8 @@ static int		ObjVarsSet(ClientData clientData,
  */
 
 static const struct DeclaredSlot slots[] = {
-    SLOT("define::filter",      ClassFilterGet, ClassFilterSet),
-    SLOT("define::mixin",       ClassMixinGet,  ClassMixinSet),
+    SLOT("define::filter",	ClassFilterGet, ClassFilterSet),
+    SLOT("define::mixin",	ClassMixinGet,  ClassMixinSet),
     SLOT("define::superclass",  ClassSuperGet,  ClassSuperSet),
     SLOT("define::variable",    ClassVarsGet,   ClassVarsSet),
     SLOT("objdefine::filter",   ObjFilterGet,   ObjFilterSet),
@@ -672,6 +681,7 @@ TclOOGetDefineCmdContext(
     Tcl_Interp *interp)
 {
     Interp *iPtr = (Interp *) interp;
+    Tcl_Object object;
 
     if ((iPtr->varFramePtr == NULL)
 	    || (iPtr->varFramePtr->isProcCallFrame != FRAME_IS_OO_DEFINE)) {
@@ -680,7 +690,13 @@ TclOOGetDefineCmdContext(
 		NULL);
 	return NULL;
     }
-    return (Tcl_Object) iPtr->varFramePtr->clientData;
+    object = iPtr->varFramePtr->clientData;
+    if (Tcl_ObjectDeleted(object)) {
+	Tcl_AppendResult(interp, "this command cannot be called when the "
+		"object has been deleted", NULL);
+	return NULL;
+    }
+    return object;
 }
 
 /*
@@ -721,6 +737,45 @@ GetClassInOuterContext(
 	return NULL;
     }
     return oPtr->classPtr;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * GenerateErrorInfo --
+ *
+ *	Factored out code to generate part of the error trace messages.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static void
+GenerateErrorInfo(
+    Tcl_Interp *interp,		/* Where to store the error info trace. */
+    Object *oPtr,		/* What object (or class) was being configured
+				 * when the error occurred? */
+    Tcl_Obj *savedNameObj,	/* Name of object saved from before script was
+				 * evaluated, which is needed if the object
+				 * goes away part way through execution. OTOH,
+				 * if the object isn't deleted then its
+				 * current name (post-execution) has to be
+				 * used. This matters, because the object
+				 * could have been renamed... */
+    const char *typeOfSubject)	/* Part of the message, saying whether it was
+				 * an object, class or class-as-object that
+				 * was being configured. */
+{
+    int length;
+    Tcl_Obj *realNameObj = Tcl_ObjectDeleted((Tcl_Object) oPtr)
+	    ? savedNameObj : TclOOObjectName(interp, oPtr);
+    const char *objName = Tcl_GetStringFromObj(realNameObj, &length);
+    int limit = OBJNAME_LENGTH_IN_ERRORINFO_LIMIT;
+    int overflow = (length > limit);
+
+    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+	    "\n    (in definition script for %s \"%.*s%s\" line %d)",
+	    typeOfSubject, (overflow ? limit : length), objName,
+	    (overflow ? "..." : ""), interp->errorLine));
 }
 
 /*
@@ -773,20 +828,15 @@ TclOODefineObjCmd(
 
     AddRef(oPtr);
     if (objc == 3) {
+	Tcl_Obj *objNameObj = TclOOObjectName(interp, oPtr);
+
+	Tcl_IncrRefCount(objNameObj);
 	result = TclEvalObjEx(interp, objv[2], 0,
 		((Interp *)interp)->cmdFramePtr, 2);
-
 	if (result == TCL_ERROR) {
-	    int length;
-	    const char *objName = Tcl_GetStringFromObj(objv[1], &length);
-	    int limit = 60;
-	    int overflow = (length > limit);
-
-	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		    "\n    (in definition script for object \"%.*s%s\" line %d)",
-		    (overflow ? limit : length), objName,
-		    (overflow ? "..." : ""), interp->errorLine));
+	    GenerateErrorInfo(interp, oPtr, objNameObj, "class");
 	}
+	Tcl_DecrRefCount(objNameObj);
     } else {
 	Tcl_Obj *objPtr, *obj2Ptr, **objs;
 	Interp *iPtr = (Interp *) interp;
@@ -892,20 +942,15 @@ TclOOObjDefObjCmd(
 
     AddRef(oPtr);
     if (objc == 3) {
+	Tcl_Obj *objNameObj = TclOOObjectName(interp, oPtr);
+
+	Tcl_IncrRefCount(objNameObj);
 	result = TclEvalObjEx(interp, objv[2], 0,
 		((Interp *)interp)->cmdFramePtr, 2);
-
 	if (result == TCL_ERROR) {
-	    int length;
-	    const char *objName = Tcl_GetStringFromObj(objv[1], &length);
-	    int limit = 60;
-	    int overflow = (length > limit);
-
-	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		    "\n    (in definition script for object \"%.*s%s\" line %d)",
-		    (overflow ? limit : length), objName,
-		    (overflow ? "..." : ""), interp->errorLine));
+	    GenerateErrorInfo(interp, oPtr, objNameObj, "object");
 	}
+	Tcl_DecrRefCount(objNameObj);
     } else {
 	Tcl_Obj *objPtr, *obj2Ptr, **objs;
 	Interp *iPtr = (Interp *) interp;
@@ -1011,21 +1056,15 @@ TclOODefineSelfObjCmd(
 
     AddRef(oPtr);
     if (objc == 2) {
+	Tcl_Obj *objNameObj = TclOOObjectName(interp, oPtr);
+
+	Tcl_IncrRefCount(objNameObj);
 	result = TclEvalObjEx(interp, objv[1], 0,
 		((Interp *)interp)->cmdFramePtr, 2);
-
 	if (result == TCL_ERROR) {
-	    int length;
-	    const char *objName = Tcl_GetStringFromObj(
-		    TclOOObjectName(interp, oPtr), &length);
-	    int limit = 60;
-	    int overflow = (length > limit);
-
-	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		    "\n    (in definition script for object \"%.*s%s\" line %d)",
-		    (overflow ? limit : length), objName,
-		    (overflow ? "..." : ""), interp->errorLine));
+	    GenerateErrorInfo(interp, oPtr, objNameObj, "class object");
 	}
+	Tcl_DecrRefCount(objNameObj);
     } else {
 	Tcl_Obj *objPtr, *obj2Ptr, **objs;
 	Interp *iPtr = (Interp *) interp;
