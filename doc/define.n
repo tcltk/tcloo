@@ -18,6 +18,10 @@ package require TclOO
 \fBoo::define\fI class subcommand arg\fR ?\fIarg ...\fR?
 \fBoo::objdefine\fI object defScript\fR
 \fBoo::objdefine\fI object subcommand arg\fR ?\fIarg ...\fR?
+
+.VS
+\fBcurrentdefinition\fR
+.VE
 .fi
 .BE
 
@@ -337,6 +341,39 @@ an unknown method handler to tie all these pieces together, and they hide
 their \fBdestroy\fR method so that it is not invoked inadvertently. It is
 \fIrecommended\fR that any user changes to the slot mechanism be restricted to
 defining new operations whose names start with a hyphen.
+.SH "ADDING DEFINITION DECLARATIONS"
+It is possible to add definition declarations by creating Tcl commands in the
+correct namespace. To add a declaration to \fBoo::define\fR, the command
+should be placed in the namespace \fB::oo::define\fR, and to add a declaration
+to \fBoo::objdefine\fR, add the command to \fB::oo::objdefine\fR (this also
+ensures that it is supported via \fBoo::define \fIcls\fB self\fR); the
+namespace to place the command into exactly matches the name of the main
+definition command that is to attached to. All definition declarations placed
+in \fB::oo::define\fR should assume that they are being applied to a class,
+and all those in \fB::oo::objdefine\fR should assume they are being applied to
+an instance object.
+.PP
+Care should be taken to respect what stack frame any called declarations are
+called from; the information about which object or class is being modified is
+stored in the stack frame itself.  A single command is provided to allow
+discovery of what object or class is being currently defined:
+.VE
+.TP
+\fBcurrentdefinition\fR
+.VS
+This takes no arguments and, when called from the correct stack frame, will
+return the full name of object that the stack frame is defining. It should not
+be called from any other context. Note that this command is not intended to be
+called directly in definition scripts themselves, but rather just in
+procedures created in the definition namespace.
+.PP
+All commands placed in the relevant namespace (i.e., \fB::oo::define\fR or
+\fB::oo::objdefine\fR) will support unique abbreviation of their name in
+definition scripts.
+.PP
+\fIBe aware\fR that while changing the way that an existing definition is
+implemented is possible, it can affect other code as well. It is recommended
+that definitions are only ever added to.
 .VE
 .SH EXAMPLES
 This example demonstrates how to use both forms of the \fBoo::define\fR and
@@ -394,6 +431,32 @@ oo::class create B {
 inst m1              \fI\(-> prints "red brick"\fR
 inst m2              \fI\(-> prints "blue brick"\fR
 .CE
+.PP
+.VS
+This shows how to create a new definition declaration. The definition prints
+some debugging information, and then creates a simple method in the context
+class which acts as a general variable reader.
+.PP
+.CS
+proc oo::define::getter {} {
+    puts "Getter for [uplevel \fBcurrentdefinition\fR]"
+    uplevel 1 [list \fBmethod\fR get name {
+        namespace upvar [namespace current] $name var
+        return $var
+    }]
+}
+
+oo::class create Example {
+    \fBvariable\fR a b c
+    \fBconstructor\fR {} {
+        set a 1; set b 2; set c 3
+    }
+    getter           \fI\(-> prints "Getter for ::Example"\fR
+}
+Example create eg1
+puts [eg1 get b]     \fI\(-> prints "2"\fR
+.CE
+.VE
 .SH "SEE ALSO"
 next(n), oo::class(n), oo::object(n)
 .SH KEYWORDS

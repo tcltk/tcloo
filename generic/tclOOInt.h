@@ -411,6 +411,9 @@ typedef struct {
  */
 
 MODULE_SCOPE int	TclOOInit(Tcl_Interp *interp);
+MODULE_SCOPE int	TclOOCurrentDefinitionObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
 MODULE_SCOPE int	TclOODefineObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);

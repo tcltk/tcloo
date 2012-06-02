@@ -1116,6 +1116,38 @@ TclOOCopyObjectCmd(
 }
 
 /*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOCurrentDefinitionObjCmd --
+ *
+ *	Implementation of the [currentdefinition] command, which what object
+ *	or class is being defined in the current stack frame.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+int
+TclOOCurrentDefinitionObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Tcl_Object object;
+
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, NULL);
+	return TCL_ERROR;
+    }
+    object = TclOOGetDefineCmdContext(interp);
+    if (object == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, TclOOObjectName(interp, (Object *) object));
+    return TCL_OK;
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
