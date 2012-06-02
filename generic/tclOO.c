@@ -284,6 +284,7 @@ InitFoundation(
     Foundation *fPtr = (Foundation *) ckalloc(sizeof(Foundation));
     Tcl_Obj *namePtr, *argsPtr, *bodyPtr;
     Tcl_DString buffer;
+    Tcl_Namespace *defHelpNs;
     int i;
 
     /*
@@ -303,6 +304,7 @@ InitFoundation(
 	    DeletedObjdefNamespace);
     fPtr->helpersNs = Tcl_CreateNamespace(interp, "::oo::Helpers", fPtr,
 	    DeletedHelpersNamespace);
+    defHelpNs = Tcl_CreateNamespace(interp, "::oo::DefineHelpers", NULL,NULL);
     fPtr->epoch = 0;
     fPtr->tsdPtr = tsdPtr;
     fPtr->unknownMethodNameObj = Tcl_NewStringObj("unknown", -1);
@@ -319,7 +321,9 @@ InitFoundation(
 	    TclOOUnknownDefinition, NULL, NULL);
     namePtr = Tcl_NewStringObj("::oo::UnknownDefinition", -1);
     Tcl_SetNamespaceUnknownHandler(interp, fPtr->defineNs, namePtr);
+    TclSetNsPath((Namespace *) fPtr->defineNs, 1, &defHelpNs);
     Tcl_SetNamespaceUnknownHandler(interp, fPtr->objdefNs, namePtr);
+    TclSetNsPath((Namespace *) fPtr->objdefNs, 1, &defHelpNs);
 
     /*
      * Create the subcommands in the oo::define and oo::objdefine spaces.
@@ -340,6 +344,8 @@ InitFoundation(
 		objdefCmds[i].objProc, INT2PTR(objdefCmds[i].flag), NULL);
 	Tcl_DStringFree(&buffer);
     }
+    Tcl_CreateObjCommand(interp, "::oo::DefineHelpers::currentdefinition",
+	    TclOOCurrentDefinitionObjCmd, NULL, NULL);
 
     /*
      * While the foundation is in assocData, this call is not needed.

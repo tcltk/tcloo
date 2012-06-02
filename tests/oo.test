@@ -2120,6 +2120,43 @@ test oo-18.11 {OO: define/self command support} -setup {
     (in definition script for class "::foo" line 1)
     invoked from within
 "oo::define foo {rename ::foo {}; self {error foobar}}"}
+test oo-18.12 {OO: define and currentdefinition} -setup {
+    oo::class create master
+    oo::class create ::foo {superclass master}
+} -body {
+    namespace eval :: {oo::define foo currentdefinition}
+} -cleanup {
+    master destroy
+} -result ::foo
+test oo-18.13 {OO: define and currentdefinition} -setup {
+    oo::class create master
+    oo::class create ::foo {superclass master}
+} -body {
+    proc oo::define::TEST {} { currentdefinition }
+    oo::define foo TEST
+} -returnCodes error -cleanup {
+    catch {rename oo::define::TEST {}}
+    master destroy
+} -result {this command may only be called from within the context of an ::oo::define or ::oo::objdefine command}
+test oo-18.14 {OO: define and currentdefinition} -setup {
+    oo::class create master
+    oo::class create ::foo {superclass master}
+} -body {
+    oo::define foo { currentdefinition bar }
+} -returnCodes error -cleanup {
+    master destroy
+} -result {wrong # args: should be "currentdefinition"}
+test oo-18.15 {OO: define and currentdefinition} -setup {
+    oo::class create master
+    oo::class create ::foo {superclass master}
+} -body {
+    oo::define foo { ::namespace origin currentdefinition }
+} -cleanup {
+    master destroy
+} -result ::oo::DefineHelpers::currentdefinition
+test oo-18.16 {OO: objdefine and currentdefinition} {
+    oo::objdefine oo::object { ::namespace origin currentdefinition }
+} ::oo::DefineHelpers::currentdefinition
 
 test oo-19.1 {OO: varname method} -setup {
     oo::object create inst
