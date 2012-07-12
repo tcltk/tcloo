@@ -1,9 +1,38 @@
-2012-02-10  Donal K. Fellows  <dkf@users.sf.net>
+2012-05-20  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOBasic.c (TclOO_Class_Constructor): [Bug 2023112]: Cut
+	the amount of hackiness in class constructors, and refactor some of
+	the error message handling from [oo::define] to be saner in the face
+	of odd happenings.
+
+2012-04-10  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOODefineCmds.c (ClassVarsSet, ObjVarsSet): [Bug 3396896]:
+	Ensure that the lists of variable names used to drive variable
+	resolution will never have the same name twice.
+
+2012-04-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (Tcl_NewObjectInstance, TclNRNewObjectInstance):
+	[Bug 3514761]: Fixed bogosity with automated argument description
+	handling when constructing an instance of a class that is itself a
+	member of an ensemble. Thanks to Andreas Kupries for identifying that
+	this was a problem case at all!
+	(Tcl_CopyObjectInstance): Fix potential bleed-over of ensemble
+	information into [oo::copy].
+
+2012-03-27  Donal K. Fellows  <dkf@users.sf.net>
+
+	IMPLEMENTATION OF TIP#397.
 
 	* generic/tclOO.c (Tcl_CopyObjectInstance): [Bug 3474460]: Make the
 	target object name optional when copying classes. [RFE 3485060]: Add
 	callback method ("<cloned>") so that scripted control over copying is
 	easier.
+	***POTENTIAL INCOMPATIBILITY***
+	If you'd previously been using the "<cloned>" method name, this now
+	has a standard semantics and call interface. Only a problem if you are
+	also using [oo::copy].
 
 2012-03-23  Donal K. Fellows  <dkf@users.sf.net>
 

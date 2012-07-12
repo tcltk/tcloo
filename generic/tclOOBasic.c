@@ -19,6 +19,66 @@
 /*
  * ----------------------------------------------------------------------
  *
+ * TclOO_Class_Constructor --
+ *
+ *	Implementation for oo::class constructor.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+int
+TclOO_Class_Constructor(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
+    Tcl_Obj *invoke[3];
+    int result;
+
+    if (objc-1 > Tcl_ObjectContextSkippedArgs(context)) {
+	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
+		"?definitionScript?");
+	return TCL_ERROR;
+    } else if (objc == Tcl_ObjectContextSkippedArgs(context)) {
+	return TCL_OK;
+    }
+
+    /*
+     * Delegate to [oo::define] to do the work.
+     */
+
+    invoke[0] = oPtr->fPtr->defineName;
+    invoke[1] = TclOOObjectName(interp, oPtr);
+    invoke[2] = objv[objc-1];
+
+    /*
+     * Must add references or errors in configuration script will cause
+     * trouble.
+     */
+
+    Tcl_IncrRefCount(invoke[0]);
+    Tcl_IncrRefCount(invoke[1]);
+    Tcl_IncrRefCount(invoke[2]);
+
+    /*
+     * Tricky point: do not want the extra reported level in the Tcl stack
+     * trace, so use TCL_EVAL_INVOKE.
+     */
+
+    result = Tcl_EvalObjv(interp, 3, invoke, TCL_EVAL_INVOKE);
+
+    Tcl_DecrRefCount(invoke[0]);
+    Tcl_DecrRefCount(invoke[1]);
+    Tcl_DecrRefCount(invoke[2]);
+    return result;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * TclOO_Class_Create --
  *
  *	Implementation for oo::class->create method.
@@ -1052,50 +1112,6 @@ TclOOCopyObjectCmd(
      */
 
     Tcl_SetObjResult(interp, TclOOObjectName(interp, (Object *) o2Ptr));
-    return TCL_OK;
-}
-
-/*
- * ----------------------------------------------------------------------
- *
- * TclOOUpcatchCmd --
- *
- *	Implementation of the [oo::UpCatch] command, which is a combination of
- *	[uplevel 1] and [catch] that makes it easier to write transparent
- *	error handling in scripts.
- *
- * ----------------------------------------------------------------------
- */
-
-int
-TclOOUpcatchCmd(
-    ClientData ignored,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    Interp *iPtr = (Interp *) interp;
-    CallFrame *savedFramePtr = iPtr->varFramePtr;
-    Tcl_Obj *resultObj[2];
-    int result;
-
-    if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "cmd ...");
-	return TCL_ERROR;
-    }
-    if (iPtr->varFramePtr->callerVarPtr != NULL) {
-	iPtr->varFramePtr = iPtr->varFramePtr->callerVarPtr;
-    }
-    result = Tcl_EvalObjv(interp, objc-1, objv+1, TCL_EVAL_INVOKE);
-    iPtr->varFramePtr = savedFramePtr;
-    if (Tcl_LimitExceeded(interp)) {
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"UpCatch\" body line %d)", interp->errorLine));
-	return TCL_ERROR;
-    }
-    resultObj[0] = Tcl_GetObjResult(interp);
-    resultObj[1] = Tcl_GetReturnOptions(interp, result);
-    Tcl_SetObjResult(interp, Tcl_NewListObj(2, resultObj));
     return TCL_OK;
 }
 
