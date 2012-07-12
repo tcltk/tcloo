@@ -1223,15 +1223,6 @@ ConstructorErrorHandler(
     const char *objectName, *kindName;
     int objectNameLen;
 
-    if (interp->errorLine == (int) 0xDEADBEEF) {
-	/*
-	 * Horrible hack to deal with certain constructors that must not add
-	 * information to the error trace.
-	 */
-
-	return;
-    }
-
     if (mPtr->declaringObjectPtr != NULL) {
 	declarerPtr = mPtr->declaringObjectPtr;
 	kindName = "object";
