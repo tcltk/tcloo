@@ -322,6 +322,7 @@ typedef struct Foundation {
 				 * destructor. */
     Tcl_Obj *clonedName;	/* Shared object containing the name of a
 				 * "<cloned>" pseudo-constructor. */
+    Tcl_Obj *defineName;	/* Fully qualified name of oo::define. */
 } Foundation;
 
 /*
@@ -466,6 +467,9 @@ MODULE_SCOPE int	TclOOSelfObjCmd(ClientData clientData,
  * Method implementations (in tclOOBasic.c).
  */
 
+MODULE_SCOPE int	TclOO_Class_Constructor(ClientData clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
 MODULE_SCOPE int	TclOO_Class_Create(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
@@ -533,9 +537,6 @@ MODULE_SCOPE Tcl_Obj *	TclOORenderCallChain(Tcl_Interp *interp,
 MODULE_SCOPE void	TclOOStashContext(Tcl_Obj *objPtr,
 			    CallContext *contextPtr);
 MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
-MODULE_SCOPE int	TclOOUpcatchCmd(ClientData ignored,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
 
 /*
  * Include all the private API, generated from tclOO.decls.
