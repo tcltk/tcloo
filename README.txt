@@ -1,6 +1,6 @@
 Object Oriented Programming Package for Tcl (TclOO) Version 0.7
 
-Copyright 2005-2008 Donal K. Fellows
+Copyright 2005-2012 Donal K. Fellows
 
 License
 =======
@@ -65,3 +65,32 @@ for {set i 1} {$i <= 10} {incr i} {
     puts "Add $i to get [$sum add $i]"
 }
 summation destroy
+
+Significant Changes from 0.6 Release
+====================================
+* Small changes that improve things substantially:
+    * Forwarded methods resolve in the object's namespace.
+    * Added [info object namespace] to get an object's namespace.
+    * Added Tcl_GetObjectName() for fetching the name of an object.
+  TIP #354 <URL:http://tip.tcl.tk/354.html>
+* Made "varname" method work with array elements.
+* Added [info object methodtype] and [info class methodtype].
+* Converted configuration of lists of things in classes and objects to work as
+  slots, implemented as instances of [oo::Slot] class. 
+  TIP #380 <URL:http://tip.tcl.tk/380.html>
+* Added introspection of call chains and [nextto] for "skipping ahead" in the
+  call chain (useful in "diamond inheritance" situations).
+  TIP #381 <URL:http://tip.tcl.tk/381.html>
+* Improved the [oo::copy] mechanism to allow greater user control.
+  TIP #397 <URL:http://tip.tcl.tk/397.html>
+
+Compatibility Warnings
+======================
+Names of classes, methods or variables that begin with a hyphen can now cause
+issues with some definitions (i.e., they are reserved to slotted operations).
+The fix is to precede the name with a "--" argument in the problem definition.
+
+The syntax and semantics of the method called "<cloned>" are now defined.
+
+Some types in the C API have changed from 0.6 to better match the Tcl style of
+doing things. ABI compatibility is maintained.
