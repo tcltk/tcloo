@@ -1,8 +1,18 @@
-2012-06-02  Donal K. Fellows  <dkf@users.sf.net>
+9999-99-99  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOBasic.c (TclOOCurrentDefinitionObjCmd): Added command
 	* generic/tclOO.c (InitFoundation): that lets scripted additional
 	definitions discover what object or class is undergoing definition.
+
+2012-07-26  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (ObjectRenamedTrace, ReleaseClassContents):
+	[Bug 3547839]: Use the memory management scheme used in version of
+	TclOO that is included in Tcl 8.6, as that doesn't crash when objects
+	are ripped out from underneath its feet.
+	(Tcl_NewObjectInstance): [Bug 2903011]: Improve fix of this bug; a
+	reference must be held from before the constructor is invoked to after
+	any resulting deletions are done.
 
 2012-05-20  Donal K. Fellows  <dkf@users.sf.net>
 
