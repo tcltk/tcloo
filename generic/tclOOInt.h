@@ -591,17 +591,6 @@ MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
     } while(0)
 
 /*
- * Convenience macro for directing a list into temporary storage and clearing
- * the original list. Used when disposing the list.
- */
-
-#define TEMP_AND_CLEAR(temporary,main) \
-    do {						\
-	memcpy(&(temporary), &(main), sizeof(main));	\
-	memset(&(main), 0, sizeof(main));		\
-    } while(0)
-
-/*
  * Alternatives to Tcl_Preserve/Tcl_EventuallyFree/Tcl_Release.
  */
 
