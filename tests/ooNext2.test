@@ -8,7 +8,7 @@
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 
-package require -exact TclOO 1.0 ;# Must match value in configure.in
+package require TclOO 1.0 ;# Should match value in configure.in
 if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
     namespace import -force ::tcltest::*
