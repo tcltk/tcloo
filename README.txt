@@ -1,4 +1,4 @@
-Object Oriented Programming Package for Tcl (TclOO) Version 0.7
+Object Oriented Programming Package for Tcl (TclOO) Version 1.0
 
 Copyright 2005-2012 Donal K. Fellows
 
@@ -12,11 +12,12 @@ which you received this file.
 Building
 ========
 
-TclOO 0.7 uses the TEA3 build system. These instructions are known to work
+TclOO 1.0 uses the TEA3 build system. These instructions are known to work
 on Linux, OSX and Windows (with msys installed).
 
 1) Make sure you have a source distribution of Tcl 8.5 somewhere; you will
-   need it to build TclOO.
+   need it to build TclOO. (Note that this functionality is incorporated
+   directly into Tcl 8.6; you do not need this package with that version.)
 
 2) Run the configure shell script in this directory. You may well want to
    use the --with-tcl option to tell the script where to find Tcl's build
@@ -66,31 +67,16 @@ for {set i 1} {$i <= 10} {incr i} {
 }
 summation destroy
 
-Significant Changes from 0.6 Release
+Significant Changes from 0.7 Release
 ====================================
-* Small changes that improve things substantially:
-    * Forwarded methods resolve in the object's namespace.
-    * Added [info object namespace] to get an object's namespace.
-    * Added Tcl_GetObjectName() for fetching the name of an object.
-  TIP #354 <URL:http://tip.tcl.tk/354.html>
-* Made "varname" method work with array elements.
-* Added [info object methodtype] and [info class methodtype].
-* Converted configuration of lists of things in classes and objects to work as
-  slots, implemented as instances of [oo::Slot] class. 
-  TIP #380 <URL:http://tip.tcl.tk/380.html>
-* Added introspection of call chains and [nextto] for "skipping ahead" in the
-  call chain (useful in "diamond inheritance" situations).
-  TIP #381 <URL:http://tip.tcl.tk/381.html>
-* Improved the [oo::copy] mechanism to allow greater user control.
-  TIP #397 <URL:http://tip.tcl.tk/397.html>
+None. Just documentation corrections.
 
 Compatibility Warnings
 ======================
 Names of classes, methods or variables that begin with a hyphen can now cause
 issues with some definitions (i.e., they are reserved to slotted operations).
-The fix is to precede the name with a "--" argument in the problem definition.
+The fix is to precede the name with a "--" argument in the problem definition;
+see the [oo::define] documentation for the affected definitions.
 
-The syntax and semantics of the method called "<cloned>" are now defined.
-
-Some types in the C API have changed from 0.6 to better match the Tcl style of
-doing things. ABI compatibility is maintained.
+Method names that are proper multi-element lists are reserved for future
+functionality.

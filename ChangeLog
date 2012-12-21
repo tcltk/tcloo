@@ -4,7 +4,23 @@
 	* generic/tclOO.c (InitFoundation): that lets scripted additional
 	definitions discover what object or class is undergoing definition.
 
+2012-12-21  Donal K. Fellows  <dkf@users.sf.net>
+
+	=== RELEASE OF TCLOO VERSION 1.0 ===
+
+	This officially corresponds to the version of TclOO that is included
+	with Tcl 8.6.0, except for features (notably coroutine support) that
+	require the 8.6 runtime and not-officially-observable differences like
+	the degree of bytecode compilation support.
+
+2012-11-09  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/OOInitStubs.3: Added description of how to use Tcl_OOInitStubs
+	to initialize the TclOO C interface.
+
 2012-07-26  Donal K. Fellows  <dkf@users.sf.net>
+
+	=== RELEASE OF TCLOO VERSION 0.7 ===
 
 	* generic/tclOO.c (ObjectRenamedTrace, ReleaseClassContents):
 	[Bug 3547839]: Use the memory management scheme used in version of
