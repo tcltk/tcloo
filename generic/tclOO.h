@@ -32,7 +32,7 @@
  * Must match version at top of ../configure.in
  */
 
-#define TCLOO_VERSION "0.7"
+#define TCLOO_VERSION "1.0"
 #define TCLOO_PATCHLEVEL TCLOO_VERSION
 
 /*

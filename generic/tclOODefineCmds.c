@@ -2205,7 +2205,7 @@ ClassVarsSet(
 
 	Tcl_InitObjHashTable(&uniqueTable);
 	for (i=n=0 ; i<varc ; i++) {
-	    Tcl_CreateHashEntry(&uniqueTable, varv[i], &created);
+	    Tcl_CreateHashEntry(&uniqueTable, (char *) varv[i], &created);
 	    if (created) {
 		oPtr->classPtr->variables.list[n++] = varv[i];
 	    } else {
@@ -2451,7 +2451,7 @@ ObjVarsSet(
 
 	Tcl_InitObjHashTable(&uniqueTable);
 	for (i=n=0 ; i<varc ; i++) {
-	    Tcl_CreateHashEntry(&uniqueTable, varv[i], &created);
+	    Tcl_CreateHashEntry(&uniqueTable, (char *) varv[i], &created);
 	    if (created) {
 		oPtr->variables.list[n++] = varv[i];
 	    } else {
