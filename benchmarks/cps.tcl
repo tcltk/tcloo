@@ -1,5 +1,5 @@
 set auto_path "[list [pwd]] $auto_path"
-package require TclOO 0.6a1
+package require TclOO
 puts "cps benchmark using TclOO [package provide TclOO]"
 # See http://wiki.tcl.tk/18152 for table of comparison
 
