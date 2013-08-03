@@ -1,7 +1,10 @@
 /* config.h.in.  Generated from configure.in by autoheader.  */
 
-/* Set to 1 when building package */
-#undef BUILD_TclOO
+/* Define if building universal (internal helper macro) */
+#undef AC_APPLE_UNIVERSAL_BUILD
+
+/* Do we have the intptr_t type? */
+#undef HAVE_INTPTR_T
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
@@ -54,7 +57,7 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* Compiler support for module scope symbols */
+/* No Compiler support for module scope symbols */
 #undef MODULE_SCOPE
 
 /* Do we have <dirent.h>? */
@@ -84,6 +87,9 @@
 /* Do we have <values.h>? */
 #undef NO_VALUES_H
 
+/* No visibility hidden passed to zlib? */
+#undef NO_VIZ
+
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
 
@@ -95,6 +101,9 @@
 
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
@@ -120,18 +129,23 @@
 /* UNDER_CE version */
 #undef UNDER_CE
 
-/* Do we need a special AIX hack for timezones? */
-#undef USE_DELTA_FOR_TZ
-
 /* Should always be 1 */
 #undef USE_TCL_STUBS
 
 /* Do we want to use the threaded memory allocator? */
 #undef USE_THREAD_ALLOC
 
-/* Define to 1 if your processor stores words with the most significant byte
-   first (like Motorola and SPARC, unlike Intel and VAX). */
-#undef WORDS_BIGENDIAN
+/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
+   significant byte first (like Motorola and SPARC, unlike Intel). */
+#if defined AC_APPLE_UNIVERSAL_BUILD
+# if defined __BIG_ENDIAN__
+#  define WORDS_BIGENDIAN 1
+# endif
+#else
+# ifndef WORDS_BIGENDIAN
+#  undef WORDS_BIGENDIAN
+# endif
+#endif
 
 /* Add the _ISOC99_SOURCE flag when building */
 #undef _ISOC99_SOURCE
@@ -165,3 +179,6 @@
 #ifndef __cplusplus
 #undef inline
 #endif
+
+/* Signed integer type wide enough to hold a pointer. */
+#undef intptr_t
