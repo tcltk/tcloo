@@ -1,3 +1,9 @@
+2013-08-02  Donal Fellows  <dkf@users.sf.net>
+
+	* generic/tclOODefineCmds.c (ClassSuperSet): Bug [9d61624b3d]: Stop
+	crashes when emptying the superclass slot, even when doing elaborate
+	things with metaclasses.
+
 2013-02-09  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOBasic.c (TclOO_Object_VarName): [Bug 3603695]: Change
