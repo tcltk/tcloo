@@ -5,7 +5,7 @@ dnl#
 dnl# You should also change the following:
 dnl#	README.txt, win/TclOO.rc
 dnl#
-AC_INIT([TclOO],[1.0])
+AC_INIT([TclOO],[1.0.1])
 AC_CONFIG_AUX_DIR(tclconfig)
 AC_CONFIG_HEADERS(config.h)
 

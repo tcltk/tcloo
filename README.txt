@@ -1,6 +1,6 @@
-Object Oriented Programming Package for Tcl (TclOO) Version 1.0
+Object Oriented Programming Package for Tcl (TclOO) Version 1.0.1
 
-Copyright 2005-2012 Donal K. Fellows
+Copyright 2005-2013 Donal K. Fellows
 
 License
 =======
@@ -36,11 +36,10 @@ on Linux, OSX and Windows (with msys installed).
 Support
 =======
 
-Please file bug reports, feature requests and patches at SourceForge under
-the Tcl package. <URL:https://sourceforge.net/projects/tcl> To ensure
-attention from the relevant maintainer, please use "TclOO Package" for the
-Category field. Remember, it is better to file a bug report twice than not
-at all!
+Please file bug reports, feature requests and patches on core.tcl.tk under the
+Tcl package. <URL:http://core.tcl.tk/tcl/tktnew> To ensure attention from the
+relevant maintainer, please use "35. TclOO Package" for the Category field.
+Remember, it is better to file a bug report twice than not at all!
 
 Simple Example
 ==============
@@ -67,9 +66,16 @@ for {set i 1} {$i <= 10} {incr i} {
 }
 summation destroy
 
-Significant Changes from 0.7 Release
+Significant Changes from 1.0 Release
 ====================================
-None. Just documentation corrections.
+Bugfixes for:
+* http://core.tcl.tk/tcl/info/9d61624b3d
+* http://core.tcl.tk/tcl/info/3603695
+
+No API changes.
+
+For a full description of all changes, see:
+ http://core.tcl.tk/tcloo/timeline?from=release-1.0&to=release-1.0.1
 
 Compatibility Warnings
 ======================
