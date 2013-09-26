@@ -1,13 +1,11 @@
 2013-09-19  Donal Fellows  <dkf@users.sf.net>
 
-	* doc/next.n (METHOD SEARCH ORDER): Bug [3606943]: Corrected
-	description of method search order.
-
-2013-09-18  Donal Fellows  <dkf@users.sf.net>
-
 	=== RELEASE OF TCLOO VERSION 1.0.1 ===
 
 	Patch release to correspond with Tcl 8.6.1.
+
+	* doc/next.n (METHOD SEARCH ORDER): Bug [3606943]: Corrected
+	description of method search order.
 
 2013-08-02  Donal Fellows  <dkf@users.sf.net>
 
