@@ -1,10 +1,9 @@
-Release of TclOO Version 1.0.1
+Release of TclOO Version 1.0.2
 ==============================
 
 This officially corresponds to the version of TclOO that is included with Tcl
-8.6.1, except for features (notably coroutine support) that require the 8.6
-runtime and not-officially-observable differences like the degree of bytecode
-compilation support.
+8.6.2, except for features (notably coroutine support and bytecode compilation
+of some commands) that require the 8.6 runtime.
 
 TclOO: An Object System for Tcl
 ===============================
@@ -17,7 +16,8 @@ inheritance, mixins, procedure-like and forwarded methods, filter methods,
 dynamic reconfiguration, etc.
 
 It does not come with a large class library, and it does not force its use
-upon user scripts.
+upon user scripts. Some of the packages in Tcllib use TclOO, but these may be
+dependent on other Tcl 8.6 features.
 
 The heritage of TclOO can be traced back to a number of other object systems,
 notably including XOTcl, incr Tcl, and Snit. It also draws on experience with
@@ -28,20 +28,22 @@ Changes in TclOO 1.0.1
 ----------------------
 Bugfixes for:
 
-* <http://core.tcl.tk/tcl/info/9d61624b3d>
+* <http://core.tcl.tk/tcl/info/7d52e1101b>
 
-* <http://core.tcl.tk/tcl/info/3603695>
+* <http://core.tcl.tk/tcl/info/75b8433707>
+
+* <http://core.tcl.tk/tcl/info/f51efe99a7>
 
 No API changes.
 
 For a full description of all changes, see:
 
-* <http://core.tcl.tk/tcloo/timeline?from=release-1.0&to=release-1.0.1>
+* <http://core.tcl.tk/tcloo/timeline?from=release-1.0.1&to=release-1.0.2>
 
 Building
 --------
 
-TclOO 1.0.1 uses the TEA3 build system. These instructions are known to work
+TclOO 1.0.2 uses the TEA3 build system. These instructions are known to work
 on Linux, OSX and Windows (with msys installed).
 
 1. Make sure you have a source distribution of Tcl 8.5 somewhere; you will

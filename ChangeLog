@@ -1,3 +1,18 @@
+2014-09-09  Donal Fellows  <dkf@users.sf.net>
+
+	=== RELEASE OF TCLOO VERSION 1.0.2 ===
+
+	Patch release to correspond with Tcl 8.6.2.
+
+	* generic/tclOO.c (InitFoundation): [7d52e1101b]: Ensure that
+	oo::class is shown as a subclass of oo::object.
+	* generic/tclOO.c (ReleaseClassContents): [75b8433707]: Plug a memory
+	leak in the test suite related to destruction ordering.  (Thanks to
+	Don Porter.)
+	* generic/tclOO.h, generic/pkgoo.c: [f51efe99a7]: Adjustments to
+	symbol exporting to ensure that the TclOO stub API is correctly
+	provided to other packages. (Thanks to Jan Nijtmans.)
+
 2013-09-19  Donal Fellows  <dkf@users.sf.net>
 
 	=== RELEASE OF TCLOO VERSION 1.0.1 ===

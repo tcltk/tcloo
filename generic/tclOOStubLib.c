@@ -94,11 +94,12 @@ RequireExactVersion(
  *----------------------------------------------------------------------
  */
 
+#undef TclOOInitializeStubs
+
 MODULE_SCOPE const char *
 TclOOInitializeStubs(
     Tcl_Interp *interp,
-    const char *version,
-    int exact)
+    const char *version)
 {
     const TclOOStubs **stubsPtrPtr = &tclOOStubsPtr;
     const char *gotVer = Tcl_PkgRequireEx(interp, "TclOO", version, 0,
@@ -109,13 +110,6 @@ TclOOInitializeStubs(
     }
 
     /* Cargo-culted logic alert! */
-    if (exact) {
-	gotVer = RequireExactVersion(interp, "TclOO", version, gotVer);
-	if (gotVer == NULL) {
-	    return NULL;
-	}
-    }
-
     if (tclOOStubsPtr == NULL) {
 	Tcl_ResetResult(interp);
 	Tcl_AppendResult(interp, "Error loading TclOO package; ",
