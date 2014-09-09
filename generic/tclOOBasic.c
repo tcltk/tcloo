@@ -4,7 +4,7 @@
  *	This file contains implementations of the "simple" commands and
  *	methods from the object-system core.
  *
- * Copyright (c) 2005-2012 by Donal K. Fellows
+ * Copyright (c) 2005-2013 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -108,8 +108,9 @@ TclOO_Class_Create(
     if (oPtr->classPtr == NULL) {
 	Tcl_Obj *cmdnameObj = TclOOObjectName(interp, oPtr);
 
-	Tcl_AppendResult(interp, "object \"", TclGetString(cmdnameObj),
+	Tcl_AppendResult(interp, "object \"", Tcl_GetString(cmdnameObj),
 		"\" is not a class", NULL);
+	Tcl_SetErrorCode(interp, "TCLOO", "INSTANTIATE_NONCLASS", NULL);
 	return TCL_ERROR;
     }
 
@@ -126,6 +127,7 @@ TclOO_Class_Create(
 	    objv[Tcl_ObjectContextSkippedArgs(context)], &len);
     if (len == 0) {
 	Tcl_AppendResult(interp, "object name must not be empty", NULL);
+	Tcl_SetErrorCode(interp, "TCLOO", "EMPTY_NAME", NULL);
 	return TCL_ERROR;
     }
 
@@ -175,8 +177,9 @@ TclOO_Class_CreateNs(
     if (oPtr->classPtr == NULL) {
 	Tcl_Obj *cmdnameObj = TclOOObjectName(interp, oPtr);
 
-	Tcl_AppendResult(interp, "object \"", TclGetString(cmdnameObj),
+	Tcl_AppendResult(interp, "object \"", Tcl_GetString(cmdnameObj),
 		"\" is not a class", NULL);
+	Tcl_SetErrorCode(interp, "TCLOO", "INSTANTIATE_NONCLASS", NULL);
 	return TCL_ERROR;
     }
 
@@ -193,12 +196,14 @@ TclOO_Class_CreateNs(
 	    objv[Tcl_ObjectContextSkippedArgs(context)], &len);
     if (len == 0) {
 	Tcl_AppendResult(interp, "object name must not be empty", NULL);
+	Tcl_SetErrorCode(interp, "TCLOO", "EMPTY_NAME", NULL);
 	return TCL_ERROR;
     }
     nsName = Tcl_GetStringFromObj(
 	    objv[Tcl_ObjectContextSkippedArgs(context)+1], &len);
     if (len == 0) {
 	Tcl_AppendResult(interp, "namespace name must not be empty", NULL);
+	Tcl_SetErrorCode(interp, "TCLOO", "EMPTY_NAME", NULL);
 	return TCL_ERROR;
     }
 
@@ -246,8 +251,9 @@ TclOO_Class_New(
     if (oPtr->classPtr == NULL) {
 	Tcl_Obj *cmdnameObj = TclOOObjectName(interp, oPtr);
 
-	Tcl_AppendResult(interp, "object \"", TclGetString(cmdnameObj),
+	Tcl_AppendResult(interp, "object \"", Tcl_GetString(cmdnameObj),
 		"\" is not a class", NULL);
+	Tcl_SetErrorCode(interp, "TCLOO", "INSTANTIATE_NONCLASS", NULL);
 	return TCL_ERROR;
     }
 
@@ -384,7 +390,7 @@ TclOO_Object_Eval(
     if (result == TCL_ERROR) {
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (in \"%s eval\" script line %d)",
-		TclGetString(objnameObj), interp->errorLine));
+		Tcl_GetString(objnameObj), interp->errorLine));
     }
 
     /*
@@ -446,16 +452,18 @@ TclOO_Object_Unknown(
     if (numMethodNames == 0) {
 	Tcl_Obj *tmpBuf = TclOOObjectName(interp, oPtr);
 
-	Tcl_AppendResult(interp, "object \"", TclGetString(tmpBuf), NULL);
+	Tcl_AppendResult(interp, "object \"", Tcl_GetString(tmpBuf), NULL);
 	if (contextPtr->callPtr->flags & PUBLIC_METHOD) {
 	    Tcl_AppendResult(interp, "\" has no visible methods", NULL);
 	} else {
 	    Tcl_AppendResult(interp, "\" has no methods", NULL);
 	}
+	Tcl_SetErrorCode(interp, "TCLOO", "LOOKUP", "METHOD",
+		Tcl_GetString(objv[skip]), NULL);
 	return TCL_ERROR;
     }
 
-    Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[skip]),
+    Tcl_AppendResult(interp, "unknown method \"", Tcl_GetString(objv[skip]),
 	    "\": must be ", NULL);
     for (i=0 ; i<numMethodNames-1 ; i++) {
 	if (i) {
@@ -468,6 +476,8 @@ TclOO_Object_Unknown(
     }
     Tcl_AppendResult(interp, methodNames[i], NULL);
     ckfree((char *) methodNames);
+    Tcl_SetErrorCode(interp, "TCLOO", "LOOKUP", "METHOD",
+	    Tcl_GetString(objv[skip]), NULL);
     return TCL_ERROR;
 }
 
@@ -523,6 +533,7 @@ TclOO_Object_LinkVar(
 	if (strstr(varName, "::") != NULL) {
 	    Tcl_AppendResult(interp, "variable name \"", varName,
 		    "\" illegal: must not contain namespace separator", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "UPVAR", "INVERTED", NULL);
 	    return TCL_ERROR;
 	}
 
@@ -551,6 +562,7 @@ TclOO_Object_LinkVar(
 
 	    TclVarErrMsg(interp, varName, NULL, "define",
 		    "name refers to an element in an array");
+	    Tcl_SetErrorCode(interp, "TCL", "UPVAR", "LOCAL_ELEMENT", NULL);
 	    return TCL_ERROR;
 	}
 
@@ -589,49 +601,50 @@ TclOO_Object_VarName(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
-    Interp *iPtr = (Interp *) interp;
     Var *varPtr, *aryVar;
-    Tcl_Obj *varNamePtr;
+    Tcl_Obj *varNamePtr, *argPtr;
+    const char *arg;
 
     if (Tcl_ObjectContextSkippedArgs(context)+1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"varName");
 	return TCL_ERROR;
     }
+    argPtr = objv[objc-1];
+    arg = Tcl_GetString(argPtr);
 
     /*
-     * Switch to the object's namespace for the duration of this call. Like
-     * this, the variable is looked up in the namespace of the object, and not
-     * in the namespace of the caller. Otherwise this would only work if the
-     * caller was a method of the object itself, which might not be true if
-     * the method was exported. This is a bit of a hack, but the simplest way
-     * to do this (pushing a stack frame would be horribly expensive by
-     * comparison, and is only done when we'd otherwise interfere with the
-     * global namespace).
+     * Convert the variable name to fully-qualified form if it wasn't already.
+     * This has to be done prior to lookup because we can run into problems
+     * with resolvers otherwise. [Bug 3603695]
+     *
+     * We still need to do the lookup; the variable could be linked to another
+     * variable and we want the target's name.
      */
 
-    if (iPtr->varFramePtr == NULL) {
-	Tcl_CallFrame *dummyFrame;
-
-	TclPushStackFrame(interp, &dummyFrame,
-		Tcl_GetObjectNamespace(Tcl_ObjectContextObject(context)),0);
-	varPtr = TclObjLookupVar(interp, objv[objc-1], NULL,
-		TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG, "refer to",1,1,&aryVar);
-	TclPopStackFrame(interp);
+    if (arg[0] == ':' && arg[1] == ':') {
+	varNamePtr = argPtr;
     } else {
-	Namespace *savedNsPtr;
-
-	savedNsPtr = iPtr->varFramePtr->nsPtr;
-	iPtr->varFramePtr->nsPtr = (Namespace *)
+	Tcl_Namespace *namespacePtr =
 		Tcl_GetObjectNamespace(Tcl_ObjectContextObject(context));
-	varPtr = TclObjLookupVar(interp, objv[objc-1], NULL,
-		TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG, "refer to",1,1,&aryVar);
-	iPtr->varFramePtr->nsPtr = savedNsPtr;
-    }
 
+	varNamePtr = Tcl_NewStringObj(namespacePtr->fullName, -1);
+	Tcl_AppendToObj(varNamePtr, "::", 2);
+	Tcl_AppendObjToObj(varNamePtr, argPtr);
+    }
+    Tcl_IncrRefCount(varNamePtr);
+    varPtr = TclObjLookupVar(interp, varNamePtr, NULL,
+	    TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG, "refer to", 1, 1, &aryVar);
+    Tcl_DecrRefCount(varNamePtr);
     if (varPtr == NULL) {
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARIABLE", arg, NULL);
 	return TCL_ERROR;
     }
+
+    /*
+     * Now that we've pinned down what variable we're really talking about
+     * (including traversing variable links), convert back to a name.
+     */
 
     varNamePtr = Tcl_NewObj();
     if (aryVar != NULL) {
@@ -692,8 +705,9 @@ TclOONextObjCmd(
      */
 
     if (framePtr == NULL || !(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
-	Tcl_AppendResult(interp, TclGetString(objv[0]),
+	Tcl_AppendResult(interp, Tcl_GetString(objv[0]),
 		" may only be called from inside a method", NULL);
+	Tcl_SetErrorCode(interp, "TCLOO", "CONTEXT_REQUIRED", NULL);
 	return TCL_ERROR;
     }
     context = framePtr->clientData;
@@ -733,6 +747,7 @@ TclOONextToObjCmd(
     CallContext *contextPtr;
     int i;
     Tcl_Object object;
+    const char *methodType;
 
     /*
      * Start with sanity checks on the calling context to make sure that we
@@ -741,8 +756,9 @@ TclOONextToObjCmd(
      */
 
     if (framePtr == NULL || !(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
-	Tcl_AppendResult(interp, TclGetString(objv[0]),
+	Tcl_AppendResult(interp, Tcl_GetString(objv[0]),
 		" may only be called from inside a method", NULL);
+	Tcl_SetErrorCode(interp, "TCLOO", "CONTEXT_REQUIRED", NULL);
 	return TCL_ERROR;
     }
     contextPtr = framePtr->clientData;
@@ -761,8 +777,9 @@ TclOONextToObjCmd(
     }
     classPtr = ((Object *)object)->classPtr;
     if (classPtr == NULL) {
-	Tcl_AppendResult(interp, "\"", TclGetString(objv[1]),
+	Tcl_AppendResult(interp, "\"", Tcl_GetString(objv[1]),
 		"\" is not a class", NULL);
+	Tcl_SetErrorCode(interp, "TCLOO", "CLASS_REQUIRED", NULL);
 	return TCL_ERROR;
     }
 
@@ -799,18 +816,30 @@ TclOONextToObjCmd(
      * is on the chain but unreachable, or not on the chain at all.
      */
 
+    if (contextPtr->callPtr->flags & CONSTRUCTOR) {
+	methodType = "constructor";
+    } else if (contextPtr->callPtr->flags & DESTRUCTOR) {
+	methodType = "destructor";
+    } else {
+	methodType = "method";
+    }
+
     for (i=contextPtr->index ; i>=0 ; i--) {
 	struct MInvoke *miPtr = contextPtr->callPtr->chain + i;
 
 	if (!miPtr->isFilter && miPtr->mPtr->declaringClassPtr == classPtr) {
-	    Tcl_AppendResult(interp, "method implementation by \"",
-		    TclGetString(objv[1]), "\" not reachable from here",
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "%s implementation by \"%s\" not reachable from here",
+		    methodType, Tcl_GetString(objv[1])));
+	    Tcl_SetErrorCode(interp, "TCLOO", "CLASS_NOT_REACHABLE",
 		    NULL);
 	    return TCL_ERROR;
 	}
     }
-    Tcl_AppendResult(interp, "method has no non-filter implementation by \"",
-	    TclGetString(objv[1]), "\"", NULL);
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "%s has no non-filter implementation by \"%s\"",
+	    methodType, Tcl_GetString(objv[1])));
+    Tcl_SetErrorCode(interp, "TCLOO", "CLASS_NOT_THERE", NULL);
     return TCL_ERROR;
 }
 
@@ -855,8 +884,9 @@ TclOOSelfObjCmd(
      */
 
     if (framePtr == NULL || !(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
-	Tcl_AppendResult(interp, TclGetString(objv[0]),
+	Tcl_AppendResult(interp, Tcl_GetString(objv[0]),
 		" may only be called from inside a method", NULL);
+	Tcl_SetErrorCode(interp, "TCLOO", "CONTEXT_REQUIRED", NULL);
 	return TCL_ERROR;
     }
 
@@ -890,6 +920,7 @@ TclOOSelfObjCmd(
 
 	if (clsPtr == NULL) {
 	    Tcl_AppendResult(interp, "method not defined by a class", NULL);
+	    Tcl_SetErrorCode(interp, "TCLOO", "UNMATCHED_CONTEXT", NULL);
 	    return TCL_ERROR;
 	}
 
@@ -909,6 +940,7 @@ TclOOSelfObjCmd(
     case SELF_FILTER:
 	if (!CurrentlyInvoked(contextPtr).isFilter) {
 	    Tcl_AppendResult(interp, "not inside a filtering context", NULL);
+	    Tcl_SetErrorCode(interp, "TCLOO", "UNMATCHED_CONTEXT", NULL);
 	    return TCL_ERROR;
 	} else {
 	    register struct MInvoke *miPtr = &CurrentlyInvoked(contextPtr);
@@ -961,6 +993,7 @@ TclOOSelfObjCmd(
 	    return TCL_OK;
 	} else {
 	    Tcl_AppendResult(interp, "caller is not an object", NULL);
+	    Tcl_SetErrorCode(interp, "TCLOO", "CONTEXT_REQUIRED", NULL);
 	    return TCL_ERROR;
 	}
     case SELF_NEXT:
@@ -995,6 +1028,7 @@ TclOOSelfObjCmd(
     case SELF_TARGET:
 	if (!CurrentlyInvoked(contextPtr).isFilter) {
 	    Tcl_AppendResult(interp, "not inside a filtering context", NULL);
+	    Tcl_SetErrorCode(interp, "TCLOO", "UNMATCHED_CONTEXT", NULL);
 	    return TCL_ERROR;
 	} else {
 	    Method *mPtr;

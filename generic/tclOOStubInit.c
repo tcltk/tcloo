@@ -13,7 +13,7 @@
 
 static const TclOOIntStubs tclOOIntStubs = {
     TCL_STUB_MAGIC,
-    NULL,
+    0,
     TclOOGetDefineCmdContext, /* 0 */
     TclOOMakeProcInstanceMethod, /* 1 */
     TclOOMakeProcMethod, /* 2 */
