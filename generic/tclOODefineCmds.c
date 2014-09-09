@@ -4,7 +4,7 @@
  *	This file contains the implementation of the ::oo::define command,
  *	part of the object-system core (NB: not Tcl_Obj, but ::oo).
  *
- * Copyright (c) 2006-2012 by Donal K. Fellows
+ * Copyright (c) 2006-2013 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -2054,27 +2054,38 @@ ClassSuperSet(
 
     /*
      * Parse the arguments to get the class to use as superclasses.
+     *
+     * Note that zero classes is special, as it is equivalent to just the
+     * class of objects. [Bug 9d61624b3d]
      */
 
-    for (i=0 ; i<superc ; i++) {
-	superclasses[i] = GetClassInOuterContext(interp, superv[i],
-		"only a class can be a superclass");
-	if (superclasses[i] == NULL) {
-	    goto failedAfterAlloc;
+    if (superc == 0) {
+	superclasses = (void *) ckrealloc((void *) superclasses, sizeof(Class *));
+	superclasses[0] = oPtr->fPtr->objectCls;
+	superc = 1;
+	if (TclOOIsReachable(oPtr->fPtr->classCls, oPtr->classPtr)) {
+	    superclasses[0] = oPtr->fPtr->classCls;
 	}
-	for (j=0 ; j<i ; j++) {
-	    if (superclasses[j] == superclasses[i]) {
-		Tcl_AppendResult(interp,
-			"class should only be a direct superclass once",NULL);
+    } else {
+	for (i=0 ; i<superc ; i++) {
+	    superclasses[i] = GetClassInOuterContext(interp, superv[i],
+		    "only a class can be a superclass");
+	    if (superclasses[i] == NULL) {
 		goto failedAfterAlloc;
 	    }
-	}
-	if (TclOOIsReachable(oPtr->classPtr, superclasses[i])) {
-	    Tcl_AppendResult(interp,
-		    "attempt to form circular dependency graph", NULL);
-	failedAfterAlloc:
-	    ckfree((char *) superclasses);
-	    return TCL_ERROR;
+	    for (j=0 ; j<i ; j++) {
+		if (superclasses[j] == superclasses[i]) {
+		    Tcl_AppendResult(interp,
+			    "class should only be a direct superclass once",
+			    NULL);
+		    goto failedAfterAlloc;
+		}
+	    }
+	    if (TclOOIsReachable(oPtr->classPtr, superclasses[i])) {
+		Tcl_AppendResult(interp,
+			"attempt to form circular dependency graph", NULL);
+		goto failedAfterAlloc;
+	    }
 	}
     }
 
@@ -2099,6 +2110,10 @@ ClassSuperSet(
     BumpGlobalEpoch(interp, oPtr->classPtr);
 
     return TCL_OK;
+
+  failedAfterAlloc:
+    ckfree((char *) superclasses);
+    return TCL_ERROR;
 }
 
 static int
