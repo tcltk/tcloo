@@ -144,7 +144,7 @@ void
 TclOODeleteChain(
     CallChain *callPtr)
 {
-    if (--callPtr->refCount >= 1) {
+    if (callPtr == NULL || --callPtr->refCount >= 1) {
 	return;
     }
     if (callPtr->chain != callPtr->staticChain) {
@@ -492,7 +492,7 @@ TclOOGetSortedClassMethodList(
 		if (PTR2INT(isWanted) & NO_IMPLEMENTATION) {
 		    continue;
 		}
-		strings[i++] = TclGetString(namePtr);
+		strings[i++] = Tcl_GetString(namePtr);
 	    }
 	}
 
