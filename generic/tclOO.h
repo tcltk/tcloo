@@ -12,28 +12,47 @@
 
 #ifndef TCLOO_H_INCLUDED
 #define TCLOO_H_INCLUDED
-#include "tcl.h"
-
-#undef TCL_STORAGE_CLASS
-#ifdef BUILD_TclOO /* Match PACKAGE_NAME case sensitive */
-#   define TCL_STORAGE_CLASS DLLEXPORT
-#	define TCLOOAPI DLLEXPORT
-#	undef USE_TCLOO_STUBS
-#else
-#	define TCLOOAPI DLLIMPORT
-#   ifdef USE_TCLOO_STUBS
-#	define TCL_STORAGE_CLASS
-#   else
-#	define TCL_STORAGE_CLASS DLLIMPORT
-#   endif
-#endif
 
 /*
  * Must match version at top of ../configure.in
  */
 
-#define TCLOO_VERSION "1.0.1"
+#define TCLOO_VERSION "1.0.2"
 #define TCLOO_PATCHLEVEL TCLOO_VERSION
+
+#include "tcl.h"
+
+/*
+ * For C++ compilers, use extern "C"
+ */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#undef TCL_STORAGE_CLASS
+#ifdef BUILD_TclOO /* Match PACKAGE_NAME case sensitive */
+#   define TCL_STORAGE_CLASS DLLEXPORT
+#   define TCLOOAPI DLLEXPORT
+#   undef USE_TCLOO_STUBS
+#else
+#   define TCLOOAPI DLLIMPORT
+#   ifdef USE_TCLOO_STUBS
+#	undef USE_TCLOO_STUBS
+#	define USE_TCLOO_STUBS
+#	define TCL_STORAGE_CLASS
+#   else
+#	define TCL_STORAGE_CLASS DLLIMPORT
+#   endif
+#endif /*BUILD_TclOO*/
+
+extern const char *TclOOInitializeStubs(
+	Tcl_Interp *, const char *version);
+#define Tcl_OOInitStubs(interp) \
+    TclOOInitializeStubs((interp), TCLOO_PATCHLEVEL)
+#if !(defined(USE_TCLOO_STUBS) || defined(USE_TCL_STUBS))
+#define TclOOInitializeStubs(interp, version) (TCLOO_PATCHLEVEL)
+#endif /*USE_TCLOO_STUBS || USE_TCL_STUBS*/
 
 /*
  * These are opaque types.
@@ -123,7 +142,10 @@ typedef struct {
 
 #include "tclOODecls.h"
 
+#ifdef __cplusplus
+}
 #endif
+#endif /*!TCLOO_H_INCLUDED*/
 
 /*
  * Local Variables:

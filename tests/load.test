@@ -1,0 +1,31 @@
+# This file contains a collection of tests for Tcl's built-in object system.
+# Sourcing this file into Tcl runs the tests and generates output for errors.
+# No output means no errors were found.
+#
+# Copyright (c) 2013 Jan Nijtmans
+# Copyright (c) 2014 Donal K. Fellows
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+set dll pkgoo[info sharedlibextension]
+testConstraint pkgooRequired [file readable $dll]
+testConstraint pkgooLoaded [expr {!([string first $dll [info loaded]] + 1)}]
+
+test load-11.1 {Load TclOO extension using Stubs (Bug [f51efe99a7])} \
+	[list pkgooRequired pkgooLoaded] {
+    load ./pkgoo[info sharedlibextension]
+    list [pkgoo_stubsok] [lsort [info commands pkgoo_*]]
+} {1 pkgoo_stubsok}
+
+cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:
