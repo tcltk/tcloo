@@ -1623,6 +1623,13 @@ Tcl_NewObjectInstance(
 	    TclOODeleteContext(contextPtr);
 	    if (result != TCL_OK && !Deleted(oPtr)) {
 		/*
+		 * Take care to make sure that we have the name of the command
+		 * before we delete it. [Bug 9dd1bd7a74]
+		 */
+
+		(void) TclOOObjectName(interp, oPtr);
+
+		/*
 		 * Take care to not delete a deleted object; that would be
 		 * bad. [Bug 2903011]
 		 */
