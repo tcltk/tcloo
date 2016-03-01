@@ -8,7 +8,7 @@
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 
-package require TclOO 1.0.2 ;# Should match value in configure.in
+package require TclOO 1.0.4 ;# Should match value in configure.in
 if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
     namespace import -force ::tcltest::*
@@ -3435,6 +3435,18 @@ test oo-35.2 {Bug 9d61624b3d: Empty superclass must not cause crash} -setup {
     unset -nocomplain result
     fruitMetaclass destroy
 } -result {::appleClass ::orange ::oo::class ::oo::class 1 1 ::appleClass ::pear}
+test oo-35.3 {Bug 593baa032c: superclass list teardown} {
+    # Bug makes this crash, especially with mem-debugging on
+    oo::class create B {}
+    oo::class create D {superclass B}
+    namespace eval [info object namespace D] [list [namespace which B] destroy]
+} {}
+test oo-35.4 {Bug 593baa032c: mixins list teardown} {
+    # Bug makes this crash, especially with mem-debugging on
+    oo::class create B {}
+    oo::class create D {mixin B}
+    namespace eval [info object namespace D] [list [namespace which B] destroy]
+} {}
 
 cleanupTests
 return
