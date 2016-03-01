@@ -59,6 +59,8 @@ static Class *		AllocClass(Tcl_Interp *interp, Object *useThisObj,
 			    Foundation *fPtr);
 static Object *		AllocObject(Foundation *fPtr, Tcl_Interp *interp,
 			    const char *nameStr, const char *nsNameStr);
+static void		ClearMixins(Class *clsPtr);
+static void		ClearSuperclasses(Class *clsPtr);
 static int		CloneClassMethod(Tcl_Interp *interp, Class *clsPtr,
 			    Method *mPtr, Tcl_Obj *namePtr,
 			    Method **newMPtrPtr);
@@ -736,7 +738,7 @@ ObjectRenamedTrace(
     ClientData clientData,	/* The object being deleted. */
     Tcl_Interp *interp,		/* The interpreter containing the object. */
     const char *oldName,	/* What the object was (last) called. */
-    const char *newName,	/* Always NULL. */
+    const char *newName,	/* What it's getting renamed to. (unused) */
     int flags)			/* Why was the object deleted? */
 {
     Object *oPtr = clientData;
@@ -840,6 +842,55 @@ ObjectRenamedTrace(
 /*
  * ----------------------------------------------------------------------
  *
+ * ClearMixins, ClearSuperclasses --
+ *
+ *	Utility functions for correctly clearing the list of mixins or
+ *	superclasses of a class. Will ckfree() the list storage.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static void
+ClearMixins(
+    Class *clsPtr)
+{
+    int i;
+    Class *mixinPtr;
+
+    if (clsPtr->mixins.num == 0) {
+	return;
+    }
+
+    FOREACH(mixinPtr, clsPtr->mixins) {
+	TclOORemoveFromMixinSubs(clsPtr, mixinPtr);
+    }
+    ckfree((char *) clsPtr->mixins.list);
+    clsPtr->mixins.list = NULL;
+    clsPtr->mixins.num = 0;
+}
+
+static void
+ClearSuperclasses(
+    Class *clsPtr)
+{
+    int i;
+    Class *superPtr;
+
+    if (clsPtr->superclasses.num == 0) {
+	return;
+    }
+
+    FOREACH(superPtr, clsPtr->superclasses) {
+	TclOORemoveFromSubclasses(clsPtr, superPtr);
+    }
+    ckfree((char *) clsPtr->superclasses.list);
+    clsPtr->superclasses.list = NULL;
+    clsPtr->superclasses.num = 0;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * ReleaseClassContents --
  *
  *	Tear down the special class data structure, including deleting all
@@ -916,13 +967,11 @@ ReleaseClassContents(
      */
 
     FOREACH(mixinSubclassPtr, clsPtr->mixinSubs) {
-	if (mixinSubclassPtr == NULL) {
-	    continue;
-	}
 	if (!Deleted(mixinSubclassPtr->thisPtr)) {
 	    Tcl_DeleteCommandFromToken(interp,
 		    mixinSubclassPtr->thisPtr->command);
 	}
+	ClearMixins(mixinSubclassPtr);
 	DelRef(mixinSubclassPtr->thisPtr);
 	DelRef(mixinSubclassPtr);
     }
@@ -937,12 +986,13 @@ ReleaseClassContents(
      */
 
     FOREACH(subclassPtr, clsPtr->subclasses) {
-	if (subclassPtr == NULL || IsRoot(subclassPtr)) {
+	if (IsRoot(subclassPtr)) {
 	    continue;
 	}
 	if (!Deleted(subclassPtr->thisPtr)) {
 	    Tcl_DeleteCommandFromToken(interp, subclassPtr->thisPtr->command);
 	}
+	ClearSuperclasses(subclassPtr);
 	DelRef(subclassPtr->thisPtr);
 	DelRef(subclassPtr);
     }
@@ -1140,8 +1190,11 @@ ObjectNamespaceDeleted(
 	oPtr->metadataPtr = NULL;
     }
 
+    /*
+     * If this was a class, there's additional deletion work to do.
+     */
+
     if (clsPtr != NULL) {
-	Class *superPtr;
 	Tcl_ObjectMetadataType *metadataTypePtr;
 	ClientData value;
 
@@ -1161,24 +1214,10 @@ ObjectNamespaceDeleted(
 	    ckfree((char *) clsPtr->filters.list);
 	    clsPtr->filters.num = 0;
 	}
-	FOREACH(mixinPtr, clsPtr->mixins) {
-	    if (!Deleted(mixinPtr->thisPtr)) {
-		TclOORemoveFromMixinSubs(clsPtr, mixinPtr);
-	    }
-	}
-	if (i) {
-	    ckfree((char *) clsPtr->mixins.list);
-	    clsPtr->mixins.num = 0;
-	}
-	FOREACH(superPtr, clsPtr->superclasses) {
-	    if (!Deleted(superPtr->thisPtr)) {
-		TclOORemoveFromSubclasses(clsPtr, superPtr);
-	    }
-	}
-	if (i) {
-	    ckfree((char *) clsPtr->superclasses.list);
-	    clsPtr->superclasses.num = 0;
-	}
+
+	ClearMixins(clsPtr);
+	ClearSuperclasses(clsPtr);
+
 	if (clsPtr->subclasses.list) {
 	    ckfree((char *) clsPtr->subclasses.list);
 	    clsPtr->subclasses.num = 0;
@@ -1320,9 +1359,7 @@ TclOORemoveFromSubclasses(
     return;
 
   removeSubclass:
-    if (Deleted(superPtr->thisPtr)) {
-	superPtr->subclasses.list[i] = NULL;
-    } else {
+    if (!Deleted(superPtr->thisPtr)) {
 	superPtr->subclasses.num--;
 	if (i < superPtr->subclasses.num) {
 	    superPtr->subclasses.list[i] =
@@ -1395,9 +1432,7 @@ TclOORemoveFromMixinSubs(
     return;
 
   removeSubclass:
-    if (Deleted(superPtr->thisPtr)) {
-	superPtr->mixinSubs.list[i] = NULL;
-    } else {
+    if (!Deleted(superPtr->thisPtr)) {
 	superPtr->mixinSubs.num--;
 	if (i < superPtr->mixinSubs.num) {
 	    superPtr->mixinSubs.list[i] =
@@ -1601,7 +1636,7 @@ Tcl_NewObjectInstance(
 	CallContext *contextPtr = TclOOGetCallContext(oPtr,NULL,CONSTRUCTOR);
 
 	if (contextPtr != NULL) {
-	    int result, flags;
+	    int result;
 	    Tcl_InterpState state;
 
 	    state = Tcl_SaveInterpState(interp, TCL_OK);
@@ -1618,7 +1653,6 @@ Tcl_NewObjectInstance(
 	    }
 	    AddRef(oPtr);
 	    result = TclOOInvokeContext(interp, contextPtr, objc, objv);
-	    flags = oPtr->flags;
 
 	    /*
 	     * It's an error if the object was whacked in the constructor.

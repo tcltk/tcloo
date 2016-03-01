@@ -1,8 +1,8 @@
-Release of TclOO Version 1.0.2
+Release of TclOO Version 1.0.4
 ==============================
 
 This officially corresponds to the version of TclOO that is included with Tcl
-8.6.2, except for features (notably coroutine support and bytecode compilation
+8.6.5, except for features (notably coroutine support and bytecode compilation
 of some commands) that require the 8.6 runtime.
 
 TclOO: An Object System for Tcl
@@ -24,26 +24,23 @@ notably including XOTcl, incr Tcl, and Snit. It also draws on experience with
 object systems in other languages like C++, Java and Ruby (despite being
 somewhat different from each of them).
 
-Changes in TclOO 1.0.1
+Changes in TclOO 1.0.4
 ----------------------
-Bugfixes for:
+* TIP #436 <http://tip.tcl.tk/436.html> was implemented, which makes `info
+  object isa` not produce errors when presented with non-objects.
 
-* <http://core.tcl.tk/tcl/info/7d52e1101b>
-
-* <http://core.tcl.tk/tcl/info/75b8433707>
-
-* <http://core.tcl.tk/tcl/info/f51efe99a7>
-
-No API changes.
+* Various bugs in class destruction were addressed.
 
 For a full description of all changes, see:
 
-* <http://core.tcl.tk/tcloo/timeline?from=release-1.0.1&to=release-1.0.2>
+* <http://core.tcl.tk/tcloo/timeline?from=release-1.0.2&to=release-1.0.4>
+
+Note that there were no meaningful changes in 1.0.3.
 
 Building
 --------
 
-TclOO 1.0.2 uses the TEA3 build system. These instructions are known to work
+TclOO 1.0.4 uses the TEA3 build system. These instructions are known to work
 on Linux, OSX and Windows (with msys installed).
 
 1. Make sure you have a source distribution of Tcl 8.5 somewhere; you will

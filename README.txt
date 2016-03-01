@@ -1,4 +1,4 @@
-Object Oriented Programming Package for Tcl (TclOO) Version 1.0.2
+Object Oriented Programming Package for Tcl (TclOO) Version 1.0.4
 
 Copyright 2005-2014 Donal K. Fellows
 
@@ -12,7 +12,7 @@ which you received this file.
 Building
 ========
 
-TclOO 1.0.2 uses the TEA3 build system. These instructions are known to work
+TclOO 1.0.4 uses the TEA3 build system. These instructions are known to work
 on Linux, OSX and Windows (with msys installed).
 
 1) Make sure you have a source distribution of Tcl 8.5 somewhere; you will
@@ -66,17 +66,16 @@ for {set i 1} {$i <= 10} {incr i} {
 }
 summation destroy
 
-Significant Changes from 1.0.1 Release
+Significant Changes from 1.0.2 Release
 ====================================
-Bugfixes for:
-* http://core.tcl.tk/tcl/info/7d52e1101b
-* http://core.tcl.tk/tcl/info/75b8433707
-* http://core.tcl.tk/tcl/info/f51efe99a7
-
-No API changes.
+* TIP #436 <http://tip.tcl.tk/436.html> was implemented, which makes `info
+  object isa` not produce errors when presented with non-objects.
+* Various bugs in class destruction were addressed.
 
 For a full description of all changes, see:
- http://core.tcl.tk/tcloo/timeline?from=release-1.0.1&to=release-1.0.2
+ http://core.tcl.tk/tcloo/timeline?from=release-1.0.2&to=release-1.0.4
+
+Note that there were no meaningful changes in 1.0.3.
 
 Compatibility Warnings
 ======================

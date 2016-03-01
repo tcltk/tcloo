@@ -17,7 +17,7 @@
  * Must match version at top of ../configure.in
  */
 
-#define TCLOO_VERSION "1.0.2"
+#define TCLOO_VERSION "1.0.4"
 #define TCLOO_PATCHLEVEL TCLOO_VERSION
 
 #include "tcl.h"
