@@ -57,6 +57,10 @@ TEAX_LAPPEND(CLEANFILES, pkgIndex.tcl)
 AC_SUBST(CLEANFILES)
 AC_DEFINE(USE_TCL_STUBS,[1],[Should always be 1])
 
+dnl# This is necessary to ensure that invocations of autoheader
+dnl# generate a config.in.h that includes the BUILD_TclOO directive.
+AC_DEFINE([BUILD_TclOO], [1], [Should always be 1])
+
 TEA_PROG_TCLSH
 CONFIGURE_OUTPUTS="Makefile tclooConfig.sh config.cache config.log config.status"
 AC_SUBST(CONFIGURE_OUTPUTS)

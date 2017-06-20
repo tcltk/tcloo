@@ -3,6 +3,9 @@
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
 
+/* Should always be 1 */
+#undef BUILD_TclOO
+
 /* Do we have the intptr_t type? */
 #undef HAVE_INTPTR_T
 
