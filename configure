@@ -7847,6 +7847,10 @@ $as_echo "#define USE_TCL_STUBS 1" >>confdefs.h
 
 
 
+$as_echo "#define BUILD_TclOO 1" >>confdefs.h
+
+
+
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for tclsh" >&5
 $as_echo_n "checking for tclsh... " >&6; }
     if test -f "${TCL_BIN_DIR}/Makefile" ; then
