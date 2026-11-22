@@ -26,14 +26,14 @@ somewhat different from each of them).
 
 Changes in TclOO 1.0.4
 ----------------------
-* TIP #436 <http://tip.tcl.tk/436.html> was implemented, which makes `info
+* TIP #436 <https://core.tcl-lang.org/tips/doc/trunk/tip/436.md> was implemented, which makes `info
   object isa` not produce errors when presented with non-objects.
 
 * Various bugs in class destruction were addressed.
 
 For a full description of all changes, see:
 
-* <http://core.tcl.tk/tcloo/timeline?from=release-1.0.2&to=release-1.0.4>
+* <https://core.tcl-lang.org/tcloo/timeline?from=release-1.0.2&to=release-1.0.4>
 
 Note that there were no meaningful changes in 1.0.3.
 
@@ -64,8 +64,8 @@ on Linux, OSX and Windows (with msys installed).
 Support
 -------
 
-Please file bug reports, feature requests and patches on core.tcl.tk under the
-Tcl package. <http://core.tcl.tk/tcl/tktnew> To ensure attention from the
+Please file bug reports, feature requests and patches on core.tcl-lang.org under the
+Tcl package. <https://core.tcl-lang.org/tcl/tktnew> To ensure attention from the
 relevant maintainer, please use "35. TclOO Package" for the Category field.
 Remember, it is better to file a bug report twice than not at all!
 

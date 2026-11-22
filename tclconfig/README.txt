@@ -1,7 +1,7 @@
 These files comprise the basic building blocks for a Tcl Extension
 Architecture (TEA) extension.  For more information on TEA see:
 
-	http://www.tcl.tk/doc/tea/
+	https://www.tcl-lang.org/doc/tea/
 
 This package is part of the Tcl project at SourceForge, and latest
 sources should be available there:
